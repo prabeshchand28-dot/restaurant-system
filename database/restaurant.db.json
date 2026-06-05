@@ -1,0 +1,194 @@
+{
+  "menu": [
+    {
+      "id": 1,
+      "name": "Momo",
+      "price": 150,
+      "category": "Snacks",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": 2,
+      "name": "Chowmein",
+      "price": 180,
+      "category": "Noodles",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": 3,
+      "name": "Thukpa",
+      "price": 200,
+      "category": "Noodles",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": 4,
+      "name": "Burger",
+      "price": 220,
+      "category": "Snacks",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": 5,
+      "name": "Pizza",
+      "price": 350,
+      "category": "Main",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": 6,
+      "name": "Dal Bhat",
+      "price": 250,
+      "category": "Main",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": 7,
+      "name": "Lassi",
+      "price": 100,
+      "category": "Drinks",
+      "image": null,
+      "available": true
+    },
+    {
+      "id": 8,
+      "name": "Masala Chai",
+      "price": 60,
+      "category": "Drinks",
+      "image": null,
+      "available": true
+    }
+  ],
+  "orders": [
+    {
+      "table": 4,
+      "items": [
+        {
+          "name": "Lassi",
+          "qty": 1,
+          "price": 100
+        },
+        {
+          "name": "Masala Chai",
+          "qty": 2,
+          "price": 60
+        }
+      ],
+      "guests": {
+        "count": 2,
+        "gender": "Male"
+      },
+      "id": 1,
+      "time": "2026-06-02T17:45:15.687Z",
+      "status": "Completed",
+      "completedAt": "2026-06-02T17:48:31.245Z"
+    },
+    {
+      "table": 1,
+      "items": [
+        {
+          "name": "Momo",
+          "qty": 1,
+          "price": 150
+        },
+        {
+          "name": "Chowmein",
+          "qty": 1,
+          "price": 180
+        }
+      ],
+      "guests": {
+        "count": 1,
+        "gender": "Male"
+      },
+      "id": 2,
+      "time": "2026-06-03T05:53:22.034Z",
+      "status": "Completed",
+      "completedAt": "2026-06-03T05:55:52.194Z"
+    },
+    {
+      "table": 1,
+      "items": [
+        {
+          "name": "Momo",
+          "qty": 1,
+          "price": 150
+        }
+      ],
+      "guests": {
+        "count": 9,
+        "gender": "Male"
+      },
+      "id": 3,
+      "time": "2026-06-03T05:54:17.904Z",
+      "status": "Completed",
+      "completedAt": "2026-06-03T05:55:57.445Z"
+    }
+  ],
+  "guests": [
+    {
+      "table": 4,
+      "count": 2,
+      "gender": "Male",
+      "time": "2026-06-02T17:44:50.817Z"
+    },
+    {
+      "table": 6,
+      "count": 1,
+      "gender": "Male",
+      "time": "2026-06-02T17:51:55.350Z"
+    },
+    {
+      "table": 1,
+      "count": 1,
+      "gender": "Other",
+      "time": "2026-06-03T05:56:08.546Z"
+    }
+  ],
+  "payments": [
+    {
+      "orderId": 1,
+      "method": "QR Payment",
+      "amount": 220,
+      "amountPaid": 220,
+      "change": 0,
+      "receiptNo": "RCP-1780422511244",
+      "status": "Paid",
+      "id": 1,
+      "time": "2026-06-02T17:48:31.245Z"
+    }
+  ],
+  "tables": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "users": [
+    {
+      "id": 1,
+      "username": "admin",
+      "password": "restaurant123",
+      "role": "admin",
+      "active": true
+    }
+  ],
+  "nextIds": {
+    "menu": 9,
+    "order": 4,
+    "payment": 2
+  }
+}

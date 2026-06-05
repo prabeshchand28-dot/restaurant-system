@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Payment — POS</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;
+  --white:#fff;
+  --navy:#1a3a6b;
+  --navy2:#0e2448;
+  --blue:#2653a0;
+  --blue-light:#3b6fd4;
+  --header-blue:#1a3a6b;
+  --row-blue:#2653a0;
+  --accent-orange:#e05a1a;
+  --text:#1a1a1a;
+  --muted:#666;
+  --border:#d0d5e0;
+  --olive:#7a9a00;
+  --green:#1a7a3a;
+  --red:#c0392b;
+  --font:'Plus Jakarta Sans',sans-serif;
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text)}
+body{display:flex;flex-direction:column;overflow:hidden}
+
+/* ══ SCREENS ══ */
+.screen{display:none;flex-direction:column;height:100vh;overflow:hidden}
+.screen.show{display:flex}
+
+/* ══════════════════════════════════════
+   SCREEN 1 — TABLE SELECTION
+══════════════════════════════════════ */
+/* Top bar */
+.sel-topbar{
+  background:var(--navy);color:#fff;padding:0 24px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.sel-brand{font-size:17px;font-weight:800}
+.sel-brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.sel-nav-btns{display:flex;gap:8px}
+.sel-nav-btn{
+  background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);
+  padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;font-family:var(--font);
+  transition:background .15s;text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+}
+.sel-nav-btn:hover{background:rgba(255,255,255,.25)}
+
+/* Section bar */
+.sel-section{
+  background:var(--blue);color:#fff;padding:10px 24px;font-size:14px;font-weight:700;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.sel-refresh{background:none;border:1px solid rgba(255,255,255,.4);color:#fff;padding:5px 12px;border-radius:5px;cursor:pointer;font-size:12px;font-family:var(--font)}
+
+/* Table grid */
+.sel-content{flex:1;overflow-y:auto;padding:20px 24px}
+.sel-stats{display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.sel-stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:12px 18px}
+.sel-stat .sv{font-size:24px;font-weight:900;color:var(--navy)}
+.sel-stat .sl{font-size:11px;color:var(--muted);margin-top:2px}
+
+.table-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.table-card{
+  background:var(--white);border:2px solid var(--border);border-radius:12px;
+  padding:16px;cursor:pointer;transition:all .2s;
+}
+.table-card:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(38,83,160,.15);transform:translateY(-2px)}
+.table-card.occupied{border-color:var(--accent-orange)}
+.table-card.occupied:hover{border-color:#b04a10}
+.tc-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.tc-table-no{
+  font-size:36px;font-weight:900;color:var(--navy);
+  background:#e8eef8;width:56px;height:56px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+}
+.tc-status{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.tc-status.Pending  {background:rgba(224,90,26,.12);color:var(--accent-orange)}
+.tc-status.Preparing{background:rgba(38,83,160,.12);color:var(--blue)}
+.tc-status.free     {background:rgba(0,0,0,.06);color:var(--muted)}
+.tc-meta{font-size:12px;color:var(--muted);margin-bottom:8px}
+.tc-items{font-size:12px;color:var(--text);margin-bottom:8px;line-height:1.6}
+.tc-total{font-size:18px;font-weight:900;color:var(--navy)}
+.tc-order-id{font-size:11px;color:var(--blue);font-weight:600;margin-top:3px}
+.tc-pay-btn{
+  width:100%;background:var(--blue);color:#fff;border:none;border-radius:8px;
+  padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);
+  margin-top:12px;transition:background .15s;
+}
+.tc-pay-btn:hover{background:var(--navy)}
+.tc-free{font-size:13px;color:var(--muted);text-align:center;padding:10px 0}
+.no-orders{text-align:center;padding:60px 20px;color:var(--muted);grid-column:1/-1}
+.no-orders .ico{font-size:48px;margin-bottom:10px}
+
+/* ══════════════════════════════════════
+   SCREEN 2 — POS PAYMENT
+══════════════════════════════════════ */
+.pos-topbar{
+  background:var(--navy2);color:#fff;padding:0 16px;height:52px;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.pos-topbar-left{display:flex;flex-direction:column}
+.pos-brand{font-size:14px;font-weight:800}
+.pos-sub{font-size:11px;opacity:.6}
+.pos-topbar-center{text-align:center}
+.pos-topbar-right{display:flex;gap:8px;align-items:center}
+.pos-nav-btn{
+  background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);
+  padding:6px 12px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;
+  font-family:var(--font);transition:background .15s;
+}
+.pos-nav-btn:hover{background:rgba(255,255,255,.25)}
+.pos-nav-btn.green-btn{background:#1a7a3a;border-color:#1a7a3a}
+.pos-nav-btn.green-btn:hover{background:#155a2c}
+
+/* Info row */
+.pos-infobar{
+  background:var(--white);border-bottom:2px solid var(--border);
+  padding:8px 16px;display:flex;align-items:center;gap:20px;flex-shrink:0;
+  font-size:13px;
+}
+.pos-infobar .info-item{display:flex;align-items:center;gap:6px}
+.pos-infobar .info-item span{color:var(--muted)}
+.pos-infobar .info-item strong{color:var(--navy);cursor:pointer}
+.pos-infobar .info-item strong:hover{text-decoration:underline}
+.pos-cancel-btn{
+  margin-left:auto;background:none;border:1px solid var(--border);
+  color:var(--muted);padding:5px 12px;border-radius:5px;cursor:pointer;font-size:12px;font-family:var(--font);
+}
+.pos-cancel-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* Main layout */
+.pos-main{flex:1;display:grid;grid-template-columns:1fr 380px;overflow:hidden}
+
+/* ── LEFT: Order summary ── */
+.pos-left{overflow-y:auto;border-right:1px solid var(--border);display:flex;flex-direction:column}
+
+.pos-total-block{
+  background:var(--navy2);padding:14px 16px;
+  display:flex;align-items:center;gap:16px;flex-shrink:0;
+}
+.pos-bill-status{
+  background:var(--blue);color:#fff;font-size:12px;font-weight:800;
+  padding:6px 12px;border-radius:5px;letter-spacing:.5px;
+}
+.pos-total-label{font-size:14px;color:rgba(255,255,255,.7)}
+.pos-total-amount{font-size:32px;font-weight:900;color:#fff;margin-left:auto}
+.pos-tax-info{font-size:11px;color:rgba(255,255,255,.5);text-align:right}
+
+/* Order items accordion */
+.pos-orders-section{flex-shrink:0}
+.pos-section-header{
+  background:var(--blue);color:#fff;padding:8px 14px;
+  display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;
+  cursor:pointer;
+}
+.pos-section-header:hover{background:var(--blue-light)}
+.pos-items-list{border-bottom:1px solid var(--border)}
+.pos-item-row{
+  display:flex;align-items:center;padding:9px 14px;border-bottom:1px solid #f0f0f0;font-size:13px;
+}
+.pos-item-row:last-child{border-bottom:none}
+.pos-item-name{flex:1;color:var(--text)}
+.pos-item-qty{background:#e8eef8;color:var(--blue);font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;margin-right:8px;flex-shrink:0}
+.pos-item-price{font-weight:600;color:var(--text);min-width:80px;text-align:right}
+
+/* Discount / Charge section */
+.pos-extras{border-bottom:1px solid var(--border)}
+.pos-extras-header{background:#e8eef8;padding:7px 14px;font-size:12px;font-weight:700;color:var(--navy)}
+.pos-extras-table{width:100%;border-collapse:collapse;font-size:12px}
+.pos-extras-table th{background:#e8eef8;color:var(--navy);padding:6px 14px;text-align:left;font-weight:700;border:1px solid var(--border)}
+.pos-extras-table td{padding:7px 14px;border:1px solid #f0f0f0;color:var(--text)}
+.pos-extras-table tr:nth-child(even) td{background:#fafbfc}
+
+/* Summary bottom */
+.pos-summary-bottom{padding:10px 14px;background:#f8f9fb;border-top:1px solid var(--border);margin-top:auto;flex-shrink:0}
+.pos-sum-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
+.pos-sum-row.total-row{font-size:16px;font-weight:900;color:var(--navy);border-top:2px solid var(--navy);padding-top:8px;margin-top:4px}
+
+/* Method selector */
+.pos-method-bar{display:flex;gap:6px;padding:8px 14px;background:#f0f2f5;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.pos-method-btn{
+  padding:7px 14px;border-radius:6px;border:1.5px solid var(--border);
+  background:var(--white);font-family:var(--font);font-size:12px;font-weight:700;
+  cursor:pointer;transition:all .15s;color:var(--text);
+}
+.pos-method-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.pos-method-btn:hover:not(.active){border-color:var(--blue);color:var(--blue)}
+
+/* ── RIGHT: Numpad + calc ── */
+.pos-right{display:flex;flex-direction:column;background:var(--white);overflow:hidden;min-height:0}
+
+/* Payment summary strip */
+.pos-calc-summary{border-bottom:2px solid var(--border);flex-shrink:0}
+.pos-calc-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;border-bottom:1px solid #e8eef8;font-size:15px;
+}
+.pos-calc-row:last-child{border-bottom:none}
+.pos-calc-row .cr-label{font-weight:700;color:var(--text);font-size:15px}
+.pos-calc-row .cr-val{font-size:22px;font-weight:900;color:var(--navy)}
+.pos-calc-row.cr-change .cr-val{color:var(--green)}
+.pos-calc-row.cr-received .cr-val{color:var(--blue)}
+.pos-method-row{
+  background:var(--navy2);padding:10px 16px;font-size:14px;font-weight:800;
+  color:#fff;display:flex;align-items:center;justify-content:space-between;
+}
+
+/* Display */
+.pos-display{
+  background:#2a2a3e;color:#fff;padding:10px 16px;text-align:right;flex-shrink:0;
+  border-bottom:2px solid var(--border);
+}
+.pos-display-hint{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px;text-align:right}
+.pos-display-val{font-size:32px;font-weight:900;letter-spacing:1px;font-family:monospace}
+
+/* Numpad — fills remaining space, buttons square */
+.pos-numpad{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  grid-template-rows:repeat(4,1fr);
+  gap:3px;padding:3px;flex:1;background:#888;min-height:0;
+}
+.nk{
+  background:var(--white);border:none;font-family:var(--font);font-size:26px;
+  font-weight:800;cursor:pointer;transition:background .08s,transform .08s;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  color:var(--text);line-height:1.1;-webkit-tap-highlight-color:transparent;
+}
+.nk:active{background:#dde4f0;transform:scale(.96)}
+.nk.ac{background:#c9330d;color:#fff}
+.nk.ac:active{background:#a02b0a}
+.nk.c-btn{background:#d9500f;color:#fff}
+.nk.c-btn:active{background:#b03f0a}
+.nk.ten-k{background:#7a9900;color:#fff}
+.nk.ten-k:active{background:#5a7200}
+.nk.calc-btn{background:#c8d0e0;color:var(--navy);font-size:18px}
+.nk.calc-btn:active{background:#aab4c8}
+.nk.dbl-zero{font-size:22px}
+.nk.span2{grid-row:span 2}
+
+/* Bottom bar */
+.pos-bottom{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--navy2);padding:10px 16px;flex-shrink:0;
+}
+.pos-back-btn{
+  background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);
+  padding:10px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;
+  font-family:var(--font);transition:background .15s;
+}
+.pos-back-btn:hover{background:rgba(255,255,255,.25)}
+.pos-execute-btn{
+  background:var(--blue);color:#fff;border:none;border-radius:8px;
+  padding:12px 36px;font-size:18px;font-weight:900;cursor:pointer;font-family:var(--font);
+  transition:all .15s;display:flex;align-items:center;gap:10px;
+  box-shadow:0 4px 16px rgba(38,83,160,.4);
+}
+.pos-execute-btn:hover{background:#1a3d8f}
+.pos-execute-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ══ SUCCESS OVERLAY ══ */
+.success-overlay{
+  display:none;position:fixed;inset:0;background:rgba(10,20,50,.85);
+  z-index:1000;align-items:center;justify-content:center;
+}
+.success-overlay.show{display:flex}
+.success-card{
+  background:#fff;border-radius:16px;padding:32px 28px;width:100%;max-width:440px;
+  text-align:center;animation:popIn .4s cubic-bezier(.22,1,.36,1);
+}
+@keyframes popIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.success-icon{font-size:64px;margin-bottom:12px}
+.success-title{font-size:24px;font-weight:900;color:var(--navy);margin-bottom:6px}
+.success-sub{font-size:14px;color:var(--muted);margin-bottom:20px}
+.receipt-paper{background:#fafafa;border:1px solid var(--border);border-radius:10px;padding:18px;text-align:left;margin-bottom:18px;font-size:13px}
+.rp-title{text-align:center;font-size:16px;font-weight:900;margin-bottom:4px}
+.rp-meta{text-align:center;font-size:11px;color:var(--muted);margin-bottom:12px}
+.rp-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f0f0}
+.rp-row:last-of-type{border-bottom:none}
+.rp-total{display:flex;justify-content:space-between;padding:10px 0 0;font-size:16px;font-weight:900;border-top:2px solid var(--navy);margin-top:6px}
+.rp-total span:last-child{color:var(--blue)}
+.rp-footer{text-align:center;font-size:11px;color:var(--muted);margin-top:12px;padding-top:10px;border-top:1px dashed #ccc}
+.success-actions{display:flex;gap:10px}
+.sa-btn{flex:1;padding:12px;border:none;border-radius:8px;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.sa-btn.primary{background:var(--blue);color:#fff}
+.sa-btn.secondary{background:#f0f2f5;color:var(--text)}
+.sa-btn:hover{opacity:.85}
+
+/* Loading */
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(10,20,50,.7);z-index:2000;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+.loading-overlay.show{display:flex}
+.spinner{width:44px;height:44px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{color:#fff;font-weight:600;font-size:14px}
+
+/* Toast */
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.error{background:var(--red)}
+.toast.success{background:var(--green)}
+
+/* Print */
+#printEl{display:none}
+@media print{body>*{visibility:hidden!important}#printEl,#printEl *{visibility:visible!important}#printEl{position:fixed;top:0;left:0;width:100%;display:block!important}}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#bbb;border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SCREEN 1 — TABLE SELECTION
+══════════════════════════════════════ -->
+<div class="screen show" id="screen-select">
+
+  <div class="sel-topbar">
+    <div>
+      <span class="sel-brand">🍽️ Restaurant System <span>Payment Terminal</span></span>
+    </div>
+    <div class="sel-nav-btns">
+      <a class="sel-nav-btn" href="/kitchen">👨‍🍳 Kitchen</a>
+      <a class="sel-nav-btn" href="/dashboard">📊 Dashboard</a>
+    </div>
+  </div>
+
+  <div class="sel-section">
+    <span>📋 Select Table to Process Payment</span>
+    <button class="sel-refresh" onclick="loadTables()">↺ Refresh</button>
+  </div>
+
+  <div class="sel-content">
+    <div class="sel-stats" id="selStats"></div>
+    <div class="table-grid" id="tableGrid">
+      <div class="no-orders"><div class="ico">⏳</div><p>Loading tables...</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 2 — POS PAYMENT
+══════════════════════════════════════ -->
+<div class="screen" id="screen-pos">
+
+  <!-- Top bar -->
+  <div class="pos-topbar">
+    <div class="pos-topbar-left">
+      <span class="pos-brand">🍽️ Restaurant POS</span>
+      <span class="pos-sub" id="posDateTime">—</span>
+    </div>
+    <div class="pos-topbar-center">
+      <span style="color:rgba(255,255,255,.7);font-size:12px">Cashier: </span>
+      <span style="font-size:13px;font-weight:700" id="posUser">Admin</span>
+    </div>
+    <div class="pos-topbar-right">
+      <button class="pos-nav-btn green-btn" onclick="openSuccess()">実行 Execute</button>
+    </div>
+  </div>
+
+  <!-- Info row -->
+  <div class="pos-infobar">
+    <div class="info-item">
+      <span>Order Code:</span>
+      <strong id="infoOrderCode">#—</strong>
+    </div>
+    <div class="info-item">
+      <span>Table No:</span>
+      <strong id="infoTableNo">—</strong>
+    </div>
+    <div class="info-item">
+      <span>Guests:</span>
+      <strong id="infoGuests">—</strong>
+    </div>
+    <div class="info-item">
+      <span>Status:</span>
+      <strong id="infoStatus">—</strong>
+    </div>
+    <button class="pos-cancel-btn" onclick="cancelPayment()">↩ Cancel Payment</button>
+  </div>
+
+  <!-- Main layout -->
+  <div class="pos-main">
+
+    <!-- LEFT: Order summary -->
+    <div class="pos-left">
+
+      <!-- Total block -->
+      <div class="pos-total-block">
+        <div class="pos-bill-status">BILLING</div>
+        <div>
+          <div class="pos-total-label">Total Amount</div>
+          <div class="pos-tax-info">Incl. 13% VAT</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div class="pos-total-amount" id="posTotal">Rs 0</div>
+          <div class="pos-tax-info">VAT: Rs <span id="posVat">0</span> · Per person: Rs <span id="posPerPerson">0</span></div>
+        </div>
+      </div>
+
+      <!-- Items -->
+      <div class="pos-orders-section">
+        <div class="pos-section-header" onclick="toggleItems()">
+          <span>注文商品 Ordered Items</span>
+          <span id="posItemSummary" style="font-size:12px;font-weight:400">0 items · Rs 0 <span id="itemsToggle">▼</span></span>
+        </div>
+        <div class="pos-items-list" id="posItemsList"></div>
+      </div>
+
+      <!-- Discount section -->
+      <div class="pos-extras">
+        <div class="pos-extras-header">割引 Discount / Promo</div>
+        <table class="pos-extras-table" style="width:100%">
+          <thead><tr><th>Type</th><th>Amount/Rate</th><th>Code</th></tr></thead>
+          <tbody id="discountRows">
+            <tr><td colspan="3" style="text-align:center;color:var(--muted);padding:12px;font-size:12px">— No discount applied —</td></tr>
+          </tbody>
+        </table>
+        <div style="padding:8px 14px;display:flex;gap:6px">
+          <input id="promoInput" placeholder="Promo code (SAVE10, VIP...)" style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:var(--font);outline:none"/>
+          <button onclick="applyPromo()" style="background:var(--blue);color:#fff;border:none;padding:7px 14px;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Apply</button>
+        </div>
+      </div>
+
+      <!-- Charges -->
+      <div class="pos-extras">
+        <div class="pos-extras-header">チャージ Charges</div>
+        <table class="pos-extras-table" style="width:100%">
+          <tbody id="chargeRows">
+            <tr><td>Service Charge</td><td id="serviceChargeVal">0% (Rs 0)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Spacer -->
+      <div style="flex:1"></div>
+
+      <!-- Summary -->
+      <div class="pos-summary-bottom">
+        <div class="pos-sum-row"><span>Subtotal</span><span id="sumSubtotal">Rs 0</span></div>
+        <div class="pos-sum-row"><span>VAT (13%)</span><span id="sumVat">Rs 0</span></div>
+        <div class="pos-sum-row" id="sumDiscRow" style="display:none;color:#8b5cf6"><span>Discount</span><span id="sumDisc">− Rs 0</span></div>
+        <div class="pos-sum-row" id="sumServiceRow" style="display:none"><span>Service Charge</span><span id="sumService">Rs 0</span></div>
+        <div class="pos-sum-row total-row"><span>TOTAL</span><span id="sumTotal">Rs 0</span></div>
+      </div>
+
+      <!-- Payment method -->
+      <div class="pos-method-bar">
+        <span style="font-size:12px;color:var(--muted);font-weight:600;line-height:2">Method:</span>
+        <button class="pos-method-btn active" onclick="setMethod('Cash',this)">💵 Cash</button>
+        <button class="pos-method-btn" onclick="setMethod('Card',this)">💳 Card</button>
+        <button class="pos-method-btn" onclick="setMethod('eSewa',this)">🟢 eSewa</button>
+        <button class="pos-method-btn" onclick="setMethod('Khalti',this)">🟣 Khalti</button>
+        <button class="pos-method-btn" onclick="setMethod('QR Pay',this)">📱 QR</button>
+        <button class="pos-method-btn" onclick="setMethod('Complimentary',this)">🎁 Comp</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: Calculator -->
+    <div class="pos-right">
+
+      <!-- Payment summary -->
+      <div class="pos-calc-summary">
+        <div class="pos-calc-row">
+          <span class="cr-label">合計 Total</span>
+          <span class="cr-val" id="calcTotal">Rs 0</span>
+        </div>
+        <div class="pos-calc-row cr-received">
+          <span class="cr-label">お預り Received</span>
+          <span class="cr-val" id="calcReceived">Rs 0</span>
+        </div>
+        <div class="pos-calc-row cr-change">
+          <span class="cr-label">お釣り Change</span>
+          <span class="cr-val" id="calcChange">Rs 0</span>
+        </div>
+        <div class="pos-method-row">
+          <span id="calcMethodLabel">💵 Cash</span>
+          <span id="calcMethodAmount" style="font-weight:900">Rs 0</span>
+        </div>
+      </div>
+
+      <!-- Display -->
+      <div class="pos-display">
+        <div class="pos-display-hint">Enter amount received</div>
+        <div id="numDisplay">Rs 0</div>
+      </div>
+
+      <!-- Numpad -->
+      <div class="pos-numpad">
+        <button class="nk" onclick="numPress('7')">7</button>
+        <button class="nk" onclick="numPress('8')">8</button>
+        <button class="nk" onclick="numPress('9')">9</button>
+        <button class="nk ac" onclick="numAC()">AC</button>
+
+        <button class="nk" onclick="numPress('4')">4</button>
+        <button class="nk" onclick="numPress('5')">5</button>
+        <button class="nk" onclick="numPress('6')">6</button>
+        <button class="nk c-btn" onclick="numC()">C</button>
+
+        <button class="nk" onclick="numPress('1')">1</button>
+        <button class="nk" onclick="numPress('2')">2</button>
+        <button class="nk" onclick="numPress('3')">3</button>
+        <button class="nk kei span2" onclick="numConfirm()">計<br>Calc</button>
+
+        <button class="nk" onclick="numPress('0')">0</button>
+        <button class="nk zero2" onclick="numPress('00')">00</button>
+        <button class="nk wan" onclick="numWan()">万<br>10k</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="pos-bottom">
+    <button class="pos-back-btn" onclick="backToList()">← 接客一覧に戻る  Back to List</button>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span id="posReadyMsg" style="font-size:12px;color:rgba(255,255,255,.5)">Select payment method</span>
+      <button class="pos-execute-btn" id="executeBtn" onclick="executePayment()" disabled>
+        ▲ 実行  Execute
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SUCCESS OVERLAY ══ -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-card">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Payment Complete!</div>
+    <div class="success-sub" id="successSub">Payment processed successfully</div>
+    <div class="receipt-paper" id="receiptPaper"></div>
+    <div class="success-actions">
+      <button class="sa-btn primary" onclick="printAndClose()">🖨️ Print Receipt</button>
+      <button class="sa-btn secondary" onclick="backToList()">← New Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Loading...</div>
+</div>
+
+<!-- Toast & Print -->
+<div class="toast" id="toast"></div>
+<div id="printEl" style="display:none"></div>
+
+<script>
+/* ══ GLOBALS ══ */
+const token   = localStorage.getItem('token');
+const user    = JSON.parse(localStorage.getItem('user') || '{}');
+let allOrders = [];
+let allTables = [];
+let currentOrder   = null;
+let payMethod      = 'Cash';
+let numInput       = '';
+let subtotal       = 0;
+let vatAmount      = 0;
+let discPct        = 0;
+let discAmt        = 0;
+let serviceChgPct  = 0;
+let serviceChgAmt  = 0;
+let finalTotal     = 0;
+let amountReceived = 0;
+
+const TAX = 0.13;
+const PROMOS = { 'SAVE10':{pct:10},'SAVE20':{pct:20},'STAFF50':{pct:50},'VIP':{pct:15},'NEPAL25':{pct:25} };
+
+/* Clock */
+setInterval(() => {
+  document.getElementById('posDateTime').textContent =
+    new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+}, 1000);
+
+/* User */
+document.getElementById('posUser').textContent = user.name || user.username || 'Admin';
+
+/* ══ SCREEN 1: TABLE SELECTION ══ */
+async function loadTables() {
+  showLoading('Loading tables...');
+  try {
+    const [ordersRes, tablesRes] = await Promise.all([
+      fetch('/api/orders', { headers: authH() }),
+      fetch('/api/tables', { headers: authH() }),
+    ]);
+    allOrders = await ordersRes.json();
+    allTables = await tablesRes.json();
+    hideLoading();
+    renderTableGrid();
+  } catch (e) {
+    hideLoading();
+    showToast('Could not load data: ' + e.message, 'error');
+  }
+}
+
+function renderTableGrid() {
+  const active = allOrders.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled');
+  const paid   = allOrders.filter(o => o.status === 'Completed').length;
+
+  // Stats
+  const totalUnpaid = active.reduce((s,o)=>s+o.items.reduce((ss,i)=>ss+i.price*i.qty,0),0);
+  document.getElementById('selStats').innerHTML = `
+    <div class="sel-stat"><div class="sv">${active.length}</div><div class="sl">Active Orders</div></div>
+    <div class="sel-stat"><div class="sv">Rs ${totalUnpaid.toLocaleString()}</div><div class="sl">Pending Revenue</div></div>
+    <div class="sel-stat"><div class="sv">${allTables.length}</div><div class="sl">Total Tables</div></div>
+    <div class="sel-stat"><div class="sv">${paid}</div><div class="sl">Paid Today</div></div>
+  `;
+
+  const grid = document.getElementById('tableGrid');
+  if (!allTables.length) {
+    grid.innerHTML = '<div class="no-orders"><div class="ico">🪑</div><p>No tables found</p></div>';
+    return;
+  }
+
+  grid.innerHTML = allTables.map(tableNo => {
+    const tableOrders = active.filter(o => o.table === tableNo);
+    const occupied    = tableOrders.length > 0;
+    if (!occupied) {
+      return `<div class="table-card">
+        <div class="tc-header">
+          <div class="tc-table-no">${tableNo}</div>
+          <span class="tc-status free">Free</span>
+        </div>
+        <div class="tc-free">No active orders</div>
+      </div>`;
+    }
+    // Show the latest/first active order
+    const o = tableOrders[0];
+    const total = o.items.reduce((s,i)=>s+i.price*i.qty,0);
+    const itemsText = o.items.slice(0,3).map(i=>`${i.name} ×${i.qty}`).join(', ') + (o.items.length>3?'...':'');
+    return `<div class="table-card occupied">
+      <div class="tc-header">
+        <div class="tc-table-no">${tableNo}</div>
+        <span class="tc-status ${o.status}">${o.status}</span>
+      </div>
+      <div class="tc-meta">👥 ${o.guests||'—'} guests · ${new Date(o.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+      <div class="tc-items">${itemsText}</div>
+      <div class="tc-total">Rs ${total.toLocaleString()}</div>
+      <div class="tc-order-id">Order #${String(o.id).padStart(5,'0')} ${tableOrders.length>1?`(+${tableOrders.length-1} more)`:''}</div>
+      <button class="tc-pay-btn" onclick="openPOS(${tableNo})">💳 Process Payment</button>
+    </div>`;
+  }).join('');
+}
+
+/* ══ SCREEN 2: POS ══ */
+async function openPOS(tableNo) {
+  showLoading('Loading order details...');
+  try {
+    const r = await fetch('/api/orders', { headers: authH() });
+    allOrders = await r.json();
+    const activeOrders = allOrders.filter(o =>
+      o.table === tableNo && o.status !== 'Completed' && o.status !== 'Cancelled'
+    );
+    if (!activeOrders.length) {
+      hideLoading();
+      showToast('No active orders for Table ' + tableNo, 'error');
+      return;
+    }
+    // Merge all active orders into one bill
+    currentOrder = mergeBill(activeOrders, tableNo);
+    hideLoading();
+    switchScreen('pos');
+    renderPOS();
+  } catch (e) {
+    hideLoading();
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+function mergeBill(orders, tableNo) {
+  // Merge items from all active orders
+  const itemMap = {};
+  orders.forEach(o => {
+    o.items.forEach(i => {
+      const k = i.name;
+      if (itemMap[k]) { itemMap[k].qty += i.qty; }
+      else itemMap[k] = { name:i.name, price:i.price, qty:i.qty };
+    });
+  });
+  const guests = orders.reduce((s,o)=>s+(parseInt(o.guests)||0),0);
+  return {
+    ids:    orders.map(o=>o.id),
+    id:     orders[0].id,
+    table:  tableNo,
+    guests: guests || 1,
+    status: orders[0].status,
+    time:   orders[0].time,
+    items:  Object.values(itemMap),
+    orderCount: orders.length,
+  };
+}
+
+function renderPOS() {
+  const o = currentOrder;
+  // Info bar
+  document.getElementById('infoOrderCode').textContent = `#${String(o.id).padStart(5,'0')}${o.orderCount>1?` (+${o.orderCount-1})`:''}`;
+  document.getElementById('infoTableNo').textContent   = `Table ${o.table}`;
+  document.getElementById('infoGuests').textContent    = o.guests || '—';
+  document.getElementById('infoStatus').textContent    = o.status;
+
+  // Calc
+  recalc();
+
+  // Items
+  renderItems();
+
+  // Numpad reset
+  numInput = '';
+  updateDisplay();
+}
+
+function recalc() {
+  const o = currentOrder;
+  subtotal       = o.items.reduce((s,i)=>s+i.price*i.qty, 0);
+  vatAmount      = Math.round(subtotal * TAX);
+  const disc     = Math.round(subtotal * discPct / 100);
+  discAmt        = disc;
+  serviceChgAmt  = Math.round(subtotal * serviceChgPct / 100);
+  finalTotal     = subtotal - disc + vatAmount + serviceChgAmt;
+
+  const perPerson = o.guests > 0 ? Math.round(finalTotal / o.guests) : finalTotal;
+
+  // Update UI
+  document.getElementById('posTotal').textContent     = `Rs ${finalTotal.toLocaleString()}`;
+  document.getElementById('posVat').textContent       = vatAmount.toLocaleString();
+  document.getElementById('posPerPerson').textContent = perPerson.toLocaleString();
+  document.getElementById('calcTotal').textContent    = `Rs ${finalTotal.toLocaleString()}`;
+
+  // Summary bottom
+  document.getElementById('sumSubtotal').textContent  = `Rs ${subtotal.toLocaleString()}`;
+  document.getElementById('sumVat').textContent       = `Rs ${vatAmount.toLocaleString()}`;
+  if (disc > 0) {
+    document.getElementById('sumDiscRow').style.display = 'flex';
+    document.getElementById('sumDisc').textContent = `− Rs ${disc.toLocaleString()}`;
+  } else {
+    document.getElementById('sumDiscRow').style.display = 'none';
+  }
+  if (serviceChgAmt > 0) {
+    document.getElementById('sumServiceRow').style.display = 'flex';
+    document.getElementById('sumService').textContent = `Rs ${serviceChgAmt.toLocaleString()}`;
+  }
+  document.getElementById('sumTotal').textContent = `Rs ${finalTotal.toLocaleString()}`;
+
+  // Item summary
+  const totalQty = currentOrder.items.reduce((s,i)=>s+i.qty,0);
+  document.getElementById('posItemSummary').innerHTML =
+    `${totalQty} items · Rs ${subtotal.toLocaleString()} <span id="itemsToggle">▼</span>`;
+
+  // Service charge row
+  document.getElementById('serviceChargeVal').textContent =
+    `${serviceChgPct}% (Rs ${serviceChgAmt.toLocaleString()})`;
+
+  // Recalc change if amount entered
+  if (amountReceived > 0) updateChangeDisplay();
+}
+
+let itemsOpen = true;
+function toggleItems() {
+  itemsOpen = !itemsOpen;
+  document.getElementById('posItemsList').style.display = itemsOpen ? '' : 'none';
+}
+
+function renderItems() {
+  document.getElementById('posItemsList').innerHTML = currentOrder.items.map(i =>
+    `<div class="pos-item-row">
+      <span class="pos-item-qty">×${i.qty}</span>
+      <span class="pos-item-name">${i.name}</span>
+      <span class="pos-item-price">Rs ${(i.price*i.qty).toLocaleString()}</span>
+    </div>`
+  ).join('');
+}
+
+/* ══ METHOD ══ */
+function setMethod(m, btn) {
+  payMethod = m;
+  document.querySelectorAll('.pos-method-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('calcMethodLabel').textContent = btn.textContent.trim();
+  updateChangeDisplay();
+  updateExecuteBtn();
+}
+
+/* ══ NUMPAD ══ */
+function numPress(val) {
+  if (numInput.length >= 10) return;
+  if (val === '00' && numInput === '') return;
+  numInput += val;
+  updateDisplay();
+}
+function numAC() { numInput = ''; amountReceived = 0; updateDisplay(); updateChangeDisplay(); }
+function numC()  { numInput = numInput.slice(0,-1); updateDisplay(); }
+function numWan(){ numInput = (parseInt(numInput||0)+10000).toString(); updateDisplay(); }
+function numConfirm() {
+  amountReceived = parseInt(numInput || '0');
+  updateChangeDisplay();
+  updateExecuteBtn();
+}
+
+function updateDisplay() {
+  const val = parseInt(numInput || '0');
+  document.getElementById('numDisplay').textContent = `Rs ${val.toLocaleString()}`;
+  document.getElementById('calcMethodAmount').textContent = `Rs ${val.toLocaleString()}`;
+}
+
+function updateChangeDisplay() {
+  const received = amountReceived || parseInt(numInput || '0');
+  const change   = received - finalTotal;
+  document.getElementById('calcReceived').textContent = `Rs ${received.toLocaleString()}`;
+  document.getElementById('calcChange').textContent   = change >= 0
+    ? `Rs ${change.toLocaleString()}` : `Rs ${Math.abs(change).toLocaleString()} short`;
+  document.getElementById('calcChange').style.color = change >= 0 ? 'var(--green)' : 'var(--red)';
+  updateExecuteBtn();
+}
+
+function updateExecuteBtn() {
+  const btn = document.getElementById('executeBtn');
+  const msg = document.getElementById('posReadyMsg');
+  const received = amountReceived || parseInt(numInput || '0');
+  const isCash = payMethod === 'Cash';
+
+  if (!payMethod) {
+    btn.disabled = true; msg.textContent = 'Select payment method'; return;
+  }
+  if (isCash && received < finalTotal) {
+    btn.disabled = true;
+    msg.textContent = `Need Rs ${(finalTotal-received).toLocaleString()} more`;
+    return;
+  }
+  btn.disabled = false;
+  msg.textContent = isCash
+    ? `Change: Rs ${Math.max(0,received-finalTotal).toLocaleString()}`
+    : `Ready to process ${payMethod}`;
+}
+
+/* ══ PROMO ══ */
+function applyPromo() {
+  const code = document.getElementById('promoInput').value.trim().toUpperCase();
+  if (PROMOS[code]) {
+    discPct = PROMOS[code].pct;
+    document.getElementById('discountRows').innerHTML =
+      `<tr><td>Discount</td><td>${discPct}%</td><td>${code}</td></tr>`;
+    recalc();
+    showToast(`✓ ${discPct}% discount applied`, 'success');
+  } else {
+    showToast('Invalid promo code', 'error');
+  }
+}
+
+/* ══ EXECUTE PAYMENT ══ */
+async function executePayment() {
+  const btn = document.getElementById('executeBtn');
+  const received = amountReceived || parseInt(numInput || '0');
+  const amtPaid  = payMethod === 'Cash' ? received : finalTotal;
+
+  if (payMethod === 'Cash' && amtPaid < finalTotal) {
+    showToast('Insufficient amount', 'error'); return;
+  }
+
+  btn.disabled = true;
+  showLoading('Processing payment...');
+
+  try {
+    // Process payment for all orders in the bill
+    const results = [];
+    for (const orderId of currentOrder.ids) {
+      const r = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', ...authH() },
+        body: JSON.stringify({ orderId, method: payMethod, amountPaid: amtPaid }),
+      });
+      const d = await r.json();
+      results.push(d);
+    }
+
+    hideLoading();
+    const success = results.some(r => r.success);
+    if (success) {
+      buildReceipt(amtPaid);
+      document.getElementById('successOverlay').classList.add('show');
+    } else {
+      showToast(results[0]?.message || 'Payment failed', 'error');
+    }
+  } catch (e) {
+    hideLoading();
+    showToast('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function buildReceipt(amtPaid) {
+  const o        = currentOrder;
+  const change   = payMethod === 'Cash' ? amtPaid - finalTotal : 0;
+  const now      = new Date().toLocaleString();
+  const rows     = o.items.map(i =>
+    `<div class="rp-row"><span>${i.name} ×${i.qty}</span><span>Rs ${(i.price*i.qty).toLocaleString()}</span></div>`
+  ).join('');
+
+  document.getElementById('successSub').textContent =
+    `Rs ${finalTotal.toLocaleString()} paid via ${payMethod} · Table ${o.table}`;
+
+  document.getElementById('receiptPaper').innerHTML = `
+    <div class="rp-title">🍽️ Restaurant Receipt</div>
+    <div class="rp-meta">Table ${o.table} · Order #${String(o.id).padStart(5,'0')} · ${now}</div>
+    ${rows}
+    <div class="rp-total"><span>Total</span><span>Rs ${finalTotal.toLocaleString()}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:6px"><span>Method</span><span>${payMethod}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px"><span>Received</span><span>Rs ${amtPaid.toLocaleString()}</span></div>
+    ${change>0?`<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--green)"><span>Change</span><span>Rs ${change.toLocaleString()}</span></div>`:''}
+    <div class="rp-footer">Thank you for dining with us! 🙏</div>`;
+}
+
+function printAndClose() {
+  const content = document.getElementById('receiptPaper').innerHTML;
+  const el = document.getElementById('printEl');
+  el.style.display = 'block';
+  el.innerHTML = `<div style="font-family:monospace;max-width:300px;margin:0 auto;padding:20px;color:#000">${content}</div>`;
+  window.print();
+  setTimeout(()=>{ el.style.display='none'; el.innerHTML=''; }, 1000);
+  backToList();
+}
+
+function cancelPayment() {
+  if (confirm('Cancel payment and go back to table list?')) backToList();
+}
+
+/* ══ NAVIGATION ══ */
+function switchScreen(name) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+  document.getElementById('screen-'+name).classList.add('show');
+}
+
+function backToList() {
+  document.getElementById('successOverlay').classList.remove('show');
+  switchScreen('select');
+  loadTables();
+  currentOrder = null;
+  numInput = ''; amountReceived = 0; discPct = 0; serviceChgPct = 0;
+}
+
+/* ══ UTILS ══ */
+function authH() {
+  return token ? { Authorization: 'Bearer '+token } : {};
+}
+function showLoading(t) {
+  document.getElementById('loadingText').textContent = t||'Loading...';
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
+
+let toastT;
+function showToast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+/* ══ INIT ══ */
+// If URL has orderId, auto-open that order's table
+const params = new URLSearchParams(location.search);
+const directOrderId = parseInt(params.get('orderId'));
+
+loadTables().then(async () => {
+  if (directOrderId && !isNaN(directOrderId)) {
+    const o = allOrders.find(x=>x.id===directOrderId);
+    if (o) openPOS(o.table);
+  }
+});
+</script>
+</body>
+</html>

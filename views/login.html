@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — Restaurant System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #050a10;
+      --surface:   #0b1320;
+      --border:    #1a2640;
+      --accent:    #e8a020;
+      --accent2:   #f0c060;
+      --text:      #eef2f8;
+      --muted:     #5a7090;
+      --error:     #f05050;
+      --success:   #30c878;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; overflow-x: hidden;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 20%, rgba(232,160,32,0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 60% at 80% 80%, rgba(232,160,32,0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    body::after {
+      content: ''; position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(232,160,32,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(232,160,32,0.03) 1px, transparent 1px);
+      background-size: 40px 40px; pointer-events: none;
+    }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 44px 40px;
+      width: 100%; max-width: 430px; position: relative; z-index: 1;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(232,160,32,0.05);
+      animation: cardIn 0.4s cubic-bezier(0.22,1,0.36,1);
+    }
+    @keyframes cardIn {
+      from { opacity:0; transform:translateY(24px) scale(0.97); }
+      to   { opacity:1; transform:translateY(0) scale(1); }
+    }
+    .page { display: none; }
+    .page.active { display: block; animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);} }
+
+    .header { text-align: center; margin-bottom: 32px; }
+    .header-icon { font-size: 44px; margin-bottom: 10px; display: block; }
+    .header h1 { color: var(--text); font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .header p  { color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+
+    label {
+      display: block; font-size: 11.5px; font-weight: 700;
+      color: var(--muted); letter-spacing: 0.8px;
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+    .input-wrap { position: relative; margin-bottom: 18px; }
+    .input-wrap input {
+      width: 100%; padding: 12px 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1.5px solid var(--border); border-radius: 10px;
+      color: var(--text); font-size: 14.5px; font-family: inherit;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-wrap input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(232,160,32,0.12);
+    }
+    .input-wrap input.error-input { border-color: var(--error); }
+    .input-wrap input::placeholder { color: #2e4060; }
+    .input-wrap .toggle-pass {
+      position: absolute; right: 12px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 17px; padding: 0;
+      line-height: 1; transition: color 0.2s;
+    }
+    .input-wrap .toggle-pass:hover { color: var(--accent); }
+    .field-error { color: var(--error); font-size: 12px; margin-top: 4px; display: none; }
+    .field-error.show { display: block; }
+
+    .btn {
+      width: 100%; padding: 13px; border-radius: 10px;
+      font-size: 14.5px; font-weight: 700; cursor: pointer;
+      border: none; font-family: inherit;
+      transition: all 0.2s; letter-spacing: 0.3px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #c87010);
+      color: #0b0800; box-shadow: 0 4px 18px rgba(232,160,32,0.35);
+    }
+    .btn-primary:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 6px 22px rgba(232,160,32,0.45); }
+    .btn-primary:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+    .btn-ghost {
+      background: transparent; color: var(--accent);
+      border: 1.5px solid var(--border); margin-top: 10px;
+    }
+    .btn-ghost:hover { border-color: var(--accent); background: rgba(232,160,32,0.05); }
+
+    .link-btn {
+      background: none; border: none; color: var(--accent);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; padding: 0; transition: color 0.2s;
+    }
+    .link-btn:hover { color: var(--accent2); text-decoration: underline; }
+    .forgot-row { display:flex; justify-content:flex-end; margin-top:-10px; margin-bottom:20px; }
+
+    .method-tabs { display:flex; gap:10px; margin-bottom:20px; }
+    .method-tab {
+      flex:1; padding:10px; border-radius:10px;
+      border:1.5px solid var(--border); background:transparent;
+      color:var(--muted); font-family:inherit;
+      font-weight:700; font-size:13px; cursor:pointer; transition:all 0.2s;
+    }
+    .method-tab.active { border-color:var(--accent); background:rgba(232,160,32,0.12); color:var(--accent); }
+
+    .info-box {
+      background: rgba(48,144,240,0.08); border:1px solid rgba(48,144,240,0.25);
+      border-radius:10px; padding:12px 14px; font-size:13px;
+      color:#7ab0d8; margin-bottom:20px; line-height:1.5;
+    }
+
+    .otp-row { display:flex; gap:10px; justify-content:center; margin-bottom:8px; }
+    .otp-input {
+      width:52px; height:60px; text-align:center;
+      font-size:24px; font-weight:800; font-family:inherit;
+      background:rgba(255,255,255,0.03);
+      border:2px solid var(--border); border-radius:12px;
+      color:var(--text); outline:none; transition:border-color 0.2s, box-shadow 0.2s;
+    }
+    .otp-input:focus, .otp-input.filled {
+      border-color:var(--accent); box-shadow:0 0 0 3px rgba(232,160,32,0.12);
+    }
+
+    .timer-row { text-align:center; margin-bottom:20px; }
+    .timer-row span { color:var(--muted); font-size:13px; }
+    .timer-row strong { color:var(--accent); }
+
+    .strength-bars { display:flex; gap:4px; margin-bottom:4px; }
+    .strength-bar { flex:1; height:4px; border-radius:2px; background:var(--border); transition:background 0.3s; }
+    .strength-label { font-size:12px; color:var(--muted); }
+
+    #toast {
+      position:fixed; top:20px; right:20px;
+      background:var(--surface); border-radius:12px;
+      padding:14px 18px; font-size:13.5px; font-weight:600;
+      color:var(--text); box-shadow:0 8px 30px rgba(0,0,0,0.5);
+      display:flex; align-items:center; gap:10px;
+      z-index:9999; max-width:300px;
+      transform:translateX(120%);
+      transition:transform 0.35s cubic-bezier(0.22,1,0.36,1);
+      border:1.5px solid var(--border);
+    }
+    #toast.show { transform:translateX(0); }
+  </style>
+</head>
+<body>
+
+<div id="toast"><span class="t-icon">ℹ</span><span id="toast-msg"></span></div>
+
+<div class="card">
+
+  <!-- PAGE 1: LOGIN -->
+  <div class="page active" id="page-login">
+    <div class="header">
+      <span class="header-icon">🍽️</span>
+      <h1>Restaurant System</h1>
+      <p>Afno account ma login garus</p>
+    </div>
+    <label>Email vaa Username</label>
+    <div class="input-wrap">
+      <input type="text" id="login-user" placeholder="admin@restaurant.com" />
+      <div class="field-error" id="err-login-user"></div>
+    </div>
+    <label>Password</label>
+    <div class="input-wrap">
+      <input type="password" id="login-pass" placeholder="••••••••" style="padding-right:44px" />
+      <button class="toggle-pass" onclick="togglePass('login-pass',this)">👁</button>
+      <div class="field-error" id="err-login-pass"></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--muted)">
+        <input type="checkbox" id="rememberMe" checked
+          style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer"/>
+        Remember me (30 days)
+      </label>
+      <button class="link-btn" onclick="goTo('page-forgot')">Password birse?</button>
+    </div>
+    <button class="btn btn-primary" id="btn-login" onclick="handleLogin()">🔐 Login</button>
+  </div>
+
+  <!-- PAGE 2: CHANGE PASSWORD -->
+  <div class="page" id="page-change-pass">
+    <div class="header">
+      <span class="header-icon">🔑</span>
+      <h1>Password Change</h1>
+      <p>Purano password halera naya set garus</p>
+    </div>
+    <label>Purano Password</label>
+    <div class="input-wrap">
+      <input type="password" id="cp-old" placeholder="Purano password" style="padding-right:44px" />
+      <button class="toggle-pass" onclick="togglePass('cp-old',this)">👁</button>
+      <div class="field-error" id="err-cp-old"></div>
+    </div>
+    <label>Naya Password</label>
+    <div class="input-wrap">
+      <input type="password" id="cp-new" placeholder="Naya password (min 8)" style="padding-right:44px"
+        oninput="checkStrength(this.value,'cp-bars','cp-slbl')" />
+      <button class="toggle-pass" onclick="togglePass('cp-new',this)">👁</button>
+      <div class="field-error" id="err-cp-new"></div>
+    </div>
+    <div style="margin-top:-12px;margin-bottom:18px">
+      <div class="strength-bars" id="cp-bars">
+        <div class="strength-bar"></div><div class="strength-bar"></div>
+        <div class="strength-bar"></div><div class="strength-bar"></div>
+      </div>
+      <div class="strength-label" id="cp-slbl"></div>
+    </div>
+    <label>Confirm Naya Password</label>
+    <div class="input-wrap">
+      <input type="password" id="cp-confirm" placeholder="Password dubaro halnus" style="padding-right:44px" />
+      <button class="toggle-pass" onclick="togglePass('cp-confirm',this)">👁</button>
+      <div class="field-error" id="err-cp-confirm"></div>
+    </div>
+    <button class="btn btn-primary" id="btn-cp" onclick="handleChangePass()" style="margin-bottom:10px">✓ Password Update Garus</button>
+    <button class="btn btn-ghost" onclick="window.location.href='/dashboard'">← Dashboard Farknu</button>
+  </div>
+
+  <!-- PAGE 3: FORGOT PASSWORD -->
+  <div class="page" id="page-forgot">
+    <div class="header">
+      <span class="header-icon">📧</span>
+      <h1>Password Reset</h1>
+      <p>OTP pathauney method choose garus</p>
+    </div>
+    <div class="method-tabs">
+      <button class="method-tab active" id="tab-email" onclick="switchMethod('email')">📧 Email</button>
+      <button class="method-tab" id="tab-phone" onclick="switchMethod('phone')">📱 Phone</button>
+    </div>
+    <label id="forgot-label">Email Address</label>
+    <div class="input-wrap">
+      <input type="text" id="forgot-contact" placeholder="user@restaurant.com" />
+      <div class="field-error" id="err-forgot"></div>
+    </div>
+    <div class="info-box" id="forgot-info">💡 OTP code email ma pathauncha</div>
+    <button class="btn btn-primary" id="btn-forgot" onclick="handleForgot()" style="margin-bottom:10px">📤 OTP Pathaunus</button>
+    <button class="btn btn-ghost" onclick="goTo('page-login')">← Login ma Farknu</button>
+  </div>
+
+  <!-- PAGE 4: OTP -->
+  <div class="page" id="page-otp">
+    <div class="header">
+      <span class="header-icon">🔢</span>
+      <h1>OTP Verify Garus</h1>
+      <p id="otp-sent-label">6-digit code pathiyo</p>
+    </div>
+    <div class="otp-row" id="otp-row">
+      <input class="otp-input" maxlength="1" inputmode="numeric" />
+      <input class="otp-input" maxlength="1" inputmode="numeric" />
+      <input class="otp-input" maxlength="1" inputmode="numeric" />
+      <input class="otp-input" maxlength="1" inputmode="numeric" />
+      <input class="otp-input" maxlength="1" inputmode="numeric" />
+      <input class="otp-input" maxlength="1" inputmode="numeric" />
+    </div>
+    <div class="field-error" id="err-otp" style="text-align:center;margin-bottom:10px"></div>
+    <div class="timer-row">
+      <span id="timer-text">⏱ OTP expire: <strong id="timer-count">60</strong>s</span>
+      <button class="link-btn" id="resend-btn" style="display:none" onclick="handleResend()">🔄 OTP pheri pathaunus</button>
+    </div>
+    <button class="btn btn-primary" id="btn-otp" onclick="handleVerifyOTP()" style="margin-bottom:10px">✓ Verify OTP</button>
+    <button class="btn btn-ghost" onclick="goTo('page-forgot')">← Farknu</button>
+  </div>
+
+  <!-- PAGE 5: RESET PASSWORD -->
+  <div class="page" id="page-reset">
+    <div class="header">
+      <span class="header-icon">🔐</span>
+      <h1>Naya Password</h1>
+      <p>Secure password set garus</p>
+    </div>
+    <label>Naya Password</label>
+    <div class="input-wrap">
+      <input type="password" id="rp-new" placeholder="Naya password (min 8)" style="padding-right:44px"
+        oninput="checkStrength(this.value,'rp-bars','rp-slbl')" />
+      <button class="toggle-pass" onclick="togglePass('rp-new',this)">👁</button>
+      <div class="field-error" id="err-rp-new"></div>
+    </div>
+    <div style="margin-top:-12px;margin-bottom:18px">
+      <div class="strength-bars" id="rp-bars">
+        <div class="strength-bar"></div><div class="strength-bar"></div>
+        <div class="strength-bar"></div><div class="strength-bar"></div>
+      </div>
+      <div class="strength-label" id="rp-slbl"></div>
+    </div>
+    <label>Confirm Password</label>
+    <div class="input-wrap">
+      <input type="password" id="rp-confirm" placeholder="Password dubaro halnus" style="padding-right:44px" />
+      <button class="toggle-pass" onclick="togglePass('rp-confirm',this)">👁</button>
+      <div class="field-error" id="err-rp-confirm"></div>
+    </div>
+    <button class="btn btn-primary" id="btn-rp" onclick="handleResetPass()" style="margin-bottom:10px">🔐 Password Reset Garus</button>
+  </div>
+
+</div>
+
+<script>
+/* ── Remember Me: check expiry on page load ── */
+(function() {
+  const token   = localStorage.getItem('token');
+  const expiry  = parseInt(localStorage.getItem('token_expiry') || '0');
+  const remember = localStorage.getItem('remember_me') === '1';
+  if (token) {
+    if (remember && expiry && Date.now() < expiry) {
+      // Token still valid — redirect directly
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const role = user.role || 'waiter';
+      window.location.href = (role === 'admin' || role === 'manager') ? '/dashboard' : '/staff';
+    } else if (!remember) {
+      // Not remembered — clear and show login
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('token_expiry');
+    } else if (remember && expiry && Date.now() >= expiry) {
+      // Remembered but expired — clear
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('token_expiry');
+      localStorage.removeItem('remember_me');
+    }
+  }
+})();
+
+const S = {
+  token:        localStorage.getItem('token') || '',
+  resetContact: '',
+  resetMethod:  'email',
+  timerInterval: null,
+};
+
+async function api(endpoint, body, token) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res  = await fetch('/api/auth' + endpoint, { method: 'POST', headers, body: JSON.stringify(body) });
+  const data = await res.json();
+  return { ok: res.ok, data };
+}
+
+function goTo(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  clearErrors();
+}
+
+function showToast(msg, type = 'info') {
+  const icons  = { success:'✓', error:'✗', info:'ℹ' };
+  const colors = { success:'#30c878', error:'#f05050', info:'#3090f0' };
+  const t = document.getElementById('toast');
+  t.querySelector('.t-icon').textContent = icons[type];
+  t.querySelector('.t-icon').style.color = colors[type];
+  t.style.borderColor = colors[type];
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function togglePass(id, btn) {
+  const inp = document.getElementById(id);
+  inp.type  = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg; el.classList.add('show');
+  el.closest?.('.input-wrap')?.querySelector('input')?.classList.add('error-input');
+}
+
+function clearErrors() {
+  document.querySelectorAll('.field-error').forEach(e => e.classList.remove('show'));
+  document.querySelectorAll('.error-input').forEach(e => e.classList.remove('error-input'));
+}
+
+function setBtn(id, loading, label) {
+  const b = document.getElementById(id);
+  if (!b) return;
+  b.disabled    = loading;
+  b.textContent = loading ? '⏳ Please wait...' : label;
+}
+
+function checkStrength(val, barsId, lblId) {
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (val.length >= 10) score++;
+  if (/[A-Z]/.test(val) && /\d/.test(val)) score++;
+  if (/[^a-zA-Z0-9]/.test(val)) score++;
+  const colors = ['#f05050','#f09030','#e8c020','#30c878'];
+  const labels = ['Kamzor','Thikai cha','Mazbut','Ekdamai Mazbut!'];
+  document.querySelectorAll('#' + barsId + ' .strength-bar').forEach((b, i) => {
+    b.style.background = i < score ? colors[score - 1] : 'var(--border)';
+  });
+  const lbl = document.getElementById(lblId);
+  if (lbl) { lbl.textContent = val ? (labels[score-1] || '') : ''; lbl.style.color = colors[score-1] || ''; }
+}
+
+// ── LOGIN ──
+async function handleLogin() {
+  clearErrors();
+  const username = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value;
+  if (!username) { showError('err-login-user', 'Username vaa email halnus'); return; }
+  if (!password) { showError('err-login-pass', 'Password halnus'); return; }
+
+  setBtn('btn-login', true, '🔐 Login');
+  try {
+    const { ok, data } = await api('/login', { username, password });
+    if (ok && data.success) {
+      S.token = data.token;
+      const remember = document.getElementById('rememberMe')?.checked;
+      // Remember Me: 30-day expiry in localStorage key, else session only
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      if (remember) {
+        localStorage.setItem('token_expiry', Date.now() + 30 * 24 * 60 * 60 * 1000);
+        localStorage.setItem('remember_me', '1');
+      } else {
+        // Session only — clear on next visit if remember_me not set
+        localStorage.removeItem('token_expiry');
+        localStorage.setItem('remember_me', '0');
+      }
+      showToast('Login safal bhayo! 🎉', 'success');
+      // Role-based redirect
+      const role = data.user?.role || 'waiter';
+      const dest = (role === 'admin' || role === 'manager') ? '/dashboard' : '/staff';
+      setTimeout(() => window.location.href = dest, 800);
+    } else {
+      showError('err-login-pass', data.message || 'Galat username vaa password');
+    }
+  } catch (e) {
+    showError('err-login-pass', 'Server sanga connect huna sakiyena');
+  }
+  setBtn('btn-login', false, '🔐 Login');
+}
+
+// ── CHANGE PASSWORD ──
+async function handleChangePass() {
+  clearErrors();
+  const currentPassword = document.getElementById('cp-old').value;
+  const newPassword     = document.getElementById('cp-new').value;
+  const confirm         = document.getElementById('cp-confirm').value;
+  let valid = true;
+  if (!currentPassword) { showError('err-cp-old', 'Purano password halnus'); valid = false; }
+  if (!newPassword || newPassword.length < 8) { showError('err-cp-new', 'Kam se kam 8 characters chahincha'); valid = false; }
+  if (newPassword !== confirm) { showError('err-cp-confirm', 'Password match gardaina'); valid = false; }
+  if (!valid) return;
+
+  setBtn('btn-cp', true, '✓ Password Update Garus');
+  try {
+    const { ok, data } = await api('/change-password', { currentPassword, newPassword }, S.token);
+    if (ok && data.success) {
+      showToast('Password change bhayo! ✓', 'success');
+      ['cp-old','cp-new','cp-confirm'].forEach(id => document.getElementById(id).value = '');
+      setTimeout(() => window.location.href = '/dashboard', 1200);
+    } else {
+      showError('err-cp-old', data.message || 'Error bhayo');
+    }
+  } catch (e) {
+    showToast('Server sanga connect huna sakiyena', 'error');
+  }
+  setBtn('btn-cp', false, '✓ Password Update Garus');
+}
+
+// ── METHOD SWITCH ──
+function switchMethod(method) {
+  S.resetMethod = method;
+  document.getElementById('tab-email').classList.toggle('active', method === 'email');
+  document.getElementById('tab-phone').classList.toggle('active', method === 'phone');
+  document.getElementById('forgot-label').textContent   = method === 'email' ? 'Email Address' : 'Phone Number';
+  document.getElementById('forgot-contact').placeholder = method === 'email' ? 'user@restaurant.com' : '98XXXXXXXX';
+  document.getElementById('forgot-info').textContent    = method === 'email' ? '💡 OTP code email ma pathauncha' : '💡 OTP code SMS ma pathauncha';
+  document.getElementById('forgot-contact').value = '';
+  clearErrors();
+}
+
+// ── FORGOT PASSWORD ──
+async function handleForgot() {
+  clearErrors();
+  const contact = document.getElementById('forgot-contact').value.trim();
+  if (!contact) { showError('err-forgot', 'Contact halnus'); return; }
+
+  setBtn('btn-forgot', true, '📤 OTP Pathaunus');
+  try {
+    const { ok, data } = await api('/forgot-password', { contact, method: S.resetMethod });
+    if (ok && data.success) {
+      S.resetContact = contact;
+      const masked = S.resetMethod === 'email'
+        ? contact.replace(/(.{2}).+(@.+)/, '$1***$2')
+        : contact.replace(/(\d{2})\d{6}(\d{2})/, '$1******$2');
+      document.getElementById('otp-sent-label').textContent =
+        `6-digit code ${S.resetMethod === 'email' ? '📧' : '📱'} ${masked} ma pathiyo`;
+      showToast('OTP pathaiyo! Check garus', 'info');
+      goTo('page-otp');
+      startTimer();
+      setupOTPInputs();
+    } else {
+      showError('err-forgot', data.message || 'Error bhayo');
+    }
+  } catch (e) {
+    showToast('Server sanga connect huna sakiyena', 'error');
+  }
+  setBtn('btn-forgot', false, '📤 OTP Pathaunus');
+}
+
+// ── OTP INPUTS ──
+function setupOTPInputs() {
+  const inputs = document.querySelectorAll('.otp-input');
+  inputs.forEach((inp, i) => {
+    inp.value = ''; inp.classList.remove('filled');
+    inp.oninput = () => {
+      inp.value = inp.value.replace(/\D/g,'').slice(-1);
+      inp.classList.toggle('filled', !!inp.value);
+      if (inp.value && i < inputs.length - 1) inputs[i+1].focus();
+    };
+    inp.onkeydown = e => { if (e.key === 'Backspace' && !inp.value && i > 0) inputs[i-1].focus(); };
+    inp.onpaste = e => {
+      const p = e.clipboardData.getData('text').replace(/\D/g,'').slice(0,6);
+      if (p.length === 6) { inputs.forEach((x,j) => { x.value=p[j]||''; x.classList.toggle('filled',!!x.value); }); inputs[5].focus(); }
+      e.preventDefault();
+    };
+  });
+  inputs[0].focus();
+}
+
+// ── TIMER ──
+function startTimer() {
+  clearInterval(S.timerInterval);
+  let sec = 60;
+  document.getElementById('timer-count').textContent    = sec;
+  document.getElementById('timer-text').style.display   = 'inline';
+  document.getElementById('resend-btn').style.display   = 'none';
+  S.timerInterval = setInterval(() => {
+    sec--;
+    document.getElementById('timer-count').textContent = sec;
+    if (sec <= 0) {
+      clearInterval(S.timerInterval);
+      document.getElementById('timer-text').style.display = 'none';
+      document.getElementById('resend-btn').style.display = 'inline';
+    }
+  }, 1000);
+}
+
+// ── RESEND OTP ──
+async function handleResend() {
+  try {
+    const { ok, data } = await api('/forgot-password', { contact: S.resetContact, method: S.resetMethod });
+    if (ok && data.success) { showToast('Naya OTP pathaiyo!', 'info'); startTimer(); setupOTPInputs(); }
+    else showToast(data.message || 'Error bhayo', 'error');
+  } catch (e) { showToast('Server sanga connect huna sakiyena', 'error'); }
+}
+
+// ── VERIFY OTP ──
+async function handleVerifyOTP() {
+  const inputs = document.querySelectorAll('.otp-input');
+  const otp    = [...inputs].map(i => i.value).join('');
+  const errEl  = document.getElementById('err-otp');
+  if (otp.length < 6) { errEl.textContent = '6-digit OTP halnus'; errEl.classList.add('show'); return; }
+
+  setBtn('btn-otp', true, '✓ Verify OTP');
+  try {
+    const { ok, data } = await api('/verify-otp', { contact: S.resetContact, otp });
+    if (ok && data.success) {
+      clearInterval(S.timerInterval);
+      showToast('OTP verified! ✓', 'success');
+      goTo('page-reset');
+    } else {
+      errEl.textContent = data.message || 'Galat OTP';
+      errEl.classList.add('show');
+      setupOTPInputs();
+    }
+  } catch (e) { showToast('Server sanga connect huna sakiyena', 'error'); }
+  setBtn('btn-otp', false, '✓ Verify OTP');
+}
+
+// ── RESET PASSWORD ──
+async function handleResetPass() {
+  clearErrors();
+  const newPassword = document.getElementById('rp-new').value;
+  const confirm     = document.getElementById('rp-confirm').value;
+  let valid = true;
+  if (!newPassword || newPassword.length < 8) { showError('err-rp-new', 'Kam se kam 8 characters chahincha'); valid = false; }
+  if (newPassword !== confirm) { showError('err-rp-confirm', 'Password match gardaina'); valid = false; }
+  if (!valid) return;
+
+  const inputs = document.querySelectorAll('.otp-input');
+  const otp    = [...inputs].map(i => i.value).join('');
+
+  setBtn('btn-rp', true, '🔐 Password Reset Garus');
+  try {
+    const { ok, data } = await api('/reset-password', { contact: S.resetContact, otp, newPassword });
+    if (ok && data.success) {
+      showToast('Password reset bhayo! Login garus 🎉', 'success');
+      ['rp-new','rp-confirm'].forEach(id => document.getElementById(id).value = '');
+      setTimeout(() => goTo('page-login'), 1500);
+    } else {
+      showToast(data.message || 'Error bhayo', 'error');
+    }
+  } catch (e) { showToast('Server sanga connect huna sakiyena', 'error'); }
+  setBtn('btn-rp', false, '🔐 Password Reset Garus');
+}
+
+// ── Restore Remember Me checkbox state ──
+(function() {
+  const cb = document.getElementById('rememberMe');
+  if (cb) cb.checked = localStorage.getItem('remember_me') !== '0';
+})();
+
+// ── ENTER KEY ──
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const active = document.querySelector('.page.active')?.id;
+  if      (active === 'page-login')       handleLogin();
+  else if (active === 'page-change-pass') handleChangePass();
+  else if (active === 'page-forgot')      handleForgot();
+  else if (active === 'page-otp')         handleVerifyOTP();
+  else if (active === 'page-reset')       handleResetPass();
+});
+</script>
+</body>
+</html>

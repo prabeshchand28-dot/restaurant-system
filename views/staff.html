@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Staff — Order Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#111;--surface:#1a1a1a;--border:#2a2a2a;
+  --accent:#f97316;--accent-soft:rgba(249,115,22,.12);
+  --text:#e8e8e8;--muted:#888;--dimmed:#555;
+  --green:#22c55e;--red:#ef4444;--blue:#3b82f6;--amber:#f59e0b;
+  --font:'Plus Jakarta Sans',sans-serif;
+}
+html,body{height:100%;overflow:hidden;font-family:var(--font)}
+body{background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+
+/* ── TOPBAR ── */
+.topbar{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 20px;height:58px;display:flex;align-items:center;gap:14px;flex-shrink:0;
+}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-logo{width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#fff}
+.brand-name{font-size:16px;font-weight:800;color:#fff}
+.brand-sep{width:1px;height:24px;background:var(--border);margin:0 6px}
+.page-title{font-size:15px;font-weight:600;color:var(--muted)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.user-chip{display:flex;align-items:center;gap:8px}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.user-name{font-size:13px;font-weight:600;color:#fff}
+.user-role{font-size:11px;color:var(--muted)}
+.role-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase}
+.role-badge.waiter{background:rgba(34,197,94,.12);color:var(--green)}
+.role-badge.kitchen{background:rgba(245,158,11,.12);color:var(--amber)}
+.role-badge.manager{background:rgba(59,130,246,.12);color:var(--blue)}
+.role-badge.admin{background:var(--accent-soft);color:var(--accent)}
+.clock{font-size:12px;color:var(--accent);font-family:monospace;font-weight:700}
+.logout-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:7px;cursor:pointer;font-size:12px;font-family:var(--font);transition:all .15s}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* ── TAB BAR ── */
+.tab-bar{background:var(--surface);border-bottom:1px solid var(--border);display:flex;padding:0 20px;flex-shrink:0}
+.tab-btn{padding:12px 18px;border:none;background:none;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px;display:flex;align-items:center;gap:7px}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-btn:hover{color:var(--text)}
+.tab-count{background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center}
+.tab-count.green{background:rgba(34,197,94,.12);color:var(--green)}
+.tab-count.amber{background:rgba(245,158,11,.12);color:var(--amber)}
+
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;padding:20px}
+
+/* ── STAT CHIPS ── */
+.stat-chips{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.stat-chip{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 18px;display:flex;align-items:center;gap:10px}
+.stat-chip .sc-val{font-size:22px;font-weight:800;color:var(--accent)}
+.stat-chip .sc-label{font-size:12px;color:var(--muted)}
+
+/* ── ORDERS GRID ── */
+.orders-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.order-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .15s}
+.order-card:hover{border-color:var(--accent)}
+.order-card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.order-table-no{font-size:18px;font-weight:800;color:#fff}
+.order-id{font-size:11px;color:var(--accent);font-weight:600}
+.order-time{font-size:11px;color:var(--muted)}
+.order-card-body{padding:12px 16px}
+.order-item-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1e1e1e;font-size:13px}
+.order-item-row:last-child{border-bottom:none}
+.order-item-name{color:var(--text)}
+.order-item-qty{color:var(--accent);font-weight:600}
+.order-item-price{color:var(--muted)}
+.order-card-footer{padding:10px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.order-total{font-size:14px;font-weight:800;color:#fff}
+.order-actions{display:flex;gap:6px}
+.action-btn{border:1px solid var(--border);background:none;color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:var(--font);transition:all .15s}
+.action-btn:hover{border-color:var(--accent);color:var(--accent)}
+.action-btn.danger:hover{border-color:var(--red);color:var(--red)}
+.action-btn.success:hover{border-color:var(--green);color:var(--green)}
+.status-pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.status-pill.Pending  {background:var(--accent-soft);color:var(--accent)}
+.status-pill.Preparing{background:rgba(245,158,11,.12);color:var(--amber)}
+.status-pill.Completed{background:rgba(34,197,94,.12);color:var(--green)}
+.status-pill.Cancelled{background:rgba(239,68,68,.12);color:var(--red)}
+
+/* ── ADD ORDER FORM ── */
+.add-order-wrap{max-width:720px}
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px}
+.form-card h3{font-size:14px;font-weight:700;color:#fff;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-group{margin-bottom:12px}
+.form-label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:500}
+.form-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-size:13px;font-family:var(--font);outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--accent)}
+.form-input option{background:var(--surface)}
+
+/* ── MENU ITEM PICKER ── */
+.menu-search{position:relative;margin-bottom:12px}
+.menu-search .form-input{padding-left:36px}
+.menu-search .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--dimmed)}
+.menu-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;max-height:260px;overflow-y:auto;margin-bottom:12px}
+.menu-pick-card{background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;transition:all .15s;text-align:center}
+.menu-pick-card:hover{border-color:var(--accent)}
+.menu-pick-card.selected{border-color:var(--accent);background:var(--accent-soft)}
+.menu-pick-emoji{font-size:22px;margin-bottom:4px}
+.menu-pick-name{font-size:12px;font-weight:600;color:#fff;margin-bottom:2px}
+.menu-pick-price{font-size:11px;color:var(--accent)}
+.menu-pick-cat{font-size:10px;color:var(--muted);margin-top:1px}
+
+/* ── ORDER ITEMS LIST ── */
+.order-items-list{background:var(--bg);border:1px solid var(--border);border-radius:8px;min-height:60px;padding:8px}
+.order-item-edit{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+.order-item-edit:last-child{border-bottom:none}
+.oie-name{flex:1;font-size:13px;color:#fff;font-weight:500}
+.oie-price{font-size:12px;color:var(--muted);width:60px;text-align:right}
+.qty-ctrl{display:flex;align-items:center;gap:6px}
+.qty-btn{width:26px;height:26px;border-radius:50%;background:var(--surface);border:1px solid var(--border);color:#fff;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;font-family:var(--font)}
+.qty-btn:hover{background:var(--accent);border-color:var(--accent)}
+.qty-val{width:24px;text-align:center;font-size:14px;font-weight:700;color:#fff}
+.remove-item{background:none;border:none;color:var(--dimmed);cursor:pointer;font-size:16px;padding:2px;transition:color .15s}
+.remove-item:hover{color:var(--red)}
+.order-summary{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px}
+.order-summary-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid #1e1e1e}
+.order-summary-row:last-child{border-bottom:none;font-weight:800;color:#fff;font-size:15px}
+
+/* ── SUBMIT BTN ── */
+.submit-btn{width:100%;padding:13px;border:none;border-radius:9px;background:var(--accent);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);transition:background .15s;margin-top:4px}
+.submit-btn:hover{background:#ea6c0a}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;position:relative}
+.modal-close{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1}
+.modal-close:hover{color:var(--red)}
+.modal h3{font-size:15px;font-weight:700;color:#fff;margin-bottom:16px}
+.modal-section{margin-bottom:12px}
+.modal-section label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:500}
+.modal-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--font);outline:none;transition:border-color .2s}
+.modal-input:focus{border-color:var(--accent)}
+.modal-btn{width:100%;padding:11px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);margin-top:6px}
+.modal-btn.primary{background:var(--accent);color:#fff}
+.modal-btn.primary:hover{background:#ea6c0a}
+.modal-btn.danger{background:var(--red);color:#fff}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--surface);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.3);border-left:3px solid var(--accent);opacity:0;transform:translateY(8px);transition:all .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{border-color:var(--green)}
+.toast.error{border-color:var(--red)}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state .e-icon{font-size:48px;margin-bottom:12px}
+.empty-state .e-title{font-size:16px;font-weight:600;color:var(--dimmed);margin-bottom:6px}
+.empty-state .e-sub{font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-logo">U</div>
+    <span class="brand-name">Uena</span>
+  </div>
+  <div class="brand-sep"></div>
+  <span class="page-title">Order Management</span>
+  <div class="topbar-right">
+    <span class="clock" id="clock">00:00:00</span>
+    <div class="user-chip">
+      <div class="user-avatar" id="staffAvatar">ST</div>
+      <div>
+        <div class="user-name" id="staffName">Staff</div>
+        <span class="role-badge" id="staffRoleBadge">waiter</span>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('orders',this)" id="tab-orders">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    My Orders
+    <span class="tab-count" id="pendingCount">0</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('addorder',this)" id="tab-addorder">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    New Order
+  </button>
+  <button class="tab-btn" onclick="switchTab('completed',this)" id="tab-completed">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    Completed
+    <span class="tab-count green" id="completedCount">0</span>
+  </button>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- ── TAB: MY ORDERS ── -->
+  <div id="tab-panel-orders" class="tab-panel">
+    <!-- Stat chips -->
+    <div class="stat-chips">
+      <div class="stat-chip"><span class="sc-val" id="stat-pending">0</span><span class="sc-label">Pending</span></div>
+      <div class="stat-chip"><span class="sc-val" id="stat-preparing" style="color:var(--amber)">0</span><span class="sc-label">Preparing</span></div>
+      <div class="stat-chip"><span class="sc-val" id="stat-done" style="color:var(--green)">0</span><span class="sc-label">Completed Today</span></div>
+      <div class="stat-chip" style="margin-left:auto"><span class="sc-val" id="stat-revenue" style="color:var(--green)">Rs 0</span><span class="sc-label">My Revenue</span></div>
+    </div>
+
+    <!-- Filter strip -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="action-btn active" id="filter-all" onclick="filterOrders('all',this)" style="border-color:var(--accent);color:var(--accent)">All Active</button>
+      <button class="action-btn" id="filter-Pending" onclick="filterOrders('Pending',this)">🟠 Pending</button>
+      <button class="action-btn" id="filter-Preparing" onclick="filterOrders('Preparing',this)">🟡 Preparing</button>
+      <div style="margin-left:auto">
+        <button class="action-btn" onclick="loadOrders()" style="color:var(--green)">↺ Refresh</button>
+      </div>
+    </div>
+
+    <div class="orders-grid" id="ordersGrid">
+      <div style="text-align:center;padding:40px;color:var(--muted);grid-column:1/-1">Loading orders...</div>
+    </div>
+  </div>
+
+  <!-- ── TAB: ADD ORDER ── -->
+  <div id="tab-panel-addorder" class="tab-panel" style="display:none">
+    <div class="add-order-wrap">
+
+      <!-- Table & Notes -->
+      <div class="form-card">
+        <h3>
+          <svg width="16" height="16" fill="none" stroke="var(--accent)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Table & Details
+        </h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Table Number *</label>
+            <select class="form-input" id="order-table">
+              <option value="">Select table...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Guests Count</label>
+            <input class="form-input" id="order-guests" type="number" placeholder="2" min="1" value="1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Special Notes</label>
+          <input class="form-input" id="order-notes" placeholder="Allergy info, special requests...">
+        </div>
+      </div>
+
+      <!-- Menu picker -->
+      <div class="form-card">
+        <h3>
+          <svg width="16" height="16" fill="none" stroke="var(--accent)" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h18v4H3z"/><path d="M3 9h18v4H3z"/><path d="M3 15h18v4H3z"/></svg>
+          Select Items
+        </h3>
+        <!-- Category filter -->
+        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+          <button class="action-btn active" id="cat-All" onclick="filterMenuCat('All',this)" style="border-color:var(--accent);color:var(--accent)">All</button>
+          <button class="action-btn" id="cat-Snacks" onclick="filterMenuCat('Snacks',this)">Snacks</button>
+          <button class="action-btn" id="cat-Main" onclick="filterMenuCat('Main',this)">Main</button>
+          <button class="action-btn" id="cat-Noodles" onclick="filterMenuCat('Noodles',this)">Noodles</button>
+          <button class="action-btn" id="cat-Drinks" onclick="filterMenuCat('Drinks',this)">Drinks</button>
+        </div>
+        <!-- Search -->
+        <div class="menu-search">
+          <svg class="search-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="form-input" id="menu-search" placeholder="Search menu..." oninput="filterMenuSearch()">
+        </div>
+        <div class="menu-picker-grid" id="menuPickerGrid">
+          <div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--muted)">Loading menu...</div>
+        </div>
+      </div>
+
+      <!-- Order items -->
+      <div class="form-card">
+        <h3>
+          <svg width="16" height="16" fill="none" stroke="var(--accent)" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          Order Items <span style="color:var(--muted);font-weight:400;font-size:12px" id="itemCountLabel">(0 items)</span>
+        </h3>
+        <div class="order-items-list" id="orderItemsList">
+          <div style="text-align:center;padding:16px;color:var(--dimmed);font-size:13px">Click menu items above to add →</div>
+        </div>
+        <div style="height:12px"></div>
+        <div class="order-summary" id="orderSummary" style="display:none">
+          <div class="order-summary-row"><span style="color:var(--muted)">Subtotal</span><span id="sum-subtotal">Rs 0</span></div>
+          <div class="order-summary-row"><span>Total</span><span id="sum-total" style="color:var(--accent)">Rs 0</span></div>
+        </div>
+      </div>
+
+      <button class="submit-btn" id="submitOrderBtn" onclick="submitOrder()">
+        🍽️ Place Order
+      </button>
+    </div>
+  </div>
+
+  <!-- ── TAB: COMPLETED ── -->
+  <div id="tab-panel-completed" class="tab-panel" style="display:none">
+    <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      <p style="font-size:13px;color:var(--muted)">Completed & cancelled orders</p>
+      <button class="action-btn" onclick="loadCompleted()" style="color:var(--green)">↺ Refresh</button>
+    </div>
+    <div class="orders-grid" id="completedGrid">
+      <div style="text-align:center;padding:40px;color:var(--muted);grid-column:1/-1">Loading...</div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- ══ EDIT ORDER MODAL ══ -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('editModal')">×</button>
+    <h3>Edit Order <span style="color:var(--accent)" id="editOrderIdLabel"></span></h3>
+
+    <div class="modal-section">
+      <label>Table</label>
+      <select class="modal-input" id="edit-table"></select>
+    </div>
+
+    <!-- Edit items -->
+    <div class="modal-section">
+      <label>Order Items</label>
+      <div class="order-items-list" id="editItemsList" style="margin-bottom:8px"></div>
+      <!-- Add more items -->
+      <div style="margin-top:8px">
+        <label style="font-size:11px;color:var(--dimmed);margin-bottom:5px;display:block">Add more items</label>
+        <div style="display:flex;gap:8px">
+          <select class="modal-input" id="edit-add-item" style="flex:1"></select>
+          <button onclick="addItemToEdit()" style="background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font);flex-shrink:0">+ Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <label>Status</label>
+      <select class="modal-input" id="edit-status">
+        <option>Pending</option><option>Preparing</option><option>Completed</option><option>Cancelled</option>
+      </select>
+    </div>
+
+    <div style="font-size:13px;color:var(--muted);padding:10px;background:var(--bg);border-radius:7px;margin-bottom:10px">
+      Total: <strong style="color:var(--accent)" id="editTotal">Rs 0</strong>
+    </div>
+
+    <button class="modal-btn primary" onclick="saveEditOrder()">Save Changes</button>
+  </div>
+</div>
+
+<!-- ══ CONFIRM DELETE MODAL ══ -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <button class="modal-close" onclick="closeModal('deleteModal')">×</button>
+    <div style="font-size:40px;margin-bottom:12px">🗑️</div>
+    <h3 style="margin-bottom:8px">Delete Order?</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:16px" id="deleteModalMsg">This action cannot be undone.</p>
+    <button class="modal-btn danger" onclick="confirmDelete()" style="margin-bottom:8px">Yes, Delete</button>
+    <button class="modal-btn" onclick="closeModal('deleteModal')" style="background:#222;color:var(--muted)">Cancel</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══ AUTH ══ */
+const token = localStorage.getItem('token');
+const user  = JSON.parse(localStorage.getItem('user') || '{}');
+// Check token validity + expiry
+(function() {
+  if (!token) { window.location.href = '/login'; return; }
+  const expiry   = parseInt(localStorage.getItem('token_expiry') || '0');
+  const remember = localStorage.getItem('remember_me') === '1';
+  if (remember && expiry && Date.now() >= expiry) {
+    localStorage.removeItem('token'); localStorage.removeItem('user');
+    localStorage.removeItem('token_expiry'); localStorage.removeItem('remember_me');
+    window.location.href = '/login';
+  }
+})();
+
+document.getElementById('staffAvatar').textContent   = (user.name||user.username||'ST').slice(0,2).toUpperCase();
+document.getElementById('staffName').textContent     = user.name || user.username || 'Staff';
+const roleBadge = document.getElementById('staffRoleBadge');
+roleBadge.textContent  = user.role || 'waiter';
+roleBadge.className    = 'role-badge ' + (user.role||'waiter');
+
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  window.location.href = '/login';
+}
+
+function authHeaders() {
+  return { 'Content-Type':'application/json', 'Authorization':'Bearer '+token };
+}
+async function api(method, url, body) {
+  const opts = { method, headers: authHeaders() };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  return r.json();
+}
+
+/* ══ CLOCK ══ */
+setInterval(() => {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US',{hour12:false});
+}, 1000);
+
+/* ══ TABS ══ */
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display='none');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-panel-'+name).style.display = 'block';
+  btn.classList.add('active');
+  if (name==='orders')    loadOrders();
+  if (name==='addorder')  initAddOrder();
+  if (name==='completed') loadCompleted();
+}
+
+/* ══ FOOD EMOJI HELPER ══ */
+const EMOJI_MAP = {momo:'🥟',chowmein:'🍜',thukpa:'🍲',burger:'🍔',pizza:'🍕','dal bhat':'🍛',lassi:'🥤',chai:'☕',tea:'☕',juice:'🧃',soup:'🍲',sandwich:'🥪',noodle:'🍜',rice:'🍚',chicken:'🍗',fish:'🐟',salad:'🥗'};
+function foodEmoji(name='') {
+  const n = name.toLowerCase();
+  for (const [k,v] of Object.entries(EMOJI_MAP)) { if (n.includes(k)) return v; }
+  return '🍽️';
+}
+
+/* ══ ALL ORDERS STATE ══ */
+let allOrders = [];
+let orderFilter = 'all';
+let menuItems = [];
+
+/* ══ LOAD ORDERS ══ */
+async function loadOrders() {
+  const r = await api('GET', '/api/orders');
+  allOrders = Array.isArray(r) ? r : [];
+  updateStats();
+  renderOrders();
+}
+
+function updateStats() {
+  const active    = allOrders.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled');
+  const pending   = allOrders.filter(o => o.status === 'Pending');
+  const preparing = allOrders.filter(o => o.status === 'Preparing');
+  const completed = allOrders.filter(o => o.status === 'Completed');
+
+  document.getElementById('stat-pending').textContent   = pending.length;
+  document.getElementById('stat-preparing').textContent = preparing.length;
+  document.getElementById('stat-done').textContent      = completed.length;
+  document.getElementById('pendingCount').textContent   = pending.length;
+  document.getElementById('completedCount').textContent = completed.length;
+
+  const revenue = completed.reduce((s,o) => s + o.items.reduce((ss,i) => ss+(i.price||0)*i.qty, 0), 0);
+  document.getElementById('stat-revenue').textContent = 'Rs '+revenue.toLocaleString();
+}
+
+function filterOrders(status, btn) {
+  orderFilter = status;
+  document.querySelectorAll('[id^="filter-"]').forEach(b => {
+    b.style.borderColor=''; b.style.color='';
+  });
+  btn.style.borderColor = 'var(--accent)';
+  btn.style.color       = 'var(--accent)';
+  renderOrders();
+}
+
+function renderOrders() {
+  const active = allOrders.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled');
+  const filtered = orderFilter === 'all' ? active : active.filter(o => o.status === orderFilter);
+  const grid = document.getElementById('ordersGrid');
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="e-icon">📋</div>
+      <div class="e-title">No orders found</div>
+      <div class="e-sub">Switch to "New Order" tab to add one</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = [...filtered].reverse().map(o => {
+    const total = o.items.reduce((s,i) => s+(i.price||0)*i.qty, 0);
+    const time  = new Date(o.time).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="order-card">
+      <div class="order-card-header">
+        <div>
+          <div class="order-table-no">Table ${o.table}</div>
+          <div class="order-id">#${String(o.id).padStart(5,'0')}</div>
+        </div>
+        <div style="text-align:right">
+          <span class="status-pill ${o.status}">${o.status}</span>
+          <div class="order-time" style="margin-top:4px">${time}</div>
+        </div>
+      </div>
+      <div class="order-card-body">
+        ${o.items.map(i=>`<div class="order-item-row">
+          <span class="order-item-name">${foodEmoji(i.name)} ${i.name}</span>
+          <span class="order-item-qty">×${i.qty}</span>
+          <span class="order-item-price">Rs ${(i.price||0)*i.qty}</span>
+        </div>`).join('')}
+      </div>
+      <div class="order-card-footer">
+        <div class="order-total">Rs ${total.toLocaleString()}</div>
+        <div class="order-actions">
+          ${o.status==='Pending'?`<button class="action-btn success" onclick="quickStatus(${o.id},'Preparing')">→ Prep</button>`:''}
+          ${o.status==='Preparing'?`<button class="action-btn success" onclick="quickStatus(${o.id},'Completed')">✓ Done</button>`:''}
+          <button class="action-btn" onclick="openEdit(${o.id})">✏️ Edit</button>
+          <button class="action-btn" onclick="printKitchenTicket(${o.id})" title="Print ticket">🖨️</button>
+          <button class="action-btn danger" onclick="openDelete(${o.id})">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══ QUICK STATUS ══ */
+async function quickStatus(id, status) {
+  const r = await api('PATCH', `/api/orders/${id}/status`, { status });
+  if (r.success) { showToast(`Order #${id} → ${status}`, 'success'); loadOrders(); }
+  else showToast(r.message||'Error','error');
+}
+
+/* ══ COMPLETED TAB ══ */
+async function loadCompleted() {
+  const r = await api('GET', '/api/orders');
+  const done = Array.isArray(r) ? r.filter(o => o.status==='Completed'||o.status==='Cancelled') : [];
+  const grid = document.getElementById('completedGrid');
+  if (!done.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="e-icon">✅</div><div class="e-title">No completed orders</div><div class="e-sub">Complete some orders first</div></div>`;
+    return;
+  }
+  grid.innerHTML = [...done].reverse().map(o => {
+    const total = o.items.reduce((s,i)=>s+(i.price||0)*i.qty,0);
+    const time  = new Date(o.time).toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    return `<div class="order-card" style="opacity:.8">
+      <div class="order-card-header">
+        <div><div class="order-table-no">Table ${o.table}</div><div class="order-id">#${String(o.id).padStart(5,'0')}</div></div>
+        <div style="text-align:right"><span class="status-pill ${o.status}">${o.status}</span><div class="order-time" style="margin-top:4px">${time}</div></div>
+      </div>
+      <div class="order-card-body">
+        ${o.items.map(i=>`<div class="order-item-row"><span class="order-item-name">${foodEmoji(i.name)} ${i.name}</span><span class="order-item-qty">×${i.qty}</span><span class="order-item-price">Rs ${(i.price||0)*i.qty}</span></div>`).join('')}
+      </div>
+      <div class="order-card-footer">
+        <div class="order-total">Rs ${total.toLocaleString()}</div>
+        <div class="order-actions">
+          <button class="action-btn danger" onclick="openDelete(${o.id})">🗑 Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══ ADD ORDER ══ */
+let orderCart = []; // [{id, name, price, qty}]
+let menuCatFilter = 'All';
+
+async function initAddOrder() {
+  // Load tables
+  const tables = await api('GET', '/api/tables');
+  const sel = document.getElementById('order-table');
+  sel.innerHTML = '<option value="">Select table...</option>' +
+    (Array.isArray(tables)?tables:[]).map(t=>`<option value="${t}">Table ${t}</option>`).join('');
+
+  // Load menu
+  menuItems = await api('GET', '/api/menu');
+  renderMenuPicker();
+}
+
+function filterMenuCat(cat, btn) {
+  menuCatFilter = cat;
+  document.querySelectorAll('[id^="cat-"]').forEach(b => { b.style.borderColor=''; b.style.color=''; });
+  btn.style.borderColor='var(--accent)'; btn.style.color='var(--accent)';
+  renderMenuPicker();
+}
+
+function filterMenuSearch() {
+  renderMenuPicker();
+}
+
+function renderMenuPicker() {
+  const search = document.getElementById('menu-search').value.toLowerCase().trim();
+  const grid = document.getElementById('menuPickerGrid');
+  const items = (Array.isArray(menuItems)?menuItems:[])
+    .filter(m => m.available !== false)
+    .filter(m => menuCatFilter === 'All' || m.category === menuCatFilter)
+    .filter(m => !search || m.name.toLowerCase().includes(search));
+
+  if (!items.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--muted);font-size:13px">No items found</div>';
+    return;
+  }
+  grid.innerHTML = items.map(m => {
+    const inCart = orderCart.find(c=>c.id===m.id);
+    return `<div class="menu-pick-card ${inCart?'selected':''}" onclick="toggleCartItem(${m.id})">
+      <div class="menu-pick-emoji">${foodEmoji(m.name)}</div>
+      <div class="menu-pick-name">${m.name}</div>
+      <div class="menu-pick-price">Rs ${m.price}</div>
+      <div class="menu-pick-cat">${m.category}</div>
+      ${inCart?`<div style="margin-top:4px;font-size:10px;color:var(--green);font-weight:700">✓ ×${inCart.qty}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function toggleCartItem(menuId) {
+  const m = menuItems.find(x=>x.id===menuId);
+  if (!m) return;
+  const idx = orderCart.findIndex(c=>c.id===menuId);
+  if (idx>-1) {
+    orderCart.splice(idx,1);
+  } else {
+    orderCart.push({ id:m.id, name:m.name, price:m.price, qty:1 });
+  }
+  renderMenuPicker();
+  renderOrderCart();
+}
+
+function updateQty(menuId, delta) {
+  const item = orderCart.find(c=>c.id===menuId);
+  if (!item) return;
+  item.qty = Math.max(1, item.qty + delta);
+  renderMenuPicker();
+  renderOrderCart();
+}
+
+function removeCartItem(menuId) {
+  orderCart = orderCart.filter(c=>c.id!==menuId);
+  renderMenuPicker();
+  renderOrderCart();
+}
+
+function renderOrderCart() {
+  const list  = document.getElementById('orderItemsList');
+  const sumEl = document.getElementById('orderSummary');
+  const label = document.getElementById('itemCountLabel');
+  label.textContent = `(${orderCart.length} item${orderCart.length!==1?'s':''})`;
+
+  if (!orderCart.length) {
+    list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--dimmed);font-size:13px">Click menu items above to add →</div>';
+    sumEl.style.display = 'none';
+    return;
+  }
+
+  const subtotal = orderCart.reduce((s,i)=>s+i.price*i.qty,0);
+  list.innerHTML = orderCart.map(i=>`<div class="order-item-edit">
+    <span class="oie-name">${foodEmoji(i.name)} ${i.name}</span>
+    <div class="qty-ctrl">
+      <button class="qty-btn" onclick="updateQty(${i.id},-1)">−</button>
+      <span class="qty-val">${i.qty}</span>
+      <button class="qty-btn" onclick="updateQty(${i.id},+1)">+</button>
+    </div>
+    <span class="oie-price">Rs ${i.price*i.qty}</span>
+    <button class="remove-item" onclick="removeCartItem(${i.id})" title="Remove">×</button>
+  </div>`).join('');
+
+  sumEl.style.display = 'block';
+  document.getElementById('sum-subtotal').textContent = 'Rs '+subtotal.toLocaleString();
+  document.getElementById('sum-total').textContent    = 'Rs '+subtotal.toLocaleString();
+}
+
+async function submitOrder() {
+  const table = parseInt(document.getElementById('order-table').value);
+  const guests = parseInt(document.getElementById('order-guests').value)||1;
+  if (!table)          return showToast('Please select a table','error');
+  if (!orderCart.length) return showToast('Add at least one item','error');
+
+  const btn = document.getElementById('submitOrderBtn');
+  btn.disabled = true; btn.textContent = '⏳ Placing order...';
+
+  const items = orderCart.map(i=>({ name:i.name, qty:i.qty, price:i.price }));
+  const r = await api('POST', '/api/orders', { table, items, guests });
+
+  btn.disabled = false; btn.textContent = '🍽️ Place Order';
+
+  if (r.success) {
+    showToast(`Order #${r.order.id} placed for Table ${table}!`, 'success');
+    orderCart = [];
+    renderOrderCart();
+    renderMenuPicker();
+    document.getElementById('order-table').value = '';
+    document.getElementById('order-guests').value = '1';
+    document.getElementById('order-notes').value  = '';
+    // Switch to orders tab
+    setTimeout(() => {
+      document.getElementById('tab-orders').click();
+    }, 600);
+  } else {
+    showToast(r.message||'Failed to place order','error');
+  }
+}
+
+/* ══ EDIT ORDER ══ */
+let editOrderId  = null;
+let editOrderItems = [];
+
+async function openEdit(id) {
+  editOrderId = id;
+  const o = await api('GET', `/api/orders/${id}`);
+  editOrderItems = o.items.map(i=>({...i, id: menuItems.find(m=>m.name===i.name)?.id || Math.random()}));
+
+  document.getElementById('editOrderIdLabel').textContent = `#${String(id).padStart(5,'0')}`;
+  document.getElementById('edit-status').value = o.status;
+
+  // Populate table select
+  const tables = await api('GET','/api/tables');
+  const tSel = document.getElementById('edit-table');
+  tSel.innerHTML = (Array.isArray(tables)?tables:[]).map(t=>`<option value="${t}" ${t==o.table?'selected':''}>${'Table '+t}</option>`).join('');
+
+  // Populate add-item select
+  const iSel = document.getElementById('edit-add-item');
+  iSel.innerHTML = (Array.isArray(menuItems)?menuItems:[]).filter(m=>m.available!==false).map(m=>`<option value="${m.id}" data-name="${m.name}" data-price="${m.price}">${m.name} — Rs ${m.price}</option>`).join('');
+
+  renderEditItems();
+  openModal('editModal');
+}
+
+function renderEditItems() {
+  const list  = document.getElementById('editItemsList');
+  const total = editOrderItems.reduce((s,i)=>s+(i.price||0)*i.qty,0);
+  document.getElementById('editTotal').textContent = 'Rs '+total.toLocaleString();
+
+  if (!editOrderItems.length) {
+    list.innerHTML='<div style="text-align:center;padding:12px;color:var(--dimmed);font-size:13px">No items — add some below</div>';
+    return;
+  }
+  list.innerHTML = editOrderItems.map((i,idx)=>`<div class="order-item-edit">
+    <span class="oie-name">${foodEmoji(i.name)} ${i.name}</span>
+    <div class="qty-ctrl">
+      <button class="qty-btn" onclick="editQty(${idx},-1)">−</button>
+      <span class="qty-val">${i.qty}</span>
+      <button class="qty-btn" onclick="editQty(${idx},+1)">+</button>
+    </div>
+    <span class="oie-price">Rs ${(i.price||0)*i.qty}</span>
+    <button class="remove-item" onclick="editRemove(${idx})">×</button>
+  </div>`).join('');
+}
+
+function editQty(idx, delta) {
+  editOrderItems[idx].qty = Math.max(1, editOrderItems[idx].qty + delta);
+  renderEditItems();
+}
+function editRemove(idx) {
+  editOrderItems.splice(idx,1);
+  renderEditItems();
+}
+function addItemToEdit() {
+  const sel = document.getElementById('edit-add-item');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt) return;
+  const name  = opt.dataset.name;
+  const price = parseInt(opt.dataset.price)||0;
+  const existing = editOrderItems.find(i=>i.name===name);
+  if (existing) { existing.qty++; }
+  else { editOrderItems.push({ name, price, qty:1 }); }
+  renderEditItems();
+}
+
+async function saveEditOrder() {
+  if (!editOrderId) return;
+  const status = document.getElementById('edit-status').value;
+  const table  = parseInt(document.getElementById('edit-table').value);
+  const items  = editOrderItems.map(i=>({ name:i.name, qty:i.qty, price:i.price||0 }));
+  if (!items.length) return showToast('Add at least one item','error');
+
+  const r = await api('PUT', `/api/orders/${editOrderId}`, { items, table, status });
+  if (r.success) {
+    showToast(`Order #${editOrderId} updated!`, 'success');
+    closeModal('editModal');
+    loadOrders();
+    loadCompleted();
+  } else {
+    showToast(r.message||'Error','error');
+  }
+}
+
+/* ══ DELETE ORDER ══ */
+let deleteOrderId = null;
+function openDelete(id) {
+  deleteOrderId = id;
+  document.getElementById('deleteModalMsg').textContent = `Delete Order #${String(id).padStart(5,'0')}? This cannot be undone.`;
+  openModal('deleteModal');
+}
+async function confirmDelete() {
+  if (!deleteOrderId) return;
+  const r = await fetch(`/api/orders/${deleteOrderId}`, { method:'DELETE', headers:authHeaders() });
+  const data = await r.json();
+  if (data.success || r.status === 404) {
+    showToast(`Order #${deleteOrderId} deleted`,'success');
+    closeModal('deleteModal');
+    loadOrders();
+    loadCompleted();
+  } else {
+    // If backend doesn't have DELETE on orders, cancel it instead
+    const r2 = await api('PATCH',`/api/orders/${deleteOrderId}/status`,{status:'Cancelled'});
+    if (r2.success) { showToast(`Order #${deleteOrderId} cancelled`,'success'); closeModal('deleteModal'); loadOrders(); }
+    else showToast('Error','error');
+  }
+  deleteOrderId = null;
+}
+
+/* ══ MODALS ══ */
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); });
+});
+
+/* ══ TOAST ══ */
+let toastTimer;
+function showToast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+/* ══ SSE — live order updates ══ */
+try {
+  const es = new EventSource('/api/dashboard/events');
+  es.onmessage = e => {
+    try {
+      const d = JSON.parse(e.data);
+      if (d.type==='new_order') { showToast(`🆕 New order: Table ${d.order?.table}`,'info'); loadOrders(); }
+      if (d.type==='order_update') loadOrders();
+    } catch{}
+  };
+} catch{}
+
+/* ══ PRINT KITCHEN TICKET ══ */
+function printKitchenTicket(orderId) {
+  const o = allOrders.find(x => x.id === orderId);
+  if (!o) return;
+  const items = o.items.map(i => `<tr><td style="padding:4px 8px">${i.name}</td><td style="padding:4px 8px;text-align:right">×${i.qty}</td></tr>`).join('');
+  const total = o.items.reduce((s,i)=>s+i.price*i.qty,0);
+  const w = window.open('','_blank','width=350,height=500');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket</title>
+  <style>body{font-family:monospace;max-width:300px;margin:0 auto;padding:20px;color:#000}
+  table{width:100%;border-collapse:collapse}
+  .total{border-top:2px dashed #000;padding-top:8px;margin-top:8px;font-weight:900;display:flex;justify-content:space-between;font-size:15px}
+  @media print{button{display:none}}</style></head><body>
+  <div style="text-align:center;border-bottom:2px dashed #000;padding-bottom:12px;margin-bottom:12px">
+    <div style="font-size:20px;font-weight:900">🍽️ ORDER TICKET</div>
+    <div style="font-size:26px;font-weight:900;margin:4px 0">TABLE ${o.table}</div>
+    <div>Order #${String(o.id).padStart(5,'0')}</div>
+    <div style="font-size:12px;color:#555">${new Date(o.time).toLocaleString()}</div>
+  </div>
+  <table style="font-size:15px">${items}</table>
+  <div class="total"><span>Total</span><span>Rs ${total.toLocaleString()}</span></div>
+  <div style="text-align:center;margin-top:14px;font-size:12px">Status: ${o.status} · Guests: ${o.guests||'—'}</div>
+  <div style="text-align:center;margin-top:8px"><button onclick="window.print()">Print</button></div>
+  </body></html>`);
+  w.document.close();
+  w.focus();
+  w.print();
+}
+
+/* ══ INIT ══ */
+loadOrders();
+// Auto-refresh every 20s
+setInterval(loadOrders, 20000);
+</script>
+</body>
+</html>

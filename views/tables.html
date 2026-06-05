@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tables & QR</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+<header>
+  <div class="logo">🪑 Tables & QR</div>
+  <div class="header-right">
+    <a href="/dashboard" style="color:var(--muted);font-size:13px;text-decoration:none">← Dashboard</a>
+  </div>
+</header>
+<main style="max-width:1100px;margin:0 auto;padding:32px 24px">
+  <div class="qr-section">
+    <div class="qr-section-header">
+      <h2>Table QR Codes</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="print-all-btn" onclick="printAll()">🖨️ Print All</button>
+        <div class="add-table-row">
+          <input class="add-table-input" type="number" id="newTableNo" placeholder="Table no." min="1">
+          <button class="add-table-btn" onclick="addTable()">+ Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="qr-grid" id="qrGrid"></div>
+  </div>
+</main>
+
+<div class="print-modal" id="printModal">
+  <div class="print-modal-inner print-area">
+    <div class="print-modal-header">
+      <h3>Print QR Codes</h3>
+      <button class="close-modal" onclick="document.getElementById('printModal').classList.remove('open');document.getElementById('printGrid').innerHTML=''">×</button>
+    </div>
+    <div class="print-qr-grid" id="printGrid"></div>
+    <button class="do-print-btn" onclick="window.print()">🖨️ Print Now</button>
+  </div>
+</div>
+
+<script>
+const BASE_URL = window.location.origin;
+
+async function loadTables() {
+  const res    = await fetch('/api/tables');
+  const tables = await res.json();
+  renderQR(tables);
+}
+
+function renderQR(tables) {
+  const grid = document.getElementById('qrGrid');
+  if (!tables.length) { grid.innerHTML = '<div style="color:var(--muted);padding:30px">No tables added yet.</div>'; return; }
+  grid.innerHTML = tables.map(t => `
+    <div class="qr-card">
+      <div class="qr-table-label">Table ${t}</div>
+      <div class="qr-box" id="qr-${t}"></div>
+      <div class="qr-url">${BASE_URL}/order?table=${t}</div>
+      <div class="qr-actions">
+        <button class="qr-btn print" onclick="printOne(${t})">🖨️</button>
+        <button class="qr-btn del" onclick="delTable(${t})">✕</button>
+      </div>
+    </div>`).join('');
+  tables.forEach(t => new QRCode(document.getElementById(`qr-${t}`), {
+    text: `${BASE_URL}/order?table=${t}`, width:118, height:118,
+    colorDark:'#000', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.H
+  }));
+}
+
+async function addTable() {
+  const no = parseInt(document.getElementById('newTableNo').value);
+  if (!no || no < 1) return alert('Valid number हाल्नुस्!');
+  await fetch('/api/tables', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({number:no}) });
+  document.getElementById('newTableNo').value = '';
+  loadTables();
+}
+
+async function delTable(no) {
+  if (!confirm(`Table ${no} delete गर्ने?`)) return;
+  await fetch(`/api/tables/${no}`, { method:'DELETE' });
+  loadTables();
+}
+
+function printOne(no) {
+  document.getElementById('printGrid').innerHTML = `
+    <div class="print-qr-item" style="grid-column:1/-1;max-width:220px;margin:0 auto">
+      <h4>Table ${no}</h4><div id="pqr-single"></div><p>${BASE_URL}/order?table=${no}</p>
+    </div>`;
+  document.getElementById('printModal').classList.add('open');
+  new QRCode(document.getElementById('pqr-single'), { text:`${BASE_URL}/order?table=${no}`, width:180, height:180, colorDark:'#000', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.H });
+}
+
+async function printAll() {
+  const res    = await fetch('/api/tables');
+  const tables = await res.json();
+  document.getElementById('printGrid').innerHTML = tables.map(t =>
+    `<div class="print-qr-item"><h4>Table ${t}</h4><div id="pqr-${t}"></div><p>${BASE_URL}/order?table=${t}</p></div>`
+  ).join('');
+  document.getElementById('printModal').classList.add('open');
+  tables.forEach(t => new QRCode(document.getElementById(`pqr-${t}`), { text:`${BASE_URL}/order?table=${t}`, width:160, height:160, colorDark:'#000', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.H }));
+}
+
+document.getElementById('newTableNo').addEventListener('keydown', e => { if (e.key==='Enter') addTable(); });
+loadTables();
+</script>
+</body>
+</html>

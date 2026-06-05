@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>Mobile Order</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f3ef;
+  --white:#fff;
+  --accent:#d4380d;
+  --accent2:#f5821f;
+  --gold:#c8a000;
+  --order-btn:#c8d600;
+  --order-btn-dark:#9ca800;
+  --text:#1a1a1a;
+  --muted:#777;
+  --border:#e8e3d8;
+  --header-bg:linear-gradient(160deg,#7b3f00 0%,#c2550a 50%,#e8a020 100%);
+  --bottom-bar:#3d2600;
+  --font:'Plus Jakarta Sans',sans-serif;
+  --font-jp:'Noto Sans JP',sans-serif;
+}
+html{font-size:15px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;position:relative;overflow-x:hidden}
+::-webkit-scrollbar{width:0}
+img{display:block}
+
+/* ══ WELCOME SCREEN ══ */
+#welcome{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--header-bg);padding:24px 20px;
+}
+.wl-card{
+  background:#fff;border-radius:20px;padding:28px 22px;width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+  animation:fadeUp .4s ease;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.wl-logo{text-align:center;font-size:40px;margin-bottom:6px}
+.wl-title{text-align:center;font-size:22px;font-weight:900;color:#1a1a1a;margin-bottom:2px}
+.wl-subtitle{text-align:center;font-size:13px;color:var(--muted);margin-bottom:4px}
+.wl-table-badge{
+  display:inline-flex;align-items:center;gap:6px;background:#fff3e0;
+  border:1.5px solid #f5821f;color:#c2550a;font-size:14px;font-weight:700;
+  padding:6px 16px;border-radius:20px;margin:12px auto 20px;display:flex;justify-content:center;
+}
+.guest-section{margin-bottom:18px}
+.guest-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin-bottom:10px}
+.guest-rows{border:1.5px solid var(--border);border-radius:12px;overflow:hidden}
+.guest-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--border);background:#fff}
+.guest-row:last-child{border-bottom:none}
+.guest-left{display:flex;align-items:center;gap:8px}
+.guest-emoji{font-size:18px}
+.guest-name{font-size:14px;font-weight:500}
+.stepper{display:flex;align-items:center;gap:10px}
+.stp-btn{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--border);background:#f5f3ef;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:var(--font);flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.stp-btn.plus{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.stp-btn:disabled{opacity:.3;cursor:not-allowed}
+.stp-num{font-size:16px;font-weight:700;min-width:20px;text-align:center}
+.guest-total-row{display:flex;align-items:center;justify-content:space-between;background:#faf8f4;border-radius:10px;padding:10px 14px;font-size:13px;color:var(--muted);margin-top:10px}
+.guest-total-num{font-size:26px;font-weight:900;color:#1a1a1a}
+.wl-start-btn{
+  width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;
+  padding:15px;font-family:var(--font);font-size:16px;font-weight:800;
+  cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;
+  letter-spacing:.5px;
+}
+.wl-start-btn:active{transform:scale(.98)}
+.wl-start-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ══ APP SCREEN ══ */
+#app{display:none;flex-direction:column;min-height:100vh}
+#app.show{display:flex}
+
+/* ── HEADER ── */
+.mo-header{
+  background:var(--header-bg);
+  padding:14px 16px 18px;
+  position:sticky;top:0;z-index:100;
+}
+.mo-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.mo-brand{text-align:center;flex:1}
+.mo-brand-title{
+  font-size:26px;font-weight:900;color:#fff;
+  letter-spacing:2px;text-shadow:0 2px 8px rgba(0,0,0,.3);
+  font-family:var(--font);
+}
+.mo-brand-sub{font-size:11px;color:rgba(255,255,255,.75);margin-top:1px}
+.mo-info-chips{display:flex;gap:6px;align-items:center}
+.mo-chip{background:rgba(255,255,255,.2);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.3);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.mo-chip.table-chip{background:rgba(255,255,255,.9);color:var(--accent);border-color:transparent}
+
+/* ── CATEGORY TABS ── */
+.cat-tabs-wrap{
+  background:var(--header-bg);
+  padding:0 16px 14px;
+  display:flex;gap:8px;overflow-x:auto;
+}
+.cat-tabs-wrap::-webkit-scrollbar{height:0}
+.cat-tab{
+  padding:7px 18px;border-radius:20px;border:none;
+  font-family:var(--font);font-size:13px;font-weight:700;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+  transition:all .2s;-webkit-tap-highlight-color:transparent;
+}
+.cat-tab.active{background:var(--accent);color:#fff;box-shadow:0 3px 10px rgba(212,56,13,.4)}
+.cat-tab:not(.active){background:rgba(255,255,255,.2);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.3)}
+
+/* ── MENU CONTENT ── */
+.menu-content{flex:1;overflow-y:auto;padding-bottom:90px}
+
+/* Featured banner */
+.featured-banner{
+  background:linear-gradient(90deg,#d4380d,#f5821f);
+  color:#fff;padding:8px 16px;
+  display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;
+}
+.featured-banner .star{font-size:16px}
+
+/* Section group */
+.menu-section{padding:12px 12px 0}
+.section-header{
+  font-size:12px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1px;
+  padding:4px 0 8px;border-bottom:1px solid var(--border);
+  margin-bottom:10px;
+}
+
+/* ── MENU CARD ── */
+.menu-card{
+  background:#fff;border-radius:14px;overflow:hidden;
+  margin-bottom:10px;display:flex;
+  box-shadow:0 2px 10px rgba(0,0,0,.07);
+  transition:box-shadow .2s;
+  border:1.5px solid transparent;
+}
+.menu-card.in-cart{border-color:var(--accent)}
+.menu-card:active{box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+.card-image{
+  width:110px;min-height:110px;flex-shrink:0;overflow:hidden;
+  background:#f0ede8;display:flex;align-items:center;justify-content:center;
+  font-size:40px;position:relative;
+}
+.card-image img{width:100%;height:100%;object-fit:cover}
+.card-image .disc-badge{
+  position:absolute;top:6px;left:6px;
+  background:var(--accent);color:#fff;font-size:10px;font-weight:800;
+  padding:2px 7px;border-radius:5px;
+}
+.card-image .best-badge{
+  position:absolute;top:6px;right:6px;
+  background:#f59e0b;color:#fff;font-size:10px;font-weight:800;
+  padding:2px 7px;border-radius:5px;
+}
+
+.card-body{flex:1;padding:12px 12px 10px;display:flex;flex-direction:column;justify-content:space-between;min-width:0}
+.card-name{font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:3px;line-height:1.3}
+.card-desc{font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-allergens{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px}
+.allergen-tag{font-size:10px;padding:2px 5px;border-radius:4px;background:#fff3cd;color:#856404;border:1px solid #ffc107}
+.allergen-tag.Spicy{background:#fde8e8;color:#c0392b;border-color:#e05252}
+.card-wait{font-size:10px;color:var(--muted);margin-bottom:6px}
+
+.card-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto}
+.card-price{font-size:20px;font-weight:900;color:#1a1a1a;line-height:1}
+.card-price .currency{font-size:12px;font-weight:600;color:var(--muted);margin-right:1px}
+.card-price .old-price{font-size:11px;font-weight:400;text-decoration:line-through;color:var(--muted);display:block;margin-top:1px}
+
+/* ── QTY CONTROLS (on card) ── */
+.card-order-wrap{flex-shrink:0}
+.card-order-btn{
+  background:var(--order-btn);color:#333;border:none;border-radius:8px;
+  padding:8px 14px;font-family:var(--font);font-size:13px;font-weight:800;
+  cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;
+  white-space:nowrap;
+}
+.card-order-btn:active{transform:scale(.95);background:var(--order-btn-dark)}
+.card-qty-wrap{display:flex;align-items:center;gap:8px;background:#f5f3ef;border-radius:8px;padding:4px 10px}
+.card-qty-btn{width:28px;height:28px;border-radius:50%;border:none;background:#1a1a1a;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font);transition:opacity .15s;-webkit-tap-highlight-color:transparent}
+.card-qty-btn.minus{background:#e5e1d6}
+.card-qty-btn.minus span{color:#1a1a1a;font-size:18px;margin-top:-1px}
+.card-qty-num{font-size:16px;font-weight:800;min-width:18px;text-align:center;color:#1a1a1a}
+
+/* ── EMPTY STATE ── */
+.no-items{text-align:center;padding:40px 20px;color:var(--muted)}
+.no-items .icon{font-size:40px;margin-bottom:8px}
+
+/* ── BOTTOM BAR ── */
+.bottom-bar{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;
+  background:var(--bottom-bar);padding:10px 14px;z-index:200;
+  display:none;
+  box-shadow:0 -4px 20px rgba(0,0,0,.3);
+}
+.bottom-bar.show{display:flex;gap:10px;align-items:center}
+.bottom-checkout-btn{
+  flex:1;background:#fff;color:var(--bottom-bar);border:none;border-radius:10px;
+  padding:13px 16px;font-family:var(--font);font-size:14px;font-weight:800;
+  cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+  -webkit-tap-highlight-color:transparent;transition:opacity .2s;
+}
+.bottom-checkout-btn:active{opacity:.85}
+.bottom-checkout-total{font-size:18px;font-weight:900;color:var(--accent)}
+.bottom-order-btn{
+  background:var(--accent);color:#fff;border:none;border-radius:10px;
+  padding:13px 18px;font-family:var(--font);font-size:14px;font-weight:800;
+  cursor:pointer;display:flex;align-items:center;gap:8px;
+  -webkit-tap-highlight-color:transparent;transition:opacity .2s;white-space:nowrap;
+}
+.bottom-order-btn:active{opacity:.85}
+.bottom-order-btn:disabled{opacity:.5;cursor:not-allowed}
+.bottom-cart-count{background:rgba(255,255,255,.25);border-radius:20px;padding:2px 8px;font-size:12px}
+
+/* ── MODALS OVERLAY ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;align-items:flex-end;justify-content:center}
+.overlay.open{display:flex}
+.sheet{background:#fff;border-radius:20px 20px 0 0;padding:24px 18px;width:100%;max-width:480px;animation:sheetUp .3s ease;max-height:85vh;overflow-y:auto}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-handle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 18px}
+.sheet-title{font-size:18px;font-weight:800;margin-bottom:14px}
+
+/* Cart sheet */
+.cart-sheet-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.cart-sheet-item:last-child{border-bottom:none}
+.csi-name{font-size:14px;font-weight:600;flex:1}
+.csi-qty-wrap{display:flex;align-items:center;gap:10px}
+.csi-qty-btn{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border);background:#f5f3ef;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font)}
+.csi-qty{font-size:14px;font-weight:700;min-width:16px;text-align:center}
+.csi-price{font-size:14px;font-weight:700;color:var(--accent);min-width:70px;text-align:right}
+.cart-total-row{display:flex;justify-content:space-between;padding:14px 0 0;font-size:16px;font-weight:800;border-top:2px solid var(--border);margin-top:8px}
+.cart-total-row span:last-child{color:var(--accent);font-size:20px}
+.place-order-btn{
+  width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;
+  padding:15px;font-family:var(--font);font-size:16px;font-weight:800;cursor:pointer;
+  margin-top:14px;transition:opacity .2s;-webkit-tap-highlight-color:transparent;
+}
+.place-order-btn:active{opacity:.85}
+.place-order-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* My orders sheet */
+.my-orders-btn{
+  background:none;border:none;color:rgba(255,255,255,.8);font-family:var(--font);
+  font-size:12px;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent;
+  display:flex;align-items:center;gap:4px;position:relative;
+}
+.orders-notif-dot{width:7px;height:7px;background:#22c55e;border-radius:50%;display:none}
+.orders-notif-dot.show{display:block}
+.order-history-card{background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+.ohc-header{display:flex;justify-content:space-between;margin-bottom:8px}
+.ohc-id{font-size:11px;color:var(--muted);font-weight:600}
+.ohc-time{font-size:11px;color:var(--muted)}
+.ohc-items{font-size:13px;color:#444;line-height:1.8;margin-bottom:8px}
+.ohc-divider{border:none;border-top:1px solid var(--border);margin:8px 0}
+.ohc-total{display:flex;justify-content:space-between;font-size:14px;font-weight:700}
+.ohc-total span:last-child{color:var(--accent)}
+.ohc-status{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;margin-top:8px}
+.ohc-status.Pending  {background:rgba(249,115,22,.1);color:#f97316}
+.ohc-status.Preparing{background:rgba(59,130,246,.1);color:#3b82f6}
+.ohc-status.Completed{background:rgba(34,197,94,.1);color:#22c55e}
+.ohc-status.Cancelled{background:rgba(239,68,68,.1);color:#ef4444}
+.ohc-actions{display:flex;gap:8px;margin-top:10px}
+.ohc-btn{padding:7px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer}
+.ohc-btn.receipt{border-color:#3b82f6;color:#3b82f6}
+.ohc-btn.rate{border-color:#f59e0b;color:#f59e0b}
+
+/* Bell sheet */
+.bell-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.bell-opt{padding:14px;border-radius:12px;border:1.5px solid var(--border);background:#faf8f4;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.bell-opt:active{background:var(--bg)}
+.bell-opt .bico{font-size:22px;display:block;margin-bottom:5px}
+.bell-sent{text-align:center;padding:16px 0;display:none}
+.cancel-btn{width:100%;padding:13px;border-radius:12px;border:1.5px solid var(--border);background:transparent;font-family:var(--font);font-size:14px;cursor:pointer;color:var(--muted)}
+
+/* Rating sheet */
+.star-row-big{display:flex;gap:8px;justify-content:center;margin-bottom:8px}
+.big-star{font-size:34px;cursor:pointer;filter:grayscale(1);transition:all .15s}
+.big-star.on{filter:grayscale(0);transform:scale(1.15)}
+.sub-ratings{display:flex;gap:20px;justify-content:center;margin-bottom:16px}
+.sub-r label{font-size:11px;color:var(--muted);display:block;text-align:center;margin-bottom:4px}
+.sub-stars{display:flex;gap:3px;justify-content:center}
+.sub-star{font-size:18px;cursor:pointer;filter:grayscale(1)}
+.sub-star.on{filter:grayscale(0)}
+.rating-comment{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px;font-family:var(--font);font-size:13px;resize:none;outline:none;margin-bottom:12px}
+.rating-comment:focus{border-color:#1a1a1a}
+.submit-rate-btn{width:100%;background:#1a1a1a;color:#fff;border:none;border-radius:10px;padding:14px;font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px}
+.skip-rate-btn{width:100%;padding:10px;border:none;background:none;color:var(--muted);font-family:var(--font);cursor:pointer}
+
+/* Receipt sheet */
+.receipt-header{text-align:center;padding-bottom:12px;border-bottom:1px dashed #ccc;margin-bottom:12px}
+.receipt-title{font-size:18px;font-weight:900}
+.receipt-meta{font-size:11px;color:var(--muted);margin-top:3px}
+.receipt-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.receipt-row:last-of-type{border-bottom:none}
+.receipt-total-row{display:flex;justify-content:space-between;padding:12px 0 0;font-size:15px;font-weight:800;border-top:2px solid #1a1a1a;margin-top:8px}
+.receipt-total-row span:last-child{color:var(--accent)}
+.receipt-footer{text-align:center;font-size:12px;color:var(--muted);margin-top:12px;padding-top:10px;border-top:1px dashed #ccc}
+.print-receipt-btn{width:100%;background:#1a1a1a;color:#fff;border:none;border-radius:10px;padding:13px;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+
+/* Toast */
+.toast{
+  position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-100px);
+  background:#1a1a1a;color:#fff;padding:10px 22px;border-radius:30px;font-size:13px;font-weight:600;
+  z-index:999;transition:transform .35s cubic-bezier(.22,1,.36,1);
+  box-shadow:0 6px 24px rgba(0,0,0,.3);white-space:nowrap;pointer-events:none;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Print */
+@media print{
+  body>*{visibility:hidden!important}
+  #printEl,#printEl *{visibility:visible!important}
+  #printEl{position:fixed;top:0;left:0;width:100%;display:block!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════
+     WELCOME SCREEN
+══════════════════════════ -->
+<div id="welcome">
+  <div class="wl-card">
+    <div class="wl-logo">🍽️</div>
+    <div class="wl-title">Welcome!</div>
+    <div class="wl-subtitle">Scan to order from your table</div>
+    <div class="wl-table-badge">🪑 Table <span id="wl-table-no">—</span></div>
+
+    <div class="guest-section">
+      <div class="guest-section-title">Number of guests</div>
+      <div class="guest-rows">
+        <div class="guest-row">
+          <div class="guest-left"><span class="guest-emoji">👨</span><span class="guest-name">Male</span></div>
+          <div class="stepper">
+            <button class="stp-btn" id="btn-m-minus" onclick="adj('m',-1)" disabled>−</button>
+            <span class="stp-num" id="cnt-m">0</span>
+            <button class="stp-btn plus" onclick="adj('m',1)">+</button>
+          </div>
+        </div>
+        <div class="guest-row">
+          <div class="guest-left"><span class="guest-emoji">👩</span><span class="guest-name">Female</span></div>
+          <div class="stepper">
+            <button class="stp-btn" id="btn-f-minus" onclick="adj('f',-1)" disabled>−</button>
+            <span class="stp-num" id="cnt-f">0</span>
+            <button class="stp-btn plus" onclick="adj('f',1)">+</button>
+          </div>
+        </div>
+        <div class="guest-row">
+          <div class="guest-left"><span class="guest-emoji">👧</span><span class="guest-name">Children</span></div>
+          <div class="stepper">
+            <button class="stp-btn" id="btn-c-minus" onclick="adj('c',-1)" disabled>−</button>
+            <span class="stp-num" id="cnt-c">0</span>
+            <button class="stp-btn plus" onclick="adj('c',1)">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="guest-total-row">
+        <span>Total guests</span>
+        <span class="guest-total-num" id="guestTotal">0</span>
+      </div>
+    </div>
+
+    <button class="wl-start-btn" id="startBtn" onclick="startOrdering()" disabled>
+      View Menu  →
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════
+     APP SCREEN
+══════════════════════════ -->
+<div id="app">
+
+  <!-- Header -->
+  <div class="mo-header">
+    <div class="mo-header-top">
+      <div class="mo-brand">
+        <div class="mo-brand-title">MOBILE ORDER</div>
+        <div class="mo-brand-sub" id="appRestName">Delicious food delivered to your table</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="mo-info-chips">
+        <span class="mo-chip table-chip">Table <strong id="appTableNo">—</strong></span>
+        <span class="mo-chip" id="appGuestChip">👥 0</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="my-orders-btn" onclick="openSheet('ordersSheet')">
+          <span class="orders-notif-dot" id="ordersNotifDot"></span>
+          📋 My Orders
+        </button>
+        <button class="my-orders-btn" onclick="openSheet('bellSheet')" style="margin-left:6px">
+          🔔
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category tabs -->
+  <div class="cat-tabs-wrap" id="catTabsWrap">
+    <button class="cat-tab active" onclick="selectCat(this,'All')" data-cat="All">⭐ All</button>
+  </div>
+
+  <!-- Menu content -->
+  <div class="menu-content" id="menuContent">
+    <!-- Featured banner -->
+    <div class="featured-banner" id="featuredBanner" style="display:none">
+      <span class="star">⭐</span>
+      <span>Today's Recommended Menu</span>
+    </div>
+    <!-- Featured items -->
+    <div class="menu-section" id="featuredSection" style="display:none">
+      <div class="section-header">⭐ Best Sellers</div>
+      <div id="featuredGrid"></div>
+    </div>
+    <!-- Main items -->
+    <div class="menu-section" id="mainSection">
+      <div id="mainGrid"></div>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="bottom-bar" id="bottomBar">
+    <button class="bottom-checkout-btn" onclick="openSheet('cartSheet')">
+      <span>
+        <span style="font-size:12px;color:var(--muted);display:block;font-weight:500">Cart Review</span>
+        <span id="bottomCountLabel" style="font-size:13px;font-weight:700">0 items</span>
+      </span>
+      <span class="bottom-checkout-total" id="bottomTotal">Rs 0</span>
+    </button>
+    <button class="bottom-order-btn" id="placeBtn" onclick="openSheet('cartSheet')">
+      🛒 Order
+      <span class="bottom-cart-count" id="bottomCartCount">0</span>
+    </button>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ══════════════════════════
+     SHEETS / MODALS
+══════════════════════════ -->
+
+<!-- Cart Sheet -->
+<div class="overlay" id="cartSheet" onclick="overlayClose(event,'cartSheet')">
+  <div class="sheet" onclick="e=>e.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">🛒 Your Cart</div>
+    <div id="cartSheetItems"></div>
+    <div class="cart-total-row"><span>Total</span><span id="cartSheetTotal">Rs 0</span></div>
+    <button class="place-order-btn" id="placeOrderBtn" onclick="placeOrder()">
+      Place Order  🍽️
+    </button>
+  </div>
+</div>
+
+<!-- My Orders Sheet -->
+<div class="overlay" id="ordersSheet" onclick="overlayClose(event,'ordersSheet')">
+  <div class="sheet" onclick="e=>e.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">📋 My Orders</div>
+    <div id="ordersSheetContent">
+      <div class="no-items"><div class="icon">🍽️</div><p>No orders yet</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- Bell Sheet -->
+<div class="overlay" id="bellSheet" onclick="overlayClose(event,'bellSheet')">
+  <div class="sheet" onclick="e=>e.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div id="bellContent">
+      <div class="sheet-title">🔔 Call Staff</div>
+      <div class="bell-grid">
+        <button class="bell-opt" onclick="callBell('Need water')"><span class="bico">💧</span>Water</button>
+        <button class="bell-opt" onclick="callBell('Need cutlery')"><span class="bico">🍴</span>Cutlery</button>
+        <button class="bell-opt" onclick="callBell('Request bill')"><span class="bico">💳</span>Bill</button>
+        <button class="bell-opt" onclick="callBell('Need help')"><span class="bico">🙋</span>Help</button>
+        <button class="bell-opt" onclick="callBell('Need tissue')"><span class="bico">🧻</span>Tissue</button>
+        <button class="bell-opt" onclick="callBell('Other request')"><span class="bico">📣</span>Other</button>
+      </div>
+      <button class="cancel-btn" onclick="closeSheet('bellSheet')">Cancel</button>
+    </div>
+    <div class="bell-sent" id="bellSent">
+      <div style="font-size:40px;margin-bottom:8px">✅</div>
+      <p style="font-size:16px;font-weight:800">Staff notified!</p>
+      <p style="font-size:12px;color:var(--muted);margin-top:4px">Someone will be with you shortly.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Rating Sheet -->
+<div class="overlay" id="ratingSheet" onclick="overlayClose(event,'ratingSheet')">
+  <div class="sheet" onclick="e=>e.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div id="ratingForm">
+      <div class="sheet-title" style="text-align:center">⭐ Rate Your Experience</div>
+      <p style="text-align:center;color:var(--muted);font-size:13px;margin-bottom:16px">How was your meal today?</p>
+      <div class="star-row-big" id="bigStars">
+        <span class="big-star" onclick="rate('overall',1)">⭐</span>
+        <span class="big-star" onclick="rate('overall',2)">⭐</span>
+        <span class="big-star" onclick="rate('overall',3)">⭐</span>
+        <span class="big-star" onclick="rate('overall',4)">⭐</span>
+        <span class="big-star" onclick="rate('overall',5)">⭐</span>
+      </div>
+      <p style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:14px">Overall Rating</p>
+      <div class="sub-ratings">
+        <div class="sub-r"><label>Food</label>
+          <div class="sub-stars" id="foodStars">
+            <span class="sub-star" onclick="rate('food',1)">⭐</span><span class="sub-star" onclick="rate('food',2)">⭐</span>
+            <span class="sub-star" onclick="rate('food',3)">⭐</span><span class="sub-star" onclick="rate('food',4)">⭐</span>
+            <span class="sub-star" onclick="rate('food',5)">⭐</span>
+          </div>
+        </div>
+        <div class="sub-r"><label>Service</label>
+          <div class="sub-stars" id="serviceStars">
+            <span class="sub-star" onclick="rate('service',1)">⭐</span><span class="sub-star" onclick="rate('service',2)">⭐</span>
+            <span class="sub-star" onclick="rate('service',3)">⭐</span><span class="sub-star" onclick="rate('service',4)">⭐</span>
+            <span class="sub-star" onclick="rate('service',5)">⭐</span>
+          </div>
+        </div>
+      </div>
+      <textarea class="rating-comment" id="ratingComment" rows="3" placeholder="Any comments? (optional)"></textarea>
+      <button class="submit-rate-btn" onclick="submitRating()">Submit Rating</button>
+      <button class="skip-rate-btn" onclick="closeSheet('ratingSheet')">Skip</button>
+    </div>
+    <div id="ratingThanks" style="display:none;text-align:center;padding:20px 0">
+      <div style="font-size:50px;margin-bottom:10px">🙏</div>
+      <p style="font-size:18px;font-weight:900;margin-bottom:6px">Thank you!</p>
+      <p style="font-size:13px;color:var(--muted)">Your feedback means a lot to us.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Sheet -->
+<div class="overlay" id="receiptSheet" onclick="overlayClose(event,'receiptSheet')">
+  <div class="sheet" onclick="e=>e.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">🧾 Receipt</div>
+    <div id="receiptContent"></div>
+    <button class="print-receipt-btn" onclick="printReceipt()">🖨️ Print Receipt</button>
+    <button class="cancel-btn" style="margin-top:8px" onclick="closeSheet('receiptSheet')">Close</button>
+  </div>
+</div>
+
+<!-- Toast & Print -->
+<div class="toast" id="toast"></div>
+<div id="printEl" style="display:none"></div>
+
+<!-- ══════════════════════════
+     JAVASCRIPT
+══════════════════════════ -->
+<script>
+/* ── INIT ── */
+const params  = new URLSearchParams(location.search);
+const tableNo = parseInt(params.get('table')) || 1;
+document.getElementById('wl-table-no').textContent = tableNo;
+document.getElementById('appTableNo').textContent  = tableNo;
+
+/* ── GUEST COUNTER ── */
+const gc = { m:0, f:0, c:0 };
+function adj(t, d) {
+  gc[t] = Math.max(0, gc[t] + d);
+  document.getElementById(`cnt-${t}`).textContent = gc[t];
+  document.getElementById(`btn-${t}-minus`).disabled = gc[t] === 0;
+  const total = gc.m + gc.f + gc.c;
+  document.getElementById('guestTotal').textContent = total;
+  document.getElementById('startBtn').disabled = total === 0;
+}
+
+async function startOrdering() {
+  const total  = gc.m + gc.f + gc.c;
+  const gender = gc.f > 0 && gc.m === 0 ? 'Female' : gc.m > 0 && gc.f === 0 ? 'Male' : 'Mixed';
+  try {
+    await fetch('/api/guests', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ table:tableNo, count:total, gender }),
+    });
+  } catch {}
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('app').style.display     = 'flex';
+  document.getElementById('appGuestChip').textContent = `👥 ${total}`;
+  loadMenu();
+}
+
+/* ── MENU DATA ── */
+let menu = [], cart = {}, myOrders = [];
+
+const EMOJI = {
+  Snacks:'🥟', Noodles:'🍜', Main:'🍛', Drinks:'🥤', Dessert:'🍮'
+};
+const ALLERGEN_ICONS = { Gluten:'🌾', Dairy:'🥛', Nuts:'🥜', Eggs:'🥚', Seafood:'🦐', Soy:'🫘', Spicy:'🌶️' };
+
+function foodEmoji(cat, name) {
+  const n = name.toLowerCase();
+  if (n.includes('momo'))   return '🥟';
+  if (n.includes('burger')) return '🍔';
+  if (n.includes('pizza'))  return '🍕';
+  if (n.includes('chai') || n.includes('tea') || n.includes('chai')) return '☕';
+  if (n.includes('lassi'))  return '🥤';
+  if (n.includes('juice'))  return '🧃';
+  if (n.includes('dal'))    return '🍛';
+  if (n.includes('thukpa')) return '🍲';
+  if (n.includes('chowmein')) return '🍜';
+  return EMOJI[cat] || '🍽️';
+}
+
+async function loadMenu() {
+  try {
+    const r = await fetch('/api/menu');
+    menu = (await r.json()).filter(m => m.available !== false);
+    buildCatTabs();
+    renderMenu('All');
+  } catch {
+    showToast('Could not load menu');
+  }
+}
+
+function buildCatTabs() {
+  const cats = ['All', '⭐ Best', ...new Set(menu.map(m => m.category))];
+  document.getElementById('catTabsWrap').innerHTML = cats.map((c, i) =>
+    `<button class="cat-tab ${i===0?'active':''}" onclick="selectCat(this,'${c}')">${c}</button>`
+  ).join('');
+}
+
+let currentCat = 'All';
+function selectCat(el, cat) {
+  document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  currentCat = cat;
+  renderMenu(cat);
+}
+
+function effectivePrice(item) {
+  return item.discount > 0 ? Math.round(item.price * (1 - item.discount / 100)) : item.price;
+}
+
+function renderMenu(cat) {
+  let items = menu;
+  if (cat === '⭐ Best') items = menu.filter(m => m.featured);
+  else if (cat !== 'All') items = menu.filter(m => m.category === cat);
+
+  const featured = cat === 'All' ? items.filter(m => m.featured) : [];
+  const regular  = cat === 'All' ? items : items;
+
+  // Featured banner & section
+  const featBanner = document.getElementById('featuredBanner');
+  const featSec    = document.getElementById('featuredSection');
+  const featGrid   = document.getElementById('featuredGrid');
+  if (featured.length && cat === 'All') {
+    featBanner.style.display = 'flex';
+    featSec.style.display    = 'block';
+    featGrid.innerHTML = featured.map(renderCard).join('');
+  } else {
+    featBanner.style.display = 'none';
+    featSec.style.display    = 'none';
+  }
+
+  // Main grid
+  const mainGrid = document.getElementById('mainGrid');
+  const allItems = cat === 'All' ? items : items;
+  if (!allItems.length) {
+    mainGrid.innerHTML = '<div class="no-items"><div class="icon">🍽️</div><p>No items available</p></div>';
+  } else {
+    mainGrid.innerHTML = allItems.map(renderCard).join('');
+  }
+}
+
+function renderCard(item) {
+  const qty   = cart[item.id] || 0;
+  const ep    = effectivePrice(item);
+  const disc  = item.discount || 0;
+  const emoji = foodEmoji(item.category, item.name);
+  const imgHTML = item.image
+    ? `<img src="${item.image}" alt="${item.name}" onerror="this.parentElement.textContent='${emoji}'">`
+    : emoji;
+  const allergyHTML = (item.allergens || []).length
+    ? `<div class="card-allergens">${item.allergens.map(a=>`<span class="allergen-tag ${a}">${ALLERGEN_ICONS[a]||''} ${a}</span>`).join('')}</div>`
+    : '';
+  const orderCtrl = qty === 0
+    ? `<button class="card-order-btn" onclick="addToCart(${item.id})">Order</button>`
+    : `<div class="card-qty-wrap">
+        <button class="card-qty-btn minus" onclick="changeQty(${item.id},-1)"><span>−</span></button>
+        <span class="card-qty-num">${qty}</span>
+        <button class="card-qty-btn" onclick="changeQty(${item.id},1)">+</button>
+       </div>`;
+
+  return `<div class="menu-card ${qty>0?'in-cart':''}" id="card-${item.id}">
+    <div class="card-image">
+      ${imgHTML}
+      ${disc>0?`<span class="disc-badge">${disc}% OFF</span>`:''}
+      ${item.featured?`<span class="best-badge">⭐ Best</span>`:''}
+    </div>
+    <div class="card-body">
+      <div>
+        <div class="card-name">${item.name}</div>
+        <div class="card-desc">${item.category} · ${item.waitMins||10} min wait</div>
+        ${allergyHTML}
+      </div>
+      <div class="card-bottom">
+        <div class="card-price">
+          <span class="currency">Rs </span>${ep.toLocaleString()}
+          ${disc>0?`<span class="old-price">Rs ${item.price}</span>`:''}
+        </div>
+        <div class="card-order-wrap">${orderCtrl}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ── CART ── */
+function addToCart(id) {
+  cart[id] = 1;
+  refreshAll();
+}
+function changeQty(id, d) {
+  cart[id] = Math.max(0, (cart[id] || 0) + d);
+  if (cart[id] === 0) delete cart[id];
+  refreshAll();
+}
+
+function refreshAll() {
+  renderMenu(currentCat);
+  updateBottomBar();
+}
+
+function updateBottomBar() {
+  const entries = Object.entries(cart);
+  const count   = entries.reduce((s,[,q])=>s+q, 0);
+  const total   = entries.reduce((s,[id,q])=>{
+    const m = menu.find(x=>x.id===parseInt(id));
+    return s + (m ? effectivePrice(m)*q : 0);
+  }, 0);
+  const bar = document.getElementById('bottomBar');
+  if (count > 0) bar.classList.add('show'); else bar.classList.remove('show');
+  document.getElementById('bottomCountLabel').textContent = `${count} item${count!==1?'s':''}`;
+  document.getElementById('bottomTotal').textContent      = `Rs ${total.toLocaleString()}`;
+  document.getElementById('bottomCartCount').textContent  = count;
+}
+
+/* ── CART SHEET ── */
+function openCartSheet() {
+  const entries = Object.entries(cart);
+  const total   = entries.reduce((s,[id,q])=>{
+    const m = menu.find(x=>x.id===parseInt(id));
+    return s + (m ? effectivePrice(m)*q : 0);
+  }, 0);
+  document.getElementById('cartSheetItems').innerHTML = entries.length
+    ? entries.map(([id,q])=>{
+        const m = menu.find(x=>x.id===parseInt(id));
+        if (!m) return '';
+        return `<div class="cart-sheet-item">
+          <span class="csi-name">${m.name}</span>
+          <div class="csi-qty-wrap">
+            <button class="csi-qty-btn" onclick="changeQty(${m.id},-1);openCartSheet()">−</button>
+            <span class="csi-qty">${q}</span>
+            <button class="csi-qty-btn" onclick="changeQty(${m.id},1);openCartSheet()">+</button>
+          </div>
+          <span class="csi-price">Rs ${effectivePrice(m)*q}</span>
+        </div>`;
+      }).join('')
+    : '<div class="no-items"><div class="icon">🛒</div><p>Cart is empty</p></div>';
+  document.getElementById('cartSheetTotal').textContent = `Rs ${total.toLocaleString()}`;
+  document.getElementById('placeOrderBtn').disabled = entries.length === 0;
+}
+
+/* ── PLACE ORDER ── */
+async function placeOrder() {
+  const btn = document.getElementById('placeOrderBtn');
+  btn.disabled = true; btn.textContent = '⏳ Placing order...';
+  const items  = Object.entries(cart).map(([id,qty])=>{
+    const m = menu.find(x=>x.id===parseInt(id));
+    return { name:m.name, qty, price:effectivePrice(m) };
+  });
+  const guests = gc.m + gc.f + gc.c;
+  try {
+    const r = await fetch('/api/orders', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ table:tableNo, items, guests }),
+    });
+    const d = await r.json();
+    if (d.success) {
+      cart = {}; updateBottomBar(); renderMenu(currentCat);
+      closeSheet('cartSheet');
+      document.getElementById('ordersNotifDot').classList.add('show');
+      showToast(`✅ Order placed! Est. wait: ${d.order.estimatedWait||'?'} min`);
+      loadMyOrders();
+    } else {
+      showToast('⚠️ ' + (d.message || 'Failed'));
+    }
+  } catch { showToast('❌ Connection error'); }
+  btn.disabled = false; btn.textContent = 'Place Order  🍽️';
+}
+
+/* ── MY ORDERS ── */
+async function loadMyOrders() {
+  try {
+    const r  = await fetch('/api/orders');
+    const all = await r.json();
+    myOrders  = all.filter(o => o.table === tableNo);
+    renderMyOrders();
+  } catch {}
+}
+
+function renderMyOrders() {
+  const el = document.getElementById('ordersSheetContent');
+  if (!myOrders.length) {
+    el.innerHTML = '<div class="no-items"><div class="icon">🍽️</div><p>No orders yet. Go order something!</p></div>';
+    return;
+  }
+  el.innerHTML = [...myOrders].reverse().map(o => {
+    const total = o.items.reduce((s,i)=>s+i.price*i.qty, 0);
+    const time  = new Date(o.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const sIcon = {Pending:'⏳',Preparing:'👨‍🍳',Completed:'✅',Cancelled:'❌'}[o.status]||'•';
+    const itemsText = o.items.map(i=>`${i.name} × ${i.qty}  —  Rs ${i.price*i.qty}`).join('\n');
+    return `<div class="order-history-card">
+      <div class="ohc-header">
+        <span class="ohc-id">ORDER #${String(o.id).padStart(5,'0')}</span>
+        <span class="ohc-time">${time}</span>
+      </div>
+      <div class="ohc-items" style="white-space:pre-line">${itemsText}</div>
+      <hr class="ohc-divider">
+      <div class="ohc-total"><span>Total</span><span>Rs ${total.toLocaleString()}</span></div>
+      <span class="ohc-status ${o.status}">${sIcon} ${o.status}</span>
+      <div class="ohc-actions">
+        <button class="ohc-btn receipt" onclick="showReceipt(${o.id})">🧾 Receipt</button>
+        ${o.status==='Completed'?`<button class="ohc-btn rate" onclick="openRating(${o.id})">⭐ Rate</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Auto-refresh orders every 12s
+setInterval(() => {
+  if (document.getElementById('ordersSheet').classList.contains('open')) loadMyOrders();
+}, 12000);
+
+/* ── RECEIPT ── */
+let receiptOrderId = null;
+function showReceipt(orderId) {
+  receiptOrderId = orderId;
+  const o = myOrders.find(x=>x.id===orderId);
+  if (!o) return;
+  const total = o.items.reduce((s,i)=>s+i.price*i.qty,0);
+  const time  = new Date(o.time).toLocaleString();
+  const rows  = o.items.map(i=>
+    `<div class="receipt-row"><span>${i.name} × ${i.qty}</span><span>Rs ${i.price*i.qty}</span></div>`
+  ).join('');
+  document.getElementById('receiptContent').innerHTML = `
+    <div class="receipt-header">
+      <div class="receipt-title">🍽️ Restaurant</div>
+      <div class="receipt-meta">Table ${tableNo} · Order #${String(o.id).padStart(5,'0')}</div>
+      <div class="receipt-meta">${time}</div>
+    </div>
+    ${rows}
+    <div class="receipt-total-row"><span>Total</span><span>Rs ${total.toLocaleString()}</span></div>
+    <div class="receipt-footer">Thank you for dining with us! 🙏</div>`;
+  closeSheet('ordersSheet');
+  openSheet('receiptSheet');
+}
+
+function printReceipt() {
+  const content = document.getElementById('receiptContent').innerHTML;
+  const el = document.getElementById('printEl');
+  el.style.display = 'block';
+  el.innerHTML = `<div style="font-family:monospace;max-width:300px;margin:0 auto;padding:20px">${content}</div>`;
+  window.print();
+  setTimeout(()=>{ el.style.display='none'; el.innerHTML=''; }, 1000);
+}
+
+/* ── CALL BELL ── */
+async function callBell(message) {
+  try {
+    await fetch('/api/orders/0/call-bell', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ table:tableNo, message }),
+    });
+  } catch {}
+  document.getElementById('bellContent').style.display = 'none';
+  document.getElementById('bellSent').style.display    = 'block';
+  setTimeout(()=>{
+    closeSheet('bellSheet');
+    document.getElementById('bellContent').style.display = 'block';
+    document.getElementById('bellSent').style.display    = 'none';
+  }, 2000);
+}
+
+/* ── RATING ── */
+const ratings = { overall:0, food:0, service:0 };
+let ratingOrderId = null;
+
+function openRating(orderId) {
+  ratingOrderId = orderId;
+  document.getElementById('ratingForm').style.display   = 'block';
+  document.getElementById('ratingThanks').style.display = 'none';
+  closeSheet('ordersSheet');
+  openSheet('ratingSheet');
+}
+function rate(type, val) {
+  ratings[type] = val;
+  const isMain = type==='overall';
+  const container = document.getElementById(isMain?'bigStars':type+'Stars');
+  container.querySelectorAll(isMain?'.big-star':'.sub-star').forEach((s,i)=>s.classList.toggle('on',i<val));
+}
+async function submitRating() {
+  if (!ratings.overall) return showToast('Please select overall rating');
+  try {
+    await fetch('/api/ratings',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({table:tableNo,orderId:ratingOrderId,...ratings,comment:document.getElementById('ratingComment').value}),
+    });
+  } catch {}
+  document.getElementById('ratingForm').style.display   = 'none';
+  document.getElementById('ratingThanks').style.display = 'block';
+  setTimeout(()=>closeSheet('ratingSheet'), 2500);
+}
+
+/* ── SHEET HELPERS ── */
+function openSheet(id) {
+  document.getElementById(id).classList.add('open');
+  if (id==='cartSheet')   openCartSheet();
+  if (id==='ordersSheet') { document.getElementById('ordersNotifDot').classList.remove('show'); loadMyOrders(); }
+}
+function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
+function overlayClose(e, id) { if (e.target === document.getElementById(id)) closeSheet(id); }
+
+/* ── TOAST ── */
+let toastT;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(()=>t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>

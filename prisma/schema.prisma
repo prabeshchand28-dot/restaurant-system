@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────
+// USERS
+// ─────────────────────────────────────
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  name      String
+  role      String   // admin | manager | waiter | kitchen
+  email     String   @default("")
+  phone     String   @default("")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────
+// RESTAURANT TABLES
+// ─────────────────────────────────────
+model RestaurantTable {
+  id           Int           @id @default(autoincrement())
+  number       Int           @unique
+  capacity     Int           @default(4)
+  active       Boolean       @default(true)
+  orders       Order[]
+  guests       Guest[]
+  reservations Reservation[]
+
+  @@map("restaurant_tables")
+}
+
+// ─────────────────────────────────────
+// MENU ITEMS
+// ─────────────────────────────────────
+model MenuItem {
+  id         Int         @id @default(autoincrement())
+  name       String
+  price      Int
+  category   String
+  image      String?
+  available  Boolean     @default(true)
+  featured   Boolean     @default(false)
+  discount   Int         @default(0)
+  waitMins   Int         @default(10)
+  allergens  String[]    @default([])
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  orderItems OrderItem[]
+
+  @@map("menu_items")
+}
+
+// ─────────────────────────────────────
+// ORDERS
+// ─────────────────────────────────────
+model Order {
+  id            Int              @id @default(autoincrement())
+  tableNumber   Int
+  tableId       Int?
+  status        String           @default("Pending")
+  estimatedWait Int              @default(10)
+  guestCount    Int              @default(1)
+  notes         String           @default("")
+  createdAt     DateTime         @default(now())
+  completedAt   DateTime?
+  items         OrderItem[]
+  payment       Payment?
+  table         RestaurantTable? @relation(fields: [tableId], references: [id])
+
+  @@map("orders")
+}
+
+// ─────────────────────────────────────
+// ORDER ITEMS
+// ─────────────────────────────────────
+model OrderItem {
+  id       Int       @id @default(autoincrement())
+  orderId  Int
+  menuId   Int?
+  name     String
+  price    Int
+  qty      Int
+  order    Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem? @relation(fields: [menuId], references: [id])
+
+  @@map("order_items")
+}
+
+// ─────────────────────────────────────
+// PAYMENTS
+// ─────────────────────────────────────
+model Payment {
+  id         Int      @id @default(autoincrement())
+  orderId    Int      @unique
+  method     String
+  amount     Int
+  amountPaid Int
+  change     Int      @default(0)
+  receiptNo  String   @default("")
+  status     String   @default("Paid")
+  createdAt  DateTime @default(now())
+  order      Order    @relation(fields: [orderId], references: [id])
+
+  @@map("payments")
+}
+
+// ─────────────────────────────────────
+// GUESTS
+// ─────────────────────────────────────
+model Guest {
+  id        Int              @id @default(autoincrement())
+  tableNum  Int
+  tableId   Int?
+  count     Int
+  gender    String           @default("Mixed")
+  createdAt DateTime         @default(now())
+  tableRel  RestaurantTable? @relation(fields: [tableId], references: [id])
+
+  @@map("guests")
+}
+
+// ─────────────────────────────────────
+// RESERVATIONS
+// ─────────────────────────────────────
+model Reservation {
+  id        Int              @id @default(autoincrement())
+  name      String
+  phone     String
+  guests    Int
+  date      String
+  time      String
+  tableNo   Int?
+  note      String           @default("")
+  status    String           @default("Confirmed")
+  tableId   Int?
+  tableRel  RestaurantTable? @relation(fields: [tableId], references: [id])
+  createdAt DateTime         @default(now())
+
+  @@map("reservations")
+}
+
+// ─────────────────────────────────────
+// INVENTORY
+// ─────────────────────────────────────
+model InventoryItem {
+  id        Int      @id @default(autoincrement())
+  name      String
+  quantity  Float
+  unit      String
+  minStock  Float    @default(0)
+  category  String   @default("General")
+  updatedAt DateTime @updatedAt
+
+  @@map("inventory")
+}
+
+// ─────────────────────────────────────
+// RATINGS
+// ─────────────────────────────────────
+model Rating {
+  id        Int      @id @default(autoincrement())
+  tableNum  Int
+  orderId   Int?
+  overall   Int
+  food      Int
+  service   Int
+  comment   String   @default("")
+  createdAt DateTime @default(now())
+
+  @@map("ratings")
+}

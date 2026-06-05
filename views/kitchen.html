@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kitchen Display</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+:root {
+  --bg:#0a0a0a; --card:#111; --border:#1e1e1e;
+  --accent:#e8b86d; --text:#f0ece4; --muted:#444;
+  --red:#e05252; --green:#4caf7d; --blue:#5b8dee; --orange:#f59e0b;
+}
+body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* ── Header ── */
+header {
+  background:#111; border-bottom:1px solid var(--border);
+  padding:14px 24px; display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:100;
+}
+.logo { font-family:'Playfair Display',serif; font-size:20px; color:var(--accent); }
+.header-right { display:flex; align-items:center; gap:16px; }
+
+/* ── Stats Bar ── */
+.stats-bar {
+  display:flex; gap:12px; align-items:center;
+}
+.stat-pill {
+  padding:6px 14px; border-radius:20px; font-size:13px; font-weight:600;
+  display:flex; align-items:center; gap:6px;
+}
+.stat-pill.pending   { background:rgba(224,82,82,0.15);  color:var(--red);   border:1px solid rgba(224,82,82,0.3); }
+.stat-pill.preparing { background:rgba(91,141,238,0.15); color:var(--blue);  border:1px solid rgba(91,141,238,0.3); }
+.stat-pill.done      { background:rgba(76,175,125,0.15); color:var(--green); border:1px solid rgba(76,175,125,0.3); }
+
+/* ── Live indicator ── */
+.live-dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(76,175,125,0.4)} 50%{opacity:0.7;box-shadow:0 0 0 6px rgba(76,175,125,0)} }
+
+/* ── New Order Alert ── */
+.new-order-toast {
+  position:fixed; top:80px; left:50%; transform:translateX(-50%) translateY(-120px);
+  background:var(--accent); color:#0d0d0d; padding:14px 28px; border-radius:12px;
+  font-size:16px; font-weight:700; z-index:999; transition:transform 0.4s ease;
+  box-shadow:0 8px 32px rgba(232,184,109,0.5);
+}
+.new-order-toast.show { transform:translateX(-50%) translateY(0); }
+
+/* ── Main Layout ── */
+main { padding:20px 24px; }
+
+.section-label {
+  font-size:11px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--muted); margin-bottom:14px; display:flex; align-items:center; gap:8px;
+}
+.section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+.kitchen-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; margin-bottom:32px;
+}
+
+/* ── Order Card ── */
+.order-card {
+  background:var(--card); border:2px solid var(--border); border-radius:16px;
+  overflow:hidden; transition:border-color 0.3s; animation:cardIn 0.4s ease both;
+}
+@keyframes cardIn { from{opacity:0;transform:translateY(-12px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+.order-card.Pending   { border-color:var(--red); }
+.order-card.Preparing { border-color:var(--blue); }
+.order-card.urgent    { border-color:var(--orange); box-shadow:0 0 0 2px rgba(245,158,11,0.2); animation:urgentPulse 2s infinite; }
+@keyframes urgentPulse { 0%,100%{box-shadow:0 0 0 2px rgba(245,158,11,0.2)} 50%{box-shadow:0 0 0 6px rgba(245,158,11,0.05)} }
+
+/* Card Header */
+.card-header {
+  padding:14px 16px; display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--border);
+}
+.table-num {
+  font-family:'Playfair Display',serif; font-size:32px; font-weight:700; color:var(--accent);
+  background:rgba(232,184,109,0.1); border-radius:10px; width:56px; height:56px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.order-meta { flex:1; padding:0 12px; }
+.order-id   { font-size:11px; color:var(--muted); letter-spacing:1px; }
+.order-type { font-size:12px; color:var(--text); margin-top:2px; }
+.guest-info { font-size:11px; color:var(--muted); margin-top:2px; }
+
+/* Timer */
+.timer-block { text-align:right; }
+.timer {
+  font-size:26px; font-weight:700; font-variant-numeric:tabular-nums;
+  color:var(--green);
+}
+.timer.warning { color:var(--orange); }
+.timer.urgent  { color:var(--red); animation:blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.timer-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+
+/* Priority Badge */
+.priority-badge {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:3px 10px; border-radius:8px; font-size:11px; font-weight:700;
+  margin-top:4px; text-transform:uppercase; letter-spacing:0.5px;
+}
+.priority-badge.normal   { background:rgba(76,175,125,0.15);  color:var(--green); }
+.priority-badge.warning  { background:rgba(245,158,11,0.15);  color:var(--orange); }
+.priority-badge.urgent   { background:rgba(224,82,82,0.15);   color:var(--red); }
+
+/* Items List */
+.items-list { padding:12px 16px; }
+.item-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px 0; border-bottom:1px solid var(--border); font-size:14px;
+}
+.item-row:last-child { border-bottom:none; }
+.item-name { color:var(--text); }
+.item-qty  {
+  background:var(--accent); color:#0d0d0d; font-weight:700;
+  padding:3px 10px; border-radius:6px; font-size:12px; flex-shrink:0;
+}
+
+/* Guest breakdown */
+.guest-breakdown { padding:0 16px 12px; display:flex; gap:6px; flex-wrap:wrap; }
+.guest-chip { font-size:11px; padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.05); color:var(--muted); }
+
+/* Action Row */
+.action-row { padding:12px 16px; display:flex; gap:8px; border-top:1px solid var(--border); }
+.btn-prepare {
+  flex:1; background:var(--blue); color:#fff; border:none; border-radius:10px;
+  padding:12px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600;
+  cursor:pointer; transition:opacity 0.2s;
+}
+.btn-prepare:hover { opacity:0.85; }
+.btn-done {
+  flex:1; background:var(--green); color:#fff; border:none; border-radius:10px;
+  padding:12px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600;
+  cursor:pointer; transition:opacity 0.2s;
+}
+.btn-done:hover { opacity:0.85; }
+.btn-pay {
+  background:#1e1e1e; color:var(--accent); border:1px solid var(--accent); border-radius:10px;
+  padding:12px 14px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600;
+  cursor:pointer; transition:all 0.2s;
+}
+.btn-pay:hover { background:var(--accent); color:#0d0d0d; }
+.btn-print {
+  background:#1e1e1e; color:var(--muted); border:1px solid var(--border); border-radius:10px;
+  padding:12px 12px; font-size:16px; cursor:pointer; transition:all 0.2s;
+}
+.btn-print:hover { border-color:var(--text); color:var(--text); }
+
+/* Empty State */
+.empty-state { text-align:center; padding:80px 20px; color:var(--muted); }
+.empty-state .emoji { font-size:64px; margin-bottom:16px; display:block; }
+
+/* Controls */
+.controls { display:flex; gap:10px; align-items:center; }
+.ctrl-btn {
+  padding:7px 14px; border-radius:8px; border:1px solid var(--border);
+  background:transparent; color:var(--muted); font-family:'DM Sans',sans-serif;
+  font-size:12px; cursor:pointer; transition:all 0.2s;
+}
+.ctrl-btn:hover { border-color:var(--text); color:var(--text); }
+.ctrl-btn.active { background:var(--accent); color:#0d0d0d; border-color:var(--accent); font-weight:600; }
+
+/* Sound toggle */
+.sound-btn { font-size:18px; background:none; border:none; cursor:pointer; color:var(--muted); transition:color 0.2s; }
+.sound-btn:hover { color:var(--text); }
+
+/* Print ticket (hidden, used for printing) */
+.print-ticket { display:none; }
+@media print {
+  body * { visibility:hidden !important; }
+  .print-ticket, .print-ticket * { visibility:visible !important; }
+  .print-ticket { display:block !important; position:fixed; top:0; left:0; width:100%; font-family:monospace; font-size:14px; padding:20px; }
+}
+
+@media (max-width:600px) {
+  main { padding:12px; }
+  header { padding:12px 16px; }
+  .stats-bar { gap:6px; }
+  .stat-pill { padding:4px 10px; font-size:11px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">👨‍🍳 Kitchen</div>
+  <div class="header-right">
+    <div class="stats-bar">
+      <div class="stat-pill pending">🔴 <span id="statPending">0</span> Pending</div>
+      <div class="stat-pill preparing">🔵 <span id="statPreparing">0</span> Preparing</div>
+      <div class="stat-pill done">✅ <span id="statDone">0</span> Done</div>
+    </div>
+    <div class="controls">
+      <button class="ctrl-btn active" id="filterAll" onclick="setFilter('all', this)">All</button>
+      <button class="ctrl-btn" id="filterPending" onclick="setFilter('Pending', this)">Pending</button>
+      <button class="ctrl-btn" id="filterPreparing" onclick="setFilter('Preparing', this)">Preparing</button>
+    </div>
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()" title="Toggle sound">🔔</button>
+    <div class="live-dot"></div>
+    <a href="/dashboard" style="color:var(--muted);font-size:13px;text-decoration:none">← Dashboard</a>
+  </div>
+</header>
+
+<!-- New Order Toast -->
+<div class="new-order-toast" id="toast">🔔 New Order!</div>
+
+<main>
+  <div id="pendingSection">
+    <div class="section-label">⏳ Pending</div>
+    <div class="kitchen-grid" id="pendingGrid">
+      <div class="empty-state"><span class="emoji">✅</span>No pending orders</div>
+    </div>
+  </div>
+
+  <div id="preparingSection">
+    <div class="section-label">🔥 Preparing</div>
+    <div class="kitchen-grid" id="preparingGrid">
+      <div style="color:var(--muted);font-size:14px;padding:10px">Nothing in progress</div>
+    </div>
+  </div>
+</main>
+
+<!-- Print Ticket Template -->
+<div class="print-ticket" id="printTicket"></div>
+
+<script>
+let orders      = [];
+let soundOn     = true;
+let currentFilter = 'all';
+let timerInterval = null;
+
+// ── Audio Context for bell sound ──
+function playBell() {
+  if (!soundOn) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.start(); osc.stop(ctx.currentTime + 0.5);
+    // Double bell
+    setTimeout(() => {
+      const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+      o2.connect(g2); g2.connect(ctx.destination);
+      o2.frequency.setValueAtTime(880, ctx.currentTime);
+      o2.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.3);
+      g2.gain.setValueAtTime(0.3, ctx.currentTime);
+      g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      o2.start(); o2.stop(ctx.currentTime + 0.5);
+    }, 400);
+  } catch(e) {}
+}
+
+function toggleSound() {
+  soundOn = !soundOn;
+  document.getElementById('soundBtn').textContent = soundOn ? '🔔' : '🔕';
+}
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Timer helpers ──
+function getElapsedSecs(time) {
+  return Math.floor((Date.now() - new Date(time)) / 1000);
+}
+
+function formatTimer(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function getPriority(secs) {
+  if (secs >= 900) return 'urgent';   // 15+ min
+  if (secs >= 480) return 'warning';  // 8+ min
+  return 'normal';
+}
+
+function getPriorityLabel(priority) {
+  if (priority === 'urgent')  return { icon:'🚨', text:'URGENT', cls:'urgent' };
+  if (priority === 'warning') return { icon:'⚠️', text:'DELAYED', cls:'warning' };
+  return { icon:'✅', text:'ON TIME', cls:'normal' };
+}
+
+// ── Render ──
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function render() {
+  const active = orders.filter(o => o.status === 'Pending' || o.status === 'Preparing');
+  const pending   = active.filter(o => o.status === 'Pending');
+  const preparing = active.filter(o => o.status === 'Preparing');
+
+  // Stats
+  document.getElementById('statPending').textContent   = pending.length;
+  document.getElementById('statPreparing').textContent = preparing.length;
+  document.getElementById('statDone').textContent      = orders.filter(o => o.status === 'Completed').length;
+
+  // Filter
+  let showPending   = currentFilter === 'all' || currentFilter === 'Pending';
+  let showPreparing = currentFilter === 'all' || currentFilter === 'Preparing';
+
+  document.getElementById('pendingSection').style.display   = showPending   ? '' : 'none';
+  document.getElementById('preparingSection').style.display = showPreparing ? '' : 'none';
+
+  // Render pending
+  document.getElementById('pendingGrid').innerHTML = pending.length
+    ? pending.map(renderCard).join('')
+    : '<div class="empty-state"><span class="emoji">✅</span>No pending orders</div>';
+
+  // Render preparing
+  document.getElementById('preparingGrid').innerHTML = preparing.length
+    ? preparing.map(renderCard).join('')
+    : '<div style="color:var(--muted);font-size:14px;padding:10px">Nothing in progress</div>';
+}
+
+function renderCard(order) {
+  const secs     = getElapsedSecs(order.time);
+  const priority = getPriority(secs);
+  const pLabel   = getPriorityLabel(priority);
+  const timerCls = priority === 'urgent' ? 'urgent' : priority === 'warning' ? 'warning' : '';
+  const cardCls  = order.status === 'Pending' ? 'Pending' : 'Preparing';
+  const urgentCls = priority === 'urgent' ? ' urgent' : '';
+
+  // Items
+  const itemsHTML = order.items.map(i =>
+    `<div class="item-row">
+      <span class="item-name">${i.name}</span>
+      <span class="item-qty">×${i.qty}</span>
+    </div>`
+  ).join('');
+
+  // Guest breakdown
+  let guestHTML = '';
+  if (order.guests) {
+    const g = order.guests;
+    const parts = [];
+    if (typeof g === 'object' && g.male !== undefined) {
+      if (g.male)     parts.push(`👨×${g.male}`);
+      if (g.female)   parts.push(`👩×${g.female}`);
+      if (g.other)    parts.push(`🧑×${g.other}`);
+      if (g.children) parts.push(`👧×${g.children}`);
+    } else if (g.count) {
+      parts.push(`👥 ${g.count}`);
+    }
+    if (parts.length) {
+      guestHTML = `<div class="guest-breakdown">${parts.map(p => `<span class="guest-chip">${p}</span>`).join('')}</div>`;
+    }
+  }
+
+  // Estimated wait
+  const waitStr = order.estimatedWait ? `Est: ${order.estimatedWait}min` : '';
+
+  // Actions
+  const actions = order.status === 'Pending'
+    ? `<button class="btn-prepare" onclick="updateStatus(${order.id},'Preparing')">🔥 Start Preparing</button>
+       <button class="btn-print" onclick="printTicket(${order.id})" title="Print ticket">🖨️</button>`
+    : `<button class="btn-done" onclick="updateStatus(${order.id},'Completed')">✅ Done</button>
+       <button class="btn-pay" onclick="goToPayment(${order.id})">💳</button>
+       <button class="btn-print" onclick="printTicket(${order.id})" title="Print ticket">🖨️</button>`;
+
+  return `<div class="order-card ${cardCls}${urgentCls}" id="card-${order.id}">
+    <div class="card-header">
+      <div class="table-num">${order.table}</div>
+      <div class="order-meta">
+        <div class="order-id">ORDER #${order.id}</div>
+        <div class="order-type">${order.status === 'Pending' ? '⏳ Waiting' : '🔥 Cooking'}</div>
+        <div class="guest-info">${waitStr}</div>
+        <span class="priority-badge ${pLabel.cls}">${pLabel.icon} ${pLabel.text}</span>
+      </div>
+      <div class="timer-block">
+        <div class="timer ${timerCls}" id="timer-${order.id}">${formatTimer(secs)}</div>
+        <div class="timer-label">elapsed</div>
+      </div>
+    </div>
+    ${guestHTML}
+    <div class="items-list">${itemsHTML}</div>
+    <div class="action-row">${actions}</div>
+  </div>`;
+}
+
+// ── Live timer tick ──
+function startTimers() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    const active = orders.filter(o => o.status === 'Pending' || o.status === 'Preparing');
+    active.forEach(order => {
+      const el = document.getElementById(`timer-${order.id}`);
+      if (!el) return;
+      const secs     = getElapsedSecs(order.time);
+      const priority = getPriority(secs);
+      el.textContent = formatTimer(secs);
+      el.className   = `timer ${priority === 'urgent' ? 'urgent' : priority === 'warning' ? 'warning' : ''}`;
+      // Update card urgency
+      const card = document.getElementById(`card-${order.id}`);
+      if (card && priority === 'urgent' && !card.classList.contains('urgent')) {
+        card.classList.add('urgent');
+      }
+      // Update priority badge
+      const badge = card?.querySelector('.priority-badge');
+      if (badge) {
+        const pLabel = getPriorityLabel(priority);
+        badge.className = `priority-badge ${pLabel.cls}`;
+        badge.textContent = `${pLabel.icon} ${pLabel.text}`;
+      }
+    });
+  }, 1000);
+}
+
+// ── API ──
+async function loadOrders() {
+  try {
+    const res = await fetch('/api/orders');
+    const all = await res.json();
+    const prev = orders.filter(o => o.status === 'Pending' || o.status === 'Preparing').length;
+    orders = all;
+    const curr = orders.filter(o => o.status === 'Pending' || o.status === 'Preparing').length;
+    if (curr > prev && prev >= 0 && document.visibilityState !== undefined) {
+      // New order detected via poll
+    }
+    render();
+  } catch(e) { console.error(e); }
+}
+
+async function updateStatus(id, status) {
+  await fetch(`/api/orders/${id}/status`, {
+    method:'PATCH', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ status })
+  });
+  await loadOrders();
+}
+
+function goToPayment(orderId) {
+  window.location.href = `/payment?orderId=${orderId}`;
+}
+
+// ── Print Ticket ──
+function printTicket(orderId) {
+  const order = orders.find(o => o.id === orderId);
+  if (!order) return;
+  const time  = new Date(order.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  const items = order.items.map(i => `  ${i.name.padEnd(20)} x${i.qty}`).join('\n');
+  document.getElementById('printTicket').innerHTML = `
+    <div style="text-align:center;border-bottom:2px dashed #000;padding-bottom:12px;margin-bottom:12px">
+      <div style="font-size:20px;font-weight:bold">🍽️ KITCHEN TICKET</div>
+      <div>Table: <strong>${order.table}</strong> &nbsp;|&nbsp; Order #${order.id}</div>
+      <div>Time: ${time}</div>
+    </div>
+    <pre style="font-size:14px;line-height:2">${items}</pre>
+    <div style="border-top:2px dashed #000;margin-top:12px;padding-top:8px;font-size:12px">
+      Status: ${order.status} | Est. Wait: ${order.estimatedWait || '?'} min
+    </div>`;
+  window.print();
+}
+
+// ── SSE — Real-time ──
+function connectSSE() {
+  const es = new EventSource('/api/dashboard/events');
+
+  // Named events (for kitchen)
+  es.addEventListener('new_order', (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      playBell();
+      showToast(`🔔 New Order — Table ${d.order?.table || '?'}!`);
+      loadOrders();
+    } catch {}
+  });
+
+  es.addEventListener('order_update', () => loadOrders());
+
+  es.addEventListener('call_bell', (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      playBell();
+      showToast(`🔔 Table ${d.table}: ${d.message}`);
+    } catch {}
+  });
+
+  // Unnamed events fallback (onmessage)
+  es.onmessage = (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      if (d.type === 'new_order')    { playBell(); showToast(`🔔 New Order — Table ${d.order?.table}!`); loadOrders(); }
+      if (d.type === 'order_update') loadOrders();
+      if (d.type === 'call_bell')    { playBell(); showToast(`🔔 Table ${d.table}: ${d.message}`); }
+    } catch {}
+  };
+
+  es.onerror = () => {
+    es.close();
+    setTimeout(connectSSE, 5000); // reconnect after 5s
+  };
+}
+
+// ── Print Ticket (improved) ──
+function printTicket(orderId) {
+  const order = orders.find(o => o.id === orderId);
+  if (!order) return;
+  const time  = new Date(order.time).toLocaleString();
+  const items = order.items.map(i =>
+    `<tr><td style="padding:4px 8px">${i.name}</td><td style="padding:4px 8px;text-align:center">×${i.qty}</td></tr>`
+  ).join('');
+  document.getElementById('printTicket').innerHTML = `
+    <div style="font-family:monospace;max-width:300px;margin:0 auto;padding:20px;color:#000">
+      <div style="text-align:center;border-bottom:2px dashed #000;padding-bottom:12px;margin-bottom:12px">
+        <div style="font-size:22px;font-weight:900">🍽️ KITCHEN TICKET</div>
+        <div style="font-size:28px;font-weight:900;margin:6px 0">TABLE ${order.table}</div>
+        <div>Order #${String(order.id).padStart(5,'0')}</div>
+        <div style="font-size:12px;color:#555;margin-top:4px">${time}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:16px">${items}</table>
+      <div style="border-top:2px dashed #000;margin-top:12px;padding-top:8px;font-size:12px">
+        <div>Status: <strong>${order.status}</strong></div>
+        <div>Est. Wait: <strong>${order.estimatedWait || '?'} min</strong></div>
+        <div>Guests: ${order.guests || '—'}</div>
+      </div>
+    </div>`;
+  window.print();
+}
+
+// ── Init ──
+loadOrders();
+startTimers();
+connectSSE();
+// Fallback poll every 30s
+setInterval(loadOrders, 30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reports</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<header>
+  <div class="logo">📊 Reports</div>
+  <div class="header-right">
+    <a href="/dashboard" style="color:var(--muted);font-size:13px;text-decoration:none">← Dashboard</a>
+  </div>
+</header>
+<main style="max-width:1100px;margin:0 auto;padding:32px 24px">
+  <div class="stats-grid" style="margin-bottom:24px">
+    <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value" id="repRevenue">—</div></div>
+    <div class="stat-card"><div class="stat-label">Total Orders</div><div class="stat-value" id="repOrders">—</div></div>
+    <div class="stat-card"><div class="stat-label">Total Guests</div><div class="stat-value" id="repGuests">—</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+    <div style="background:var(--dark-card);border:1px solid var(--dark-border);border-radius:14px;padding:24px">
+      <div class="stat-label" style="margin-bottom:16px">🏆 Top Selling Items</div>
+      <div id="topItems"></div>
+    </div>
+    <div style="background:var(--dark-card);border:1px solid var(--dark-border);border-radius:14px;padding:24px">
+      <div class="stat-label" style="margin-bottom:16px">👥 Guest Breakdown</div>
+      <div id="guestBreakdown"></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+    <div style="background:var(--dark-card);border:1px solid var(--dark-border);border-radius:14px;padding:24px">
+      <div class="stat-label" style="margin-bottom:16px">📋 Orders by Status</div>
+      <div id="ordersByStatus"></div>
+    </div>
+    <div style="background:var(--dark-card);border:1px solid var(--dark-border);border-radius:14px;padding:24px">
+      <div class="stat-label" style="margin-bottom:16px">💳 Payment Methods</div>
+      <div id="paymentBreakdown"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+async function loadReports() {
+  const res  = await fetch('/api/reports/summary');
+  const data = await res.json();
+
+  document.getElementById('repRevenue').textContent = `Rs. ${data.stats.revenue}`;
+  document.getElementById('repOrders').textContent  = data.stats.totalOrders;
+  document.getElementById('repGuests').textContent  = data.stats.totalGuests;
+
+  const row = (label, val, color='var(--accent)') =>
+    `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--dark-border);font-size:14px">
+      <span>${label}</span><span style="font-weight:600;color:${color}">${val}</span>
+    </div>`;
+
+  document.getElementById('topItems').innerHTML = data.topItems.length
+    ? data.topItems.map((i,n) => row(`${n+1}. ${i.name}`, `${i.qty} sold`)).join('')
+    : '<p style="color:var(--muted)">No data</p>';
+
+  document.getElementById('guestBreakdown').innerHTML = Object.keys(data.guestBreakdown).length
+    ? Object.entries(data.guestBreakdown).map(([g,c]) => row(`${g==='Male'?'👨':g==='Female'?'👩':'🧑'} ${g}`, `${c} guests`)).join('')
+    : '<p style="color:var(--muted)">No data</p>';
+
+  document.getElementById('ordersByStatus').innerHTML =
+    row('⏳ Pending',   data.byStatus.Pending,   '#e05252') +
+    row('🔥 Preparing', data.byStatus.Preparing, '#5b8dee') +
+    row('✅ Completed', data.byStatus.Completed, '#4caf7d') +
+    row('❌ Cancelled', data.byStatus.Cancelled, 'var(--muted)');
+
+  document.getElementById('paymentBreakdown').innerHTML = Object.keys(data.paymentBreakdown).length
+    ? Object.entries(data.paymentBreakdown).map(([m,a]) => row(m, `Rs. ${a}`)).join('')
+    : '<p style="color:var(--muted)">No payments yet</p>';
+}
+
+loadReports();
+setInterval(loadReports, 30000);
+</script>
+</body>
+</html>
