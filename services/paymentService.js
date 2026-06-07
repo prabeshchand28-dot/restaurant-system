@@ -1,36 +1,32 @@
-// services/paymentService.js
-const db = require('../config/database');
-const { calcOrderTotal, generateReceiptNo } = require('../utils/helpers');
+// services/paymentService.js — Prisma-based
+const prisma = require('../config/prisma');
+const { generateReceiptNo } = require('../utils/helpers');
 const { generateReceiptHTML } = require('../utils/receiptGenerator');
 
-function processPayment({ orderId, method, amountPaid }) {
-  const order = db.getOrderById(orderId);
+async function processPayment({ orderId, method, amountPaid, amount: overrideAmount }) {
+  const order = await prisma.order.findUnique({ where: { id: parseInt(orderId) }, include: { items: true } });
   if (!order) throw new Error('Order not found');
 
-  const amount   = calcOrderTotal(order.items);
-  const change   = amountPaid - amount;
-  const receiptNo = generateReceiptNo();
+  const baseAmount = order.items.reduce((s, i) => s + i.price * i.qty, 0);
+  const amount     = overrideAmount ? Math.round(parseFloat(overrideAmount)) : baseAmount;
+  const change     = Math.round(parseFloat(amountPaid)) - amount;
+  const receiptNo  = generateReceiptNo();
 
-  const payment = db.addPayment({
-    orderId, method, amount, amountPaid, change, receiptNo,
-    status: 'Paid'
+  const payment = await prisma.payment.create({
+    data: { orderId: parseInt(orderId), method, amount, amountPaid: Math.round(parseFloat(amountPaid)), change: Math.max(0, change), receiptNo, status: 'Paid' },
   });
 
-  // Mark order as completed
-  db.updateOrderStatus(orderId, 'Completed');
+  await prisma.order.update({ where: { id: parseInt(orderId) }, data: { status: 'Completed', completedAt: new Date() } });
 
-  const receiptHtml = generateReceiptHTML(order, payment);
-
-  return { payment, order, receiptHtml, change };
+  const shaped = { id: order.id, table: order.tableNumber, items: order.items.map(i => ({ name: i.name, qty: i.qty, price: i.price })), time: order.createdAt };
+  const receiptHtml = generateReceiptHTML(shaped, payment);
+  return { payment, order: shaped, receiptHtml, change: Math.max(0, change) };
 }
 
-function getPaymentSummary() {
-  const payments = db.getPayments();
+async function getPaymentSummary() {
+  const payments = await prisma.payment.findMany();
   const total    = payments.reduce((s, p) => s + p.amount, 0);
-  const byMethod = payments.reduce((acc, p) => {
-    acc[p.method] = (acc[p.method] || 0) + p.amount;
-    return acc;
-  }, {});
+  const byMethod = payments.reduce((acc, p) => { acc[p.method] = (acc[p.method]||0) + p.amount; return acc; }, {});
   return { total, count: payments.length, byMethod };
 }
 

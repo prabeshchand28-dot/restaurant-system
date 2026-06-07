@@ -92,6 +92,17 @@ body{display:flex;flex-direction:column;overflow:hidden}
   margin-top:12px;transition:background .15s;
 }
 .tc-pay-btn:hover{background:var(--navy)}
+/* Bill requested badge */
+.bill-req-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:#fef3c7;color:#b45309;border:1.5px solid #fbbf24;
+  border-radius:20px;padding:4px 10px;font-size:11px;font-weight:800;
+  margin-bottom:6px;animation:pulse-badge 1.5s ease-in-out infinite;
+}
+@keyframes pulse-badge{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.4)}50%{box-shadow:0 0 0 6px rgba(251,191,36,0)}}
+.table-card.bill-requested{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.25)}
+.tc-pay-btn.urgent{background:linear-gradient(135deg,#b45309,#f59e0b);animation:pulse-btn 1.2s ease-in-out infinite}
+@keyframes pulse-btn{0%,100%{opacity:1}50%{opacity:.8}}
 .tc-free{font-size:13px;color:var(--muted);text-align:center;padding:10px 0}
 .no-orders{text-align:center;padding:60px 20px;color:var(--muted);grid-column:1/-1}
 .no-orders .ico{font-size:48px;margin-bottom:10px}
@@ -358,7 +369,8 @@ body{display:flex;flex-direction:column;overflow:hidden}
       <span style="font-size:13px;font-weight:700" id="posUser">Admin</span>
     </div>
     <div class="pos-topbar-right">
-      <button class="pos-nav-btn green-btn" onclick="openSuccess()">実行 Execute</button>
+      <a class="pos-nav-btn" href="/kitchen">👨‍🍳 Kitchen</a>
+      <a class="pos-nav-btn" href="/dashboard">📊 Dashboard</a>
     </div>
   </div>
 
@@ -397,8 +409,8 @@ body{display:flex;flex-direction:column;overflow:hidden}
           <div class="pos-tax-info">Incl. 13% VAT</div>
         </div>
         <div style="margin-left:auto;text-align:right">
-          <div class="pos-total-amount" id="posTotal">Rs 0</div>
-          <div class="pos-tax-info">VAT: Rs <span id="posVat">0</span> · Per person: Rs <span id="posPerPerson">0</span></div>
+          <div class="pos-total-amount" id="posTotal">रू 0</div>
+          <div class="pos-tax-info">VAT: रू <span id="posVat">0</span> · Per person: रू <span id="posPerPerson">0</span></div>
         </div>
       </div>
 
@@ -406,7 +418,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
       <div class="pos-orders-section">
         <div class="pos-section-header" onclick="toggleItems()">
           <span>注文商品 Ordered Items</span>
-          <span id="posItemSummary" style="font-size:12px;font-weight:400">0 items · Rs 0 <span id="itemsToggle">▼</span></span>
+          <span id="posItemSummary" style="font-size:12px;font-weight:400">0 items · रू 0 <span id="itemsToggle">▼</span></span>
         </div>
         <div class="pos-items-list" id="posItemsList"></div>
       </div>
@@ -431,7 +443,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
         <div class="pos-extras-header">チャージ Charges</div>
         <table class="pos-extras-table" style="width:100%">
           <tbody id="chargeRows">
-            <tr><td>Service Charge</td><td id="serviceChargeVal">0% (Rs 0)</td></tr>
+            <tr><td>Service Charge</td><td id="serviceChargeVal">0% (रू 0)</td></tr>
           </tbody>
         </table>
       </div>
@@ -441,11 +453,11 @@ body{display:flex;flex-direction:column;overflow:hidden}
 
       <!-- Summary -->
       <div class="pos-summary-bottom">
-        <div class="pos-sum-row"><span>Subtotal</span><span id="sumSubtotal">Rs 0</span></div>
-        <div class="pos-sum-row"><span>VAT (13%)</span><span id="sumVat">Rs 0</span></div>
-        <div class="pos-sum-row" id="sumDiscRow" style="display:none;color:#8b5cf6"><span>Discount</span><span id="sumDisc">− Rs 0</span></div>
-        <div class="pos-sum-row" id="sumServiceRow" style="display:none"><span>Service Charge</span><span id="sumService">Rs 0</span></div>
-        <div class="pos-sum-row total-row"><span>TOTAL</span><span id="sumTotal">Rs 0</span></div>
+        <div class="pos-sum-row"><span>Subtotal</span><span id="sumSubtotal">रू 0</span></div>
+        <div class="pos-sum-row"><span>VAT (13%)</span><span id="sumVat">रू 0</span></div>
+        <div class="pos-sum-row" id="sumDiscRow" style="display:none;color:#8b5cf6"><span>Discount</span><span id="sumDisc">− रू 0</span></div>
+        <div class="pos-sum-row" id="sumServiceRow" style="display:none"><span>Service Charge</span><span id="sumService">रू 0</span></div>
+        <div class="pos-sum-row total-row"><span>TOTAL</span><span id="sumTotal">रू 0</span></div>
       </div>
 
       <!-- Payment method -->
@@ -466,27 +478,27 @@ body{display:flex;flex-direction:column;overflow:hidden}
       <!-- Payment summary -->
       <div class="pos-calc-summary">
         <div class="pos-calc-row">
-          <span class="cr-label">合計 Total</span>
-          <span class="cr-val" id="calcTotal">Rs 0</span>
+          <span class="cr-label">जम्मा / Total</span>
+          <span class="cr-val" id="calcTotal">रू 0</span>
         </div>
         <div class="pos-calc-row cr-received">
-          <span class="cr-label">お預り Received</span>
-          <span class="cr-val" id="calcReceived">Rs 0</span>
+          <span class="cr-label">प्राप्त / Received</span>
+          <span class="cr-val" id="calcReceived">रू 0</span>
         </div>
         <div class="pos-calc-row cr-change">
-          <span class="cr-label">お釣り Change</span>
-          <span class="cr-val" id="calcChange">Rs 0</span>
+          <span class="cr-label">फिर्ता / Change</span>
+          <span class="cr-val" id="calcChange">रू 0</span>
         </div>
         <div class="pos-method-row">
           <span id="calcMethodLabel">💵 Cash</span>
-          <span id="calcMethodAmount" style="font-weight:900">Rs 0</span>
+          <span id="calcMethodAmount" style="font-weight:900">रू 0</span>
         </div>
       </div>
 
       <!-- Display -->
       <div class="pos-display">
-        <div class="pos-display-hint">Enter amount received</div>
-        <div id="numDisplay">Rs 0</div>
+        <div class="pos-display-hint">प्राप्त रकम हाल्नुस् / Enter amount received</div>
+        <div id="numDisplay">रू 0</div>
       </div>
 
       <!-- Numpad -->
@@ -504,22 +516,23 @@ body{display:flex;flex-direction:column;overflow:hidden}
         <button class="nk" onclick="numPress('1')">1</button>
         <button class="nk" onclick="numPress('2')">2</button>
         <button class="nk" onclick="numPress('3')">3</button>
-        <button class="nk kei span2" onclick="numConfirm()">計<br>Calc</button>
+        <button class="nk kei span2" onclick="numConfirm()">✓<br>Confirm</button>
 
         <button class="nk" onclick="numPress('0')">0</button>
         <button class="nk zero2" onclick="numPress('00')">00</button>
-        <button class="nk wan" onclick="numWan()">万<br>10k</button>
+        <button class="nk wan" onclick="numWan()">+१०,०००</button>
       </div>
     </div>
   </div>
 
   <!-- Bottom bar -->
   <div class="pos-bottom">
-    <button class="pos-back-btn" onclick="backToList()">← 接客一覧に戻る  Back to List</button>
+    <button class="pos-back-btn" onclick="backToList()">← टेबल सूचीमा फर्कनुस्</button>
     <div style="display:flex;gap:10px;align-items:center">
-      <span id="posReadyMsg" style="font-size:12px;color:rgba(255,255,255,.5)">Select payment method</span>
+      <button class="pos-back-btn" onclick="printBill()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.4)">🖨️ बिल प्रिन्ट</button>
+      <span id="posReadyMsg" style="font-size:12px;color:rgba(255,255,255,.5)">भुक्तानी विधि छान्नुस्</span>
       <button class="pos-execute-btn" id="executeBtn" onclick="executePayment()" disabled>
-        ▲ 実行  Execute
+        ✓ भुक्तानी गर्नुस्
       </button>
     </div>
   </div>
@@ -550,11 +563,22 @@ body{display:flex;flex-direction:column;overflow:hidden}
 <div id="printEl" style="display:none"></div>
 
 <script>
+/* ══ AUTH GUARD — admin / manager only ══ */
+(function() {
+  const t = localStorage.getItem('token');
+  const u = JSON.parse(localStorage.getItem('user') || '{}');
+  if (!t || !['admin', 'manager'].includes(u.role)) {
+    window.location.replace('/login');
+  }
+})();
+
 /* ══ GLOBALS ══ */
 const token   = localStorage.getItem('token');
 const user    = JSON.parse(localStorage.getItem('user') || '{}');
 let allOrders = [];
 let allTables = [];
+// Tables that have requested bill (cleared on payment)
+const billRequestedTables = new Set();
 let currentOrder   = null;
 let payMethod      = 'Cash';
 let numInput       = '';
@@ -605,7 +629,7 @@ function renderTableGrid() {
   const totalUnpaid = active.reduce((s,o)=>s+o.items.reduce((ss,i)=>ss+i.price*i.qty,0),0);
   document.getElementById('selStats').innerHTML = `
     <div class="sel-stat"><div class="sv">${active.length}</div><div class="sl">Active Orders</div></div>
-    <div class="sel-stat"><div class="sv">Rs ${totalUnpaid.toLocaleString()}</div><div class="sl">Pending Revenue</div></div>
+    <div class="sel-stat"><div class="sv">रू ${totalUnpaid.toLocaleString()}</div><div class="sl">Pending Revenue</div></div>
     <div class="sel-stat"><div class="sv">${allTables.length}</div><div class="sl">Total Tables</div></div>
     <div class="sel-stat"><div class="sv">${paid}</div><div class="sl">Paid Today</div></div>
   `;
@@ -616,9 +640,18 @@ function renderTableGrid() {
     return;
   }
 
-  grid.innerHTML = allTables.map(tableNo => {
+  // Sort: bill-requested tables first, then occupied, then free
+  const sorted = [...allTables].sort((a, b) => {
+    const aReq = billRequestedTables.has(a) ? 0 : (active.some(o=>o.table===a) ? 1 : 2);
+    const bReq = billRequestedTables.has(b) ? 0 : (active.some(o=>o.table===b) ? 1 : 2);
+    return aReq - bReq;
+  });
+
+  grid.innerHTML = sorted.map(tableNo => {
     const tableOrders = active.filter(o => o.table === tableNo);
     const occupied    = tableOrders.length > 0;
+    const billReq     = billRequestedTables.has(tableNo);
+
     if (!occupied) {
       return `<div class="table-card">
         <div class="tc-header">
@@ -628,20 +661,22 @@ function renderTableGrid() {
         <div class="tc-free">No active orders</div>
       </div>`;
     }
-    // Show the latest/first active order
     const o = tableOrders[0];
     const total = o.items.reduce((s,i)=>s+i.price*i.qty,0);
     const itemsText = o.items.slice(0,3).map(i=>`${i.name} ×${i.qty}`).join(', ') + (o.items.length>3?'...':'');
-    return `<div class="table-card occupied">
+    return `<div class="table-card occupied ${billReq ? 'bill-requested' : ''}">
       <div class="tc-header">
         <div class="tc-table-no">${tableNo}</div>
         <span class="tc-status ${o.status}">${o.status}</span>
       </div>
+      ${billReq ? `<div class="bill-req-badge">🔔 Bill Requested!</div>` : ''}
       <div class="tc-meta">👥 ${o.guests||'—'} guests · ${new Date(o.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
       <div class="tc-items">${itemsText}</div>
-      <div class="tc-total">Rs ${total.toLocaleString()}</div>
+      <div class="tc-total">रू ${total.toLocaleString()}</div>
       <div class="tc-order-id">Order #${String(o.id).padStart(5,'0')} ${tableOrders.length>1?`(+${tableOrders.length-1} more)`:''}</div>
-      <button class="tc-pay-btn" onclick="openPOS(${tableNo})">💳 Process Payment</button>
+      <button class="tc-pay-btn ${billReq ? 'urgent' : ''}" onclick="openPOS(${tableNo})">
+        ${billReq ? '🔔 Pay Now — Bill Requested' : '💳 Process Payment'}
+      </button>
     </div>`;
   }).join('');
 }
@@ -725,34 +760,34 @@ function recalc() {
   const perPerson = o.guests > 0 ? Math.round(finalTotal / o.guests) : finalTotal;
 
   // Update UI
-  document.getElementById('posTotal').textContent     = `Rs ${finalTotal.toLocaleString()}`;
+  document.getElementById('posTotal').textContent     = `रू ${finalTotal.toLocaleString()}`;
   document.getElementById('posVat').textContent       = vatAmount.toLocaleString();
   document.getElementById('posPerPerson').textContent = perPerson.toLocaleString();
-  document.getElementById('calcTotal').textContent    = `Rs ${finalTotal.toLocaleString()}`;
+  document.getElementById('calcTotal').textContent    = `रू ${finalTotal.toLocaleString()}`;
 
   // Summary bottom
-  document.getElementById('sumSubtotal').textContent  = `Rs ${subtotal.toLocaleString()}`;
-  document.getElementById('sumVat').textContent       = `Rs ${vatAmount.toLocaleString()}`;
+  document.getElementById('sumSubtotal').textContent  = `रू ${subtotal.toLocaleString()}`;
+  document.getElementById('sumVat').textContent       = `रू ${vatAmount.toLocaleString()}`;
   if (disc > 0) {
     document.getElementById('sumDiscRow').style.display = 'flex';
-    document.getElementById('sumDisc').textContent = `− Rs ${disc.toLocaleString()}`;
+    document.getElementById('sumDisc').textContent = `− रू ${disc.toLocaleString()}`;
   } else {
     document.getElementById('sumDiscRow').style.display = 'none';
   }
   if (serviceChgAmt > 0) {
     document.getElementById('sumServiceRow').style.display = 'flex';
-    document.getElementById('sumService').textContent = `Rs ${serviceChgAmt.toLocaleString()}`;
+    document.getElementById('sumService').textContent = `रू ${serviceChgAmt.toLocaleString()}`;
   }
-  document.getElementById('sumTotal').textContent = `Rs ${finalTotal.toLocaleString()}`;
+  document.getElementById('sumTotal').textContent = `रू ${finalTotal.toLocaleString()}`;
 
   // Item summary
   const totalQty = currentOrder.items.reduce((s,i)=>s+i.qty,0);
   document.getElementById('posItemSummary').innerHTML =
-    `${totalQty} items · Rs ${subtotal.toLocaleString()} <span id="itemsToggle">▼</span>`;
+    `${totalQty} items · रू ${subtotal.toLocaleString()} <span id="itemsToggle">▼</span>`;
 
   // Service charge row
   document.getElementById('serviceChargeVal').textContent =
-    `${serviceChgPct}% (Rs ${serviceChgAmt.toLocaleString()})`;
+    `${serviceChgPct}% (रू ${serviceChgAmt.toLocaleString()})`;
 
   // Recalc change if amount entered
   if (amountReceived > 0) updateChangeDisplay();
@@ -769,7 +804,7 @@ function renderItems() {
     `<div class="pos-item-row">
       <span class="pos-item-qty">×${i.qty}</span>
       <span class="pos-item-name">${i.name}</span>
-      <span class="pos-item-price">Rs ${(i.price*i.qty).toLocaleString()}</span>
+      <span class="pos-item-price">रू ${(i.price*i.qty).toLocaleString()}</span>
     </div>`
   ).join('');
 }
@@ -780,6 +815,12 @@ function setMethod(m, btn) {
   document.querySelectorAll('.pos-method-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('calcMethodLabel').textContent = btn.textContent.trim();
+  // For non-cash methods auto-set amount = total
+  if (m !== 'Cash') {
+    amountReceived = finalTotal;
+    numInput = finalTotal.toString();
+    updateDisplay();
+  }
   updateChangeDisplay();
   updateExecuteBtn();
 }
@@ -791,7 +832,14 @@ function numPress(val) {
   numInput += val;
   updateDisplay();
 }
-function numAC() { numInput = ''; amountReceived = 0; updateDisplay(); updateChangeDisplay(); }
+function numAC() {
+  numInput = ''; amountReceived = 0;
+  document.getElementById('calcReceived').textContent = 'रू 0';
+  document.getElementById('calcChange').textContent   = 'रू 0';
+  document.getElementById('calcChange').style.color   = 'var(--green)';
+  updateDisplay();
+  updateExecuteBtn();
+}
 function numC()  { numInput = numInput.slice(0,-1); updateDisplay(); }
 function numWan(){ numInput = (parseInt(numInput||0)+10000).toString(); updateDisplay(); }
 function numConfirm() {
@@ -802,16 +850,22 @@ function numConfirm() {
 
 function updateDisplay() {
   const val = parseInt(numInput || '0');
-  document.getElementById('numDisplay').textContent = `Rs ${val.toLocaleString()}`;
-  document.getElementById('calcMethodAmount').textContent = `Rs ${val.toLocaleString()}`;
+  document.getElementById('numDisplay').textContent = `रू ${val.toLocaleString()}`;
+  document.getElementById('calcMethodAmount').textContent = `रू ${val.toLocaleString()}`;
+  // Real-time change calculation as user types
+  if (numInput) {
+    amountReceived = val;
+    updateChangeDisplay();
+    updateExecuteBtn();
+  }
 }
 
 function updateChangeDisplay() {
   const received = amountReceived || parseInt(numInput || '0');
   const change   = received - finalTotal;
-  document.getElementById('calcReceived').textContent = `Rs ${received.toLocaleString()}`;
+  document.getElementById('calcReceived').textContent = `रू ${received.toLocaleString()}`;
   document.getElementById('calcChange').textContent   = change >= 0
-    ? `Rs ${change.toLocaleString()}` : `Rs ${Math.abs(change).toLocaleString()} short`;
+    ? `रू ${change.toLocaleString()}` : `रू ${Math.abs(change).toLocaleString()} short`;
   document.getElementById('calcChange').style.color = change >= 0 ? 'var(--green)' : 'var(--red)';
   updateExecuteBtn();
 }
@@ -827,12 +881,12 @@ function updateExecuteBtn() {
   }
   if (isCash && received < finalTotal) {
     btn.disabled = true;
-    msg.textContent = `Need Rs ${(finalTotal-received).toLocaleString()} more`;
+    msg.textContent = `Need रू ${(finalTotal-received).toLocaleString()} more`;
     return;
   }
   btn.disabled = false;
   msg.textContent = isCash
-    ? `Change: Rs ${Math.max(0,received-finalTotal).toLocaleString()}`
+    ? `Change: रू ${Math.max(0,received-finalTotal).toLocaleString()}`
     : `Ready to process ${payMethod}`;
 }
 
@@ -864,25 +918,39 @@ async function executePayment() {
   showLoading('Processing payment...');
 
   try {
-    // Process payment for all orders in the bill
-    const results = [];
-    for (const orderId of currentOrder.ids) {
-      const r = await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json', ...authH() },
-        body: JSON.stringify({ orderId, method: payMethod, amountPaid: amtPaid }),
-      });
-      const d = await r.json();
-      results.push(d);
+    const ids = currentOrder.ids;
+
+    // Primary order: create payment record with VAT-inclusive finalTotal
+    const primaryRes = await fetch('/api/payments', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', ...authH() },
+      body: JSON.stringify({
+        orderId:   ids[0],
+        method:    payMethod,
+        amount:    finalTotal,   // VAT + discounts included
+        amountPaid: amtPaid,
+      }),
+    });
+    const primaryData = await primaryRes.json();
+
+    // Companion orders (if table had multiple orders): just mark Completed
+    if (ids.length > 1) {
+      await Promise.all(ids.slice(1).map(id =>
+        fetch(`/api/orders/${id}/status`, {
+          method:  'PATCH',
+          headers: { 'Content-Type':'application/json', ...authH() },
+          body:    JSON.stringify({ status: 'Completed' }),
+        })
+      ));
     }
 
     hideLoading();
-    const success = results.some(r => r.success);
-    if (success) {
+    if (primaryData.success) {
+      billRequestedTables.delete(currentOrder.table);  // clear badge after payment
       buildReceipt(amtPaid);
       document.getElementById('successOverlay').classList.add('show');
     } else {
-      showToast(results[0]?.message || 'Payment failed', 'error');
+      showToast(primaryData.message || 'Payment failed', 'error');
     }
   } catch (e) {
     hideLoading();
@@ -897,28 +965,92 @@ function buildReceipt(amtPaid) {
   const change   = payMethod === 'Cash' ? amtPaid - finalTotal : 0;
   const now      = new Date().toLocaleString();
   const rows     = o.items.map(i =>
-    `<div class="rp-row"><span>${i.name} ×${i.qty}</span><span>Rs ${(i.price*i.qty).toLocaleString()}</span></div>`
+    `<div class="rp-row"><span>${i.name} ×${i.qty}</span><span>रू ${(i.price*i.qty).toLocaleString()}</span></div>`
   ).join('');
 
   document.getElementById('successSub').textContent =
-    `Rs ${finalTotal.toLocaleString()} paid via ${payMethod} · Table ${o.table}`;
+    `रू ${finalTotal.toLocaleString()} paid via ${payMethod} · Table ${o.table}`;
 
   document.getElementById('receiptPaper').innerHTML = `
-    <div class="rp-title">🍽️ Restaurant Receipt</div>
-    <div class="rp-meta">Table ${o.table} · Order #${String(o.id).padStart(5,'0')} · ${now}</div>
+    <div class="rp-title">🍽️ रेस्टुरेन्ट रसिद</div>
+    <div class="rp-meta">टेबल ${o.table} · अर्डर #${String(o.id).padStart(5,'0')} · ${now}</div>
     ${rows}
-    <div class="rp-total"><span>Total</span><span>Rs ${finalTotal.toLocaleString()}</span></div>
-    <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:6px"><span>Method</span><span>${payMethod}</span></div>
-    <div style="display:flex;justify-content:space-between;font-size:13px"><span>Received</span><span>Rs ${amtPaid.toLocaleString()}</span></div>
-    ${change>0?`<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--green)"><span>Change</span><span>Rs ${change.toLocaleString()}</span></div>`:''}
-    <div class="rp-footer">Thank you for dining with us! 🙏</div>`;
+    <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;color:#666"><span>उप-जम्मा</span><span>रू ${subtotal.toLocaleString()}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;color:#666"><span>VAT 13%</span><span>रू ${vatAmount.toLocaleString()}</span></div>
+    <div class="rp-total"><span>जम्मा TOTAL</span><span>रू ${finalTotal.toLocaleString()}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:6px"><span>भुक्तानी विधि</span><span>${payMethod}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px"><span>प्राप्त</span><span>रू ${amtPaid.toLocaleString()}</span></div>
+    ${change>0?`<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--green)"><span>फिर्ता</span><span>रू ${change.toLocaleString()}</span></div>`:''}
+    <div class="rp-footer">धन्यवाद! पुनः स्वागत छ 🙏</div>`;
+}
+
+/* ══ PRINT BILL (before payment) ══ */
+function printBill() {
+  if (!currentOrder) return;
+  const o   = currentOrder;
+  const now = new Date().toLocaleString('ne-NP');
+  const restName = document.title.replace(' — POS','') || 'Restaurant';
+
+  const itemRows = o.items.map(i => `
+    <tr>
+      <td style="padding:5px 8px;border-bottom:1px dashed #ccc">${i.name}</td>
+      <td style="padding:5px 8px;border-bottom:1px dashed #ccc;text-align:center">×${i.qty}</td>
+      <td style="padding:5px 8px;border-bottom:1px dashed #ccc;text-align:right">रू ${(i.price * i.qty).toLocaleString()}</td>
+    </tr>`).join('');
+
+  const billHtml = `
+    <div style="font-family:'Courier New',monospace;max-width:320px;margin:0 auto;padding:20px;color:#000;font-size:13px">
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="font-size:18px;font-weight:900">🍽️ रेस्टुरेन्ट बिल</div>
+        <div style="font-size:11px;color:#555;margin-top:3px">Restaurant Bill</div>
+      </div>
+      <div style="border-top:2px solid #000;border-bottom:1px dashed #ccc;padding:6px 0;margin-bottom:10px;font-size:11px">
+        <div>टेबल / Table: <strong>${o.table}</strong></div>
+        <div>अर्डर / Order: #${String(o.id).padStart(5,'0')}</div>
+        <div>समय / Time: ${now}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px">
+        <thead>
+          <tr style="border-bottom:2px solid #000">
+            <th style="padding:5px 8px;text-align:left;font-size:11px">सामान / Item</th>
+            <th style="padding:5px 8px;text-align:center;font-size:11px">qty</th>
+            <th style="padding:5px 8px;text-align:right;font-size:11px">रकम</th>
+          </tr>
+        </thead>
+        <tbody>${itemRows}</tbody>
+      </table>
+      <div style="border-top:1px dashed #ccc;padding-top:8px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span>उप-जम्मा / Subtotal</span><span>रू ${subtotal.toLocaleString()}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px;color:#555">
+          <span>मूल्य अभिवृद्धि कर (VAT 13%)</span><span>रू ${vatAmount.toLocaleString()}</span>
+        </div>
+        ${discAmt > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#555">
+          <span>छुट / Discount</span><span>− रू ${discAmt.toLocaleString()}</span>
+        </div>` : ''}
+        <div style="display:flex;justify-content:space-between;font-size:17px;font-weight:900;border-top:2px solid #000;padding-top:8px;margin-top:4px">
+          <span>जम्मा / TOTAL</span><span>रू ${finalTotal.toLocaleString()}</span>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:16px;padding-top:12px;border-top:1px dashed #ccc;font-size:11px;color:#555">
+        <div>धन्यवाद! पुनः स्वागत छ 🙏</div>
+        <div style="margin-top:2px">Thank you for dining with us!</div>
+      </div>
+    </div>`;
+
+  const el = document.getElementById('printEl');
+  el.style.display = 'block';
+  el.innerHTML = billHtml;
+  window.print();
+  setTimeout(() => { el.style.display = 'none'; el.innerHTML = ''; }, 1500);
 }
 
 function printAndClose() {
   const content = document.getElementById('receiptPaper').innerHTML;
   const el = document.getElementById('printEl');
   el.style.display = 'block';
-  el.innerHTML = `<div style="font-family:monospace;max-width:300px;margin:0 auto;padding:20px;color:#000">${content}</div>`;
+  el.innerHTML = `<div style="font-family:'Courier New',monospace;max-width:320px;margin:0 auto;padding:20px;color:#000">${content}</div>`;
   window.print();
   setTimeout(()=>{ el.style.display='none'; el.innerHTML=''; }, 1000);
   backToList();
@@ -970,6 +1102,40 @@ loadTables().then(async () => {
     if (o) openPOS(o.table);
   }
 });
+
+/* ══ SSE — listen for customer bill requests ══ */
+(function connectSSE() {
+  const es = new EventSource('/api/dashboard/events');
+
+  // Listen for unnamed messages (dashboard-style broadcast)
+  es.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.type === 'call_bell' && data.message === 'Request bill' && data.table) {
+        const t = parseInt(data.table);
+        billRequestedTables.add(t);
+        renderTableGrid();                          // re-render to show badge
+        showToast(`🔔 Table ${t} — Bill Requested!`, 'info');
+      }
+    } catch {}
+  };
+
+  // Also listen as named event
+  es.addEventListener('call_bell', (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.message === 'Request bill' && data.table) {
+        const t = parseInt(data.table);
+        billRequestedTables.add(t);
+        renderTableGrid();
+        showToast(`🔔 Table ${t} — Bill Requested!`, 'info');
+      }
+    } catch {}
+  });
+
+  es.onerror = () => setTimeout(connectSSE, 5000);  // reconnect on drop
+})();
 </script>
+<script src="/js/offline.js" defer></script>
 </body>
 </html>

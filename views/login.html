@@ -314,29 +314,44 @@
 </div>
 
 <script>
-/* ── Remember Me: check expiry on page load ── */
+/* ── Remember Me: check expiry + pre-fill credentials on page load ── */
 (function() {
-  const token   = localStorage.getItem('token');
-  const expiry  = parseInt(localStorage.getItem('token_expiry') || '0');
+  const token    = localStorage.getItem('token');
+  const expiry   = parseInt(localStorage.getItem('token_expiry') || '0');
   const remember = localStorage.getItem('remember_me') === '1';
+
   if (token) {
     if (remember && expiry && Date.now() < expiry) {
       // Token still valid — redirect directly
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const role = user.role || 'waiter';
       window.location.href = (role === 'admin' || role === 'manager') ? '/dashboard' : '/staff';
+      return;
     } else if (!remember) {
       // Not remembered — clear and show login
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('token_expiry');
     } else if (remember && expiry && Date.now() >= expiry) {
-      // Remembered but expired — clear
+      // Remembered but expired — clear token, keep saved credentials
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('token_expiry');
       localStorage.removeItem('remember_me');
     }
+  }
+
+  // Pre-fill saved credentials if any
+  const savedUser = localStorage.getItem('saved_username');
+  const savedPass = localStorage.getItem('saved_password');
+  if (savedUser || savedPass) {
+    // Run after DOM is ready
+    window.addEventListener('DOMContentLoaded', function() {
+      if (savedUser) document.getElementById('login-user').value = savedUser;
+      if (savedPass) document.getElementById('login-pass').value = savedPass;
+      const cb = document.getElementById('rememberMe');
+      if (cb) cb.checked = true;
+    });
   }
 })();
 
@@ -433,10 +448,15 @@ async function handleLogin() {
       if (remember) {
         localStorage.setItem('token_expiry', Date.now() + 30 * 24 * 60 * 60 * 1000);
         localStorage.setItem('remember_me', '1');
+        // Save credentials for auto-fill on next visit
+        localStorage.setItem('saved_username', username);
+        localStorage.setItem('saved_password', password);
       } else {
-        // Session only — clear on next visit if remember_me not set
+        // Session only — clear saved credentials
         localStorage.removeItem('token_expiry');
         localStorage.setItem('remember_me', '0');
+        localStorage.removeItem('saved_username');
+        localStorage.removeItem('saved_password');
       }
       showToast('Login safal bhayo! 🎉', 'success');
       // Role-based redirect

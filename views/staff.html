@@ -517,6 +517,15 @@ function renderOrders() {
           <button class="action-btn" onclick="printKitchenTicket(${o.id})" title="Print ticket">🖨️</button>
           <button class="action-btn danger" onclick="openDelete(${o.id})">🗑</button>
         </div>
+        ${o.status==='Completed'?`
+        <a href="/payment" style="
+          display:block;margin-top:8px;padding:10px;
+          background:#0e6b7a;color:#fff;text-align:center;
+          border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;
+          font-family:var(--font);transition:opacity .15s;
+        " onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+          💳 Process Payment
+        </a>`:''}
       </div>
     </div>`;
   }).join('');
@@ -824,16 +833,30 @@ function showToast(msg, type='info') {
 }
 
 /* ══ SSE — live order updates ══ */
-try {
-  const es = new EventSource('/api/dashboard/events');
-  es.onmessage = e => {
-    try {
-      const d = JSON.parse(e.data);
-      if (d.type==='new_order') { showToast(`🆕 New order: Table ${d.order?.table}`,'info'); loadOrders(); }
-      if (d.type==='order_update') loadOrders();
-    } catch{}
-  };
-} catch{}
+function connectSSE() {
+  try {
+    const es = new EventSource('/api/dashboard/events');
+    es.onmessage = e => {
+      try {
+        const d = JSON.parse(e.data);
+        if (d.type==='new_order')    { showToast(`🆕 New order: Table ${d.order?.table}`,'info'); loadOrders(); }
+        if (d.type==='order_update') loadOrders();
+        if (d.type==='call_bell') {
+          const table   = d.table;
+          const message = d.message || '';
+          const isBill  = message.toLowerCase().includes('bill');
+          if (isBill) {
+            showPaymentAlert(table);
+          } else {
+            showToast(`🔔 Table ${table}: ${message}`, 'info');
+          }
+        }
+      } catch{}
+    };
+    es.onerror = () => { es.close(); setTimeout(connectSSE, 5000); };
+  } catch{}
+}
+connectSSE();
 
 /* ══ PRINT KITCHEN TICKET ══ */
 function printKitchenTicket(orderId) {
@@ -861,6 +884,44 @@ function printKitchenTicket(orderId) {
   w.document.close();
   w.focus();
   w.print();
+}
+
+/* ══ PAYMENT ALERT ══ */
+function showPaymentAlert(table) {
+  let el = document.getElementById('staffPayAlert');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'staffPayAlert';
+    el.style.cssText = `
+      position:fixed;top:0;left:0;right:0;z-index:9999;
+      background:linear-gradient(135deg,#0e6b7a,#0a5462);
+      color:#fff;padding:14px 20px;
+      display:flex;align-items:center;justify-content:space-between;
+      gap:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);
+      font-family:'Plus Jakarta Sans',sans-serif;
+      animation:slideDown .3s ease;
+    `;
+    document.head.insertAdjacentHTML('beforeend',`<style>@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}</style>`);
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;flex:1">
+      <span style="font-size:22px">🔔</span>
+      <div>
+        <div style="font-weight:800;font-size:14px">Table ${table} — Customer requesting bill!</div>
+        <div style="font-size:12px;opacity:.8;margin-top:1px">Tap to open payment terminal</div>
+      </div>
+    </div>
+    <a href="/payment" style="
+      background:#fff;color:#0e6b7a;text-decoration:none;
+      padding:9px 18px;border-radius:8px;font-size:13px;font-weight:800;
+      white-space:nowrap;
+    ">💳 Process Payment</a>
+    <button onclick="document.getElementById('staffPayAlert').remove()"
+      style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;flex-shrink:0">×</button>
+  `;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.remove(), 30000);
 }
 
 /* ══ INIT ══ */

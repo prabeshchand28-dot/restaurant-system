@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment variables (sensitive)
+.env
+.env.local
+
+# Database files
+database/*.db
+database/*.db-wal
+database/*.db-shm
+database/*.db.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Uploads (user content)
+uploads/*
+!uploads/.gitkeep
+
+# Prisma generated
+node_modules/.prisma/

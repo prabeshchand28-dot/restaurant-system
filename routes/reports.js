@@ -1,15 +1,9 @@
 // routes/reports.js
 const express = require('express');
 const router  = express.Router();
-const { getDailySummary } = require('../services/reportService');
+const ctrl    = require('../controllers/reportController');
 
-router.get('/summary', async (req, res) => {
-  try {
-    const data = await getDailySummary();
-    res.json(data);
-  } catch (e) {
-    res.status(500).json({ success: false, message: e.message });
-  }
-});
+router.get('/summary',       ctrl.getSummary);
+router.get('/orders-export', ctrl.exportOrders);
 
 module.exports = router;

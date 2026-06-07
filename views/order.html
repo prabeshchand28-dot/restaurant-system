@@ -300,6 +300,28 @@ img{display:block}
 .receipt-footer{text-align:center;font-size:12px;color:var(--muted);margin-top:12px;padding-top:10px;border-top:1px dashed #ccc}
 .print-receipt-btn{width:100%;background:#1a1a1a;color:#fff;border:none;border-radius:10px;padding:13px;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px}
 
+/* Bill sheet */
+.bill-header{background:linear-gradient(135deg,#7b3f00,#c2550a);color:#fff;border-radius:12px;padding:16px;margin-bottom:14px;text-align:center}
+.bill-header .bh-title{font-size:18px;font-weight:900;margin-bottom:2px}
+.bill-header .bh-meta{font-size:12px;opacity:.8}
+.bill-items-list{margin-bottom:12px}
+.bill-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.bill-item:last-child{border-bottom:none}
+.bill-item .bi-name{flex:1;font-weight:600}
+.bill-item .bi-qty{color:var(--muted);font-size:12px;margin:0 10px}
+.bill-item .bi-price{font-weight:700;color:var(--text)}
+.bill-totals{background:#f9f7f3;border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.bill-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--muted)}
+.bill-row.grand{font-size:17px;font-weight:900;color:var(--text);border-top:2px solid var(--text);padding-top:10px;margin-top:6px}
+.bill-row.grand span:last-child{color:var(--accent)}
+.bill-request-btn{width:100%;background:linear-gradient(135deg,#1a5c1a,#22c55e);color:#fff;border:none;border-radius:12px;padding:15px;font-family:var(--font);font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px}
+.bill-request-btn:active{opacity:.85}
+.bill-request-btn:disabled{opacity:.5;cursor:not-allowed}
+.bill-empty{text-align:center;padding:30px 0;color:var(--muted)}
+.bill-empty .icon{font-size:40px;margin-bottom:8px}
+.bill-requested-msg{text-align:center;padding:16px;background:#f0fdf4;border-radius:12px;border:1.5px solid #22c55e;display:none}
+.bill-btn-bar{display:flex;align-items:center;justify-content:center;gap:8px;padding:0;margin-bottom:8px;cursor:pointer;background:none;border:none;font-family:var(--font);font-size:12px;color:var(--muted)}
+
 /* Toast */
 .toast{
   position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-100px);
@@ -391,6 +413,9 @@ img{display:block}
         <button class="my-orders-btn" onclick="openSheet('ordersSheet')">
           <span class="orders-notif-dot" id="ordersNotifDot"></span>
           📋 My Orders
+        </button>
+        <button class="my-orders-btn" onclick="openBillSheet()" style="margin-left:6px;background:#1a5c1a;color:#fff;border-color:#1a5c1a" id="billHeaderBtn">
+          💳 Bill
         </button>
         <button class="my-orders-btn" onclick="openSheet('bellSheet')" style="margin-left:6px">
           🔔
@@ -534,14 +559,14 @@ img{display:block}
   </div>
 </div>
 
-<!-- Receipt Sheet -->
-<div class="overlay" id="receiptSheet" onclick="overlayClose(event,'receiptSheet')">
+<!-- Bill Sheet -->
+<div class="overlay" id="billSheet" onclick="overlayClose(event,'billSheet')">
   <div class="sheet" onclick="e=>e.stopPropagation()">
     <div class="sheet-handle"></div>
-    <div class="sheet-title">🧾 Receipt</div>
-    <div id="receiptContent"></div>
-    <button class="print-receipt-btn" onclick="printReceipt()">🖨️ Print Receipt</button>
-    <button class="cancel-btn" style="margin-top:8px" onclick="closeSheet('receiptSheet')">Close</button>
+    <div class="sheet-title">💳 My Bill</div>
+    <div id="billSheetContent">
+      <div class="bill-empty"><div class="icon">🍽️</div><p>No orders yet</p></div>
+    </div>
   </div>
 </div>
 
@@ -559,6 +584,24 @@ const tableNo = parseInt(params.get('table')) || 1;
 document.getElementById('wl-table-no').textContent = tableNo;
 document.getElementById('appTableNo').textContent  = tableNo;
 
+/* ── SESSION MANAGEMENT ──────────────────────────────────
+   sessionStorage automatically clears when tab closes.
+   Each QR scan = new tab = fresh session.
+   We only store ORDER IDs placed in this session.
+───────────────────────────────────────────────────────── */
+const SESSION_KEY = `orders_table_${tableNo}`;
+
+function getSessionOrderIds() {
+  try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || '[]'); } catch { return []; }
+}
+function addSessionOrderId(id) {
+  const ids = getSessionOrderIds();
+  if (!ids.includes(id)) { ids.push(id); sessionStorage.setItem(SESSION_KEY, JSON.stringify(ids)); }
+}
+function clearSession() {
+  sessionStorage.removeItem(SESSION_KEY);
+}
+
 /* ── GUEST COUNTER ── */
 const gc = { m:0, f:0, c:0 };
 function adj(t, d) {
@@ -573,6 +616,10 @@ function adj(t, d) {
 async function startOrdering() {
   const total  = gc.m + gc.f + gc.c;
   const gender = gc.f > 0 && gc.m === 0 ? 'Female' : gc.m > 0 && gc.f === 0 ? 'Male' : 'Mixed';
+
+  // Clear any previous session data for this table — fresh start
+  clearSession();
+
   try {
     await fetch('/api/guests', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -782,6 +829,8 @@ async function placeOrder() {
     });
     const d = await r.json();
     if (d.success) {
+      // Save order ID to this session so only this customer sees it
+      addSessionOrderId(d.order.id);
       cart = {}; updateBottomBar(); renderMenu(currentCat);
       closeSheet('cartSheet');
       document.getElementById('ordersNotifDot').classList.add('show');
@@ -797,9 +846,13 @@ async function placeOrder() {
 /* ── MY ORDERS ── */
 async function loadMyOrders() {
   try {
-    const r  = await fetch('/api/orders');
+    const sessionIds = getSessionOrderIds();
+    if (!sessionIds.length) { myOrders = []; renderMyOrders(); return; }
+
+    const r   = await fetch('/api/orders');
     const all = await r.json();
-    myOrders  = all.filter(o => o.table === tableNo);
+    // Only show orders placed in THIS session
+    myOrders = all.filter(o => sessionIds.includes(o.id));
     renderMyOrders();
   } catch {}
 }
@@ -807,13 +860,32 @@ async function loadMyOrders() {
 function renderMyOrders() {
   const el = document.getElementById('ordersSheetContent');
   if (!myOrders.length) {
-    el.innerHTML = '<div class="no-items"><div class="icon">🍽️</div><p>No orders yet. Go order something!</p></div>';
+    el.innerHTML = `<div class="no-items">
+      <div class="icon">🍽️</div>
+      <p style="margin-bottom:6px">No orders yet</p>
+      <p style="font-size:12px;color:var(--muted)">Go to Menu and add items</p>
+    </div>`;
     return;
   }
-  el.innerHTML = [...myOrders].reverse().map(o => {
-    const total = o.items.reduce((s,i)=>s+i.price*i.qty, 0);
-    const time  = new Date(o.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    const sIcon = {Pending:'⏳',Preparing:'👨‍🍳',Completed:'✅',Cancelled:'❌'}[o.status]||'•';
+
+  // Check if all orders are completed/paid → show call-for-bill
+  const allDone = myOrders.every(o => o.status === 'Completed' || o.status === 'Cancelled');
+  const grandTotal = myOrders.reduce((s,o)=>s+o.items.reduce((ss,i)=>ss+i.price*i.qty,0),0);
+
+  const callBillBanner = allDone ? `
+    <div style="background:linear-gradient(135deg,#1a5c1a,#22c55e);border-radius:12px;padding:14px 16px;margin-bottom:14px;text-align:center;color:#fff">
+      <div style="font-size:24px;margin-bottom:4px">✅</div>
+      <div style="font-size:14px;font-weight:800;margin-bottom:4px">All orders completed!</div>
+      <div style="font-size:13px;opacity:.85;margin-bottom:10px">Total: Rs ${grandTotal.toLocaleString()}</div>
+      <button onclick="callBell('Request bill')" style="background:#fff;color:#1a5c1a;border:none;border-radius:8px;padding:10px 22px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--font)">
+        💳 Call Staff for Bill
+      </button>
+    </div>` : '';
+
+  el.innerHTML = callBillBanner + [...myOrders].reverse().map(o => {
+    const total     = o.items.reduce((s,i)=>s+i.price*i.qty, 0);
+    const time      = new Date(o.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const sIcon     = {Pending:'⏳',Preparing:'👨‍🍳',Completed:'✅',Cancelled:'❌'}[o.status]||'•';
     const itemsText = o.items.map(i=>`${i.name} × ${i.qty}  —  Rs ${i.price*i.qty}`).join('\n');
     return `<div class="order-history-card">
       <div class="ohc-header">
@@ -824,10 +896,7 @@ function renderMyOrders() {
       <hr class="ohc-divider">
       <div class="ohc-total"><span>Total</span><span>Rs ${total.toLocaleString()}</span></div>
       <span class="ohc-status ${o.status}">${sIcon} ${o.status}</span>
-      <div class="ohc-actions">
-        <button class="ohc-btn receipt" onclick="showReceipt(${o.id})">🧾 Receipt</button>
-        ${o.status==='Completed'?`<button class="ohc-btn rate" onclick="openRating(${o.id})">⭐ Rate</button>`:''}
-      </div>
+      ${o.status==='Completed' ? `<div class="ohc-actions" style="margin-top:10px"><button class="ohc-btn rate" onclick="openRating(${o.id})">⭐ Rate this order</button></div>` : ''}
     </div>`;
   }).join('');
 }
@@ -837,37 +906,80 @@ setInterval(() => {
   if (document.getElementById('ordersSheet').classList.contains('open')) loadMyOrders();
 }, 12000);
 
-/* ── RECEIPT ── */
-let receiptOrderId = null;
-function showReceipt(orderId) {
-  receiptOrderId = orderId;
-  const o = myOrders.find(x=>x.id===orderId);
-  if (!o) return;
-  const total = o.items.reduce((s,i)=>s+i.price*i.qty,0);
-  const time  = new Date(o.time).toLocaleString();
-  const rows  = o.items.map(i=>
-    `<div class="receipt-row"><span>${i.name} × ${i.qty}</span><span>Rs ${i.price*i.qty}</span></div>`
-  ).join('');
-  document.getElementById('receiptContent').innerHTML = `
-    <div class="receipt-header">
-      <div class="receipt-title">🍽️ Restaurant</div>
-      <div class="receipt-meta">Table ${tableNo} · Order #${String(o.id).padStart(5,'0')}</div>
-      <div class="receipt-meta">${time}</div>
-    </div>
-    ${rows}
-    <div class="receipt-total-row"><span>Total</span><span>Rs ${total.toLocaleString()}</span></div>
-    <div class="receipt-footer">Thank you for dining with us! 🙏</div>`;
-  closeSheet('ordersSheet');
-  openSheet('receiptSheet');
+/* ── BILL SHEET ── */
+let billRequested = false;
+
+function openBillSheet() {
+  renderBillSheet();
+  openSheet('billSheet');
 }
 
-function printReceipt() {
-  const content = document.getElementById('receiptContent').innerHTML;
-  const el = document.getElementById('printEl');
-  el.style.display = 'block';
-  el.innerHTML = `<div style="font-family:monospace;max-width:300px;margin:0 auto;padding:20px">${content}</div>`;
-  window.print();
-  setTimeout(()=>{ el.style.display='none'; el.innerHTML=''; }, 1000);
+function renderBillSheet() {
+  const el = document.getElementById('billSheetContent');
+  const active = myOrders.filter(o => o.status !== 'Cancelled');
+
+  if (!active.length) {
+    el.innerHTML = `<div class="bill-empty"><div class="icon">🍽️</div><p>No orders yet</p></div>`;
+    return;
+  }
+
+  // Merge all items across orders
+  const itemMap = {};
+  active.forEach(o => o.items.forEach(i => {
+    if (itemMap[i.name]) itemMap[i.name].qty += i.qty;
+    else itemMap[i.name] = { name: i.name, price: i.price, qty: i.qty };
+  }));
+  const items    = Object.values(itemMap);
+  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const vat      = Math.round(subtotal * 0.13);
+  const total    = subtotal + vat;
+
+  const itemRows = items.map(i => `
+    <div class="bill-item">
+      <span class="bi-name">${i.name}</span>
+      <span class="bi-qty">×${i.qty}</span>
+      <span class="bi-price">Rs ${(i.price * i.qty).toLocaleString()}</span>
+    </div>`).join('');
+
+  const requestedMsg = billRequested
+    ? `<div class="bill-requested-msg" style="display:block">
+        <div style="font-size:28px;margin-bottom:6px">✅</div>
+        <div style="font-weight:800;font-size:14px;color:#1a5c1a">Bill Request Sent!</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Staff will come to your table shortly.</div>
+      </div>`
+    : `<button class="bill-request-btn" id="reqBillBtn" onclick="requestBill()">
+        💳 Request Bill — Rs ${total.toLocaleString()}
+      </button>`;
+
+  el.innerHTML = `
+    <div class="bill-header">
+      <div class="bh-title">Table ${tableNo}</div>
+      <div class="bh-meta">${items.length} item type${items.length !== 1 ? 's' : ''} · ${active.length} order${active.length !== 1 ? 's' : ''}</div>
+    </div>
+    <div class="bill-items-list">${itemRows}</div>
+    <div class="bill-totals">
+      <div class="bill-row"><span>Subtotal</span><span>Rs ${subtotal.toLocaleString()}</span></div>
+      <div class="bill-row"><span>VAT (13%)</span><span>Rs ${vat.toLocaleString()}</span></div>
+      <div class="bill-row grand"><span>Total</span><span>Rs ${total.toLocaleString()}</span></div>
+    </div>
+    ${requestedMsg}
+    <button class="cancel-btn" onclick="closeSheet('billSheet')">Close</button>`;
+}
+
+async function requestBill() {
+  const btn = document.getElementById('reqBillBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending...'; }
+  try {
+    await fetch('/api/orders/0/call-bell', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table: tableNo, message: 'Request bill' }),
+    });
+    billRequested = true;
+    renderBillSheet();
+  } catch {
+    if (btn) { btn.disabled = false; btn.textContent = '💳 Request Bill'; }
+  }
 }
 
 /* ── CALL BELL ── */
@@ -935,5 +1047,6 @@ function showToast(msg) {
   toastT = setTimeout(()=>t.classList.remove('show'), 3500);
 }
 </script>
+<script src="/js/offline.js" defer></script>
 </body>
 </html>

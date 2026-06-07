@@ -1,67 +1,11 @@
 // routes/tables.js
-const express  = require('express');
-const router   = express.Router();
-const prisma   = require('../config/prisma');
-const { generateQRDataUrl } = require('../utils/qrGenerator');
+const express = require('express');
+const router  = express.Router();
+const ctrl    = require('../controllers/tableController');
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-
-// GET /api/tables — returns array of table numbers (same API as before)
-router.get('/', async (req, res) => {
-  const tables = await prisma.restaurantTable.findMany({
-    where:   { active: true },
-    orderBy: { number: 'asc' },
-  });
-  res.json(tables.map(t => t.number));
-});
-
-// POST /api/tables
-router.post('/', async (req, res) => {
-  try {
-    const no = parseInt(req.body.number);
-    if (!no || no < 1) return res.status(400).json({ success: false, message: 'Valid table number required' });
-
-    await prisma.restaurantTable.upsert({
-      where:  { number: no },
-      update: { active: true },
-      create: { number: no, capacity: 4 },
-    });
-
-    const tables = await prisma.restaurantTable.findMany({
-      where: { active: true }, orderBy: { number: 'asc' },
-    });
-    res.json({ success: true, tables: tables.map(t => t.number) });
-  } catch (e) {
-    res.status(500).json({ success: false, message: e.message });
-  }
-});
-
-// DELETE /api/tables/:no
-router.delete('/:no', async (req, res) => {
-  try {
-    await prisma.restaurantTable.update({
-      where:  { number: parseInt(req.params.no) },
-      data:   { active: false },
-    });
-    const tables = await prisma.restaurantTable.findMany({
-      where: { active: true }, orderBy: { number: 'asc' },
-    });
-    res.json({ success: true, tables: tables.map(t => t.number) });
-  } catch (e) {
-    res.status(500).json({ success: false, message: e.message });
-  }
-});
-
-// GET /api/tables/:no/qr
-router.get('/:no/qr', async (req, res) => {
-  try {
-    const no  = parseInt(req.params.no);
-    const url = `${BASE_URL}/order?table=${no}`;
-    const dataUrl = await generateQRDataUrl(url);
-    res.json({ success: true, dataUrl, url });
-  } catch (e) {
-    res.status(500).json({ success: false, message: e.message });
-  }
-});
+router.get('/',           ctrl.getAll);
+router.post('/',          ctrl.create);
+router.delete('/:no',     ctrl.remove);
+router.get('/:no/qr',     ctrl.getQR);
 
 module.exports = router;

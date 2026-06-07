@@ -42,6 +42,8 @@ app.use('/api/staff',        require('./routes/staff'));
 app.use('/api/reservations', require('./routes/reservations'));
 app.use('/api/inventory',    require('./routes/inventory'));
 app.use('/api/kitchen',      require('./routes/kitchen'));
+app.use('/api/attendance',   require('./routes/attendance'));
+app.use('/api/settings',     require('./routes/settings'));
 
 // ── Page Routes ─────────────────────────────────────────
 app.get('/',          (req, res) => res.redirect('/login'));

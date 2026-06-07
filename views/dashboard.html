@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="/js/offline.js" defer></script>
 <style>
 /* ══ RESET & BASE ══ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -558,11 +559,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
         <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
       </div>
     </div>
-    <!-- Payments (external) -->
+    <!-- Payments (internal section) -->
     <div class="nav-group">
-      <div class="nav-parent" onclick="window.open('/payment','_blank')">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><span class="label">Payments</span></span>
-        <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      <div class="nav-parent" onclick="showSection('payments',this)">
+        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><span class="label">Payments / भुक्तानी</span></span>
       </div>
     </div>
   </nav>
@@ -900,58 +900,143 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 
     <!-- ══════════ SECTION: ANALYTICS ══════════ -->
     <div class="section" id="sec-analytics">
+      <!-- Header + Period Selector -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+        <h3 style="color:#fff;font-size:15px">📊 Analytics</h3>
+        <div style="display:flex;gap:6px">
+          <button onclick="setAnalyticsPeriod('daily',this)"   class="period-btn active">Daily</button>
+          <button onclick="setAnalyticsPeriod('weekly',this)"  class="period-btn">Weekly</button>
+          <button onclick="setAnalyticsPeriod('monthly',this)" class="period-btn">Monthly</button>
+          <button onclick="setAnalyticsPeriod('yearly',this)"  class="period-btn">Yearly</button>
+        </div>
+      </div>
+      <!-- KPI Cards -->
       <div class="kpi-row" id="analyticsKPI"></div>
+      <!-- Revenue Trend + Sales Comparison -->
+      <div class="analytics-grid">
+        <div class="card" style="grid-column:1/-1">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div class="card-title">📈 Revenue Trend</div>
+            <span id="revTrendLabel" style="font-size:11px;color:var(--muted)"></span>
+          </div>
+          <canvas id="revenueTrendChart" height="120"></canvas>
+        </div>
+      </div>
+      <!-- Daily/Weekly/Monthly Sales Summary -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px" id="salesSummaryCards"></div>
+      <!-- Charts Row 1 -->
       <div class="analytics-grid">
         <div class="card"><div class="card-title" style="margin-bottom:12px">Orders by Status</div><canvas id="statusPieChart" height="220"></canvas></div>
         <div class="card"><div class="card-title" style="margin-bottom:12px">Revenue by Payment Method</div><canvas id="paymentPieChart" height="220"></canvas></div>
       </div>
+      <!-- Charts Row 2 -->
       <div class="analytics-grid">
-        <div class="card"><div class="card-title" style="margin-bottom:12px">Top Menu Items</div><canvas id="topItemsChart" height="220"></canvas></div>
-        <div class="card"><div class="card-title" style="margin-bottom:12px">Peak Hours (Orders)</div><canvas id="peakHoursChart" height="220"></canvas></div>
+        <div class="card"><div class="card-title" style="margin-bottom:12px">🏆 Top Menu Items</div><canvas id="topItemsChart" height="220"></canvas></div>
+        <div class="card"><div class="card-title" style="margin-bottom:12px">⏰ Peak Hours</div><canvas id="peakHoursChart" height="220"></canvas></div>
       </div>
-      <div class="card"><div class="card-title" style="margin-bottom:12px">Guest Demographics</div>
-        <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;padding:10px 0">
-          <canvas id="guestDemoChart" width="180" height="180"></canvas>
-          <div id="guestDemoLegend" style="flex:1;min-width:180px;display:flex;flex-direction:column;gap:8px"></div>
+      <!-- Customer Growth + Demographics -->
+      <div class="analytics-grid">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px">👥 Customer Growth</div>
+          <canvas id="customerGrowthChart" height="220"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px">Demographics</div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding:10px 0">
+            <canvas id="guestDemoChart" width="160" height="160"></canvas>
+            <div id="guestDemoLegend" style="flex:1;min-width:140px;display:flex;flex-direction:column;gap:8px"></div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- ══════════ SECTION: ATTENDANCE ══════════ -->
     <div class="section" id="sec-attendance">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
         <div>
-          <h3 style="color:#fff;font-size:15px;margin-bottom:3px">Staff Attendance</h3>
+          <h3 style="color:#fff;font-size:15px;margin-bottom:3px">🕐 Staff Attendance</h3>
           <p style="font-size:12px;color:var(--muted)" id="attDate">Today</p>
         </div>
-        <div class="att-summary" id="attSummary"></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div class="att-summary" id="attSummary"></div>
+          <input type="date" id="attDatePicker" onchange="loadAttendance(this.value)"
+            style="background:var(--surface);border:1px solid var(--border);color:#fff;padding:5px 10px;border-radius:7px;font-size:12px;font-family:var(--font)"/>
+          <button onclick="loadAttendance()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:7px;cursor:pointer;font-size:12px;font-family:var(--font)">↺ Today</button>
+          <button onclick="showAttReport()" style="background:var(--accent);color:#fff;border:none;padding:6px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--font)">📊 Report</button>
+        </div>
       </div>
+      <!-- Summary chips -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:14px" id="attKPIs"></div>
+      <!-- Staff cards -->
       <div class="att-grid" id="attendanceGrid"></div>
+      <!-- Log table -->
       <div class="card" style="margin-top:14px">
-        <div class="card-title" style="margin-bottom:12px">Today's Attendance Log</div>
-        <table class="orders-table" id="attLogTable">
-          <thead><tr><th>Staff</th><th>Role</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Status</th></tr></thead>
-          <tbody id="attLogTbody"></tbody>
-        </table>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="card-title">Attendance Log</div>
+          <select id="attStatusFilter" onchange="filterAttLog(this.value)" style="background:var(--bg);border:1px solid var(--border);color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;font-family:var(--font)">
+            <option value="all">All Status</option>
+            <option value="Present">Present</option>
+            <option value="Late">Late</option>
+            <option value="Absent">Absent</option>
+            <option value="Half-Day">Half-Day</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="orders-table" id="attLogTable">
+            <thead><tr><th>Staff</th><th>Role</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="attLogTbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Report Modal -->
+      <div id="attReportModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center">
+        <div style="background:var(--dark-card);border:1px solid var(--border);border-radius:14px;padding:24px;width:min(700px,95vw);max-height:85vh;overflow-y:auto">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <h3 style="color:#fff">📊 Attendance Report</h3>
+            <button onclick="document.getElementById('attReportModal').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">×</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+            <input type="date" id="rptFrom" style="background:var(--bg);border:1px solid var(--border);color:#fff;padding:6px 10px;border-radius:7px;font-size:12px;font-family:var(--font)"/>
+            <input type="date" id="rptTo"   style="background:var(--bg);border:1px solid var(--border);color:#fff;padding:6px 10px;border-radius:7px;font-size:12px;font-family:var(--font)"/>
+            <button onclick="loadAttReport()" style="background:var(--accent);color:#fff;border:none;padding:6px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--font)">Load Report</button>
+          </div>
+          <div id="attReportContent"><p style="color:var(--muted);font-size:13px">Select date range and click Load Report</p></div>
+        </div>
       </div>
     </div>
 
     <!-- ══════════ SECTION: FLOOR MAP ══════════ -->
     <div class="section" id="sec-floormap">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <h3 style="color:#fff;font-size:15px">Restaurant Floor Map</h3>
-        <button onclick="loadFloorMap()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:7px;cursor:pointer;font-size:12px;font-family:var(--font)">↺ Refresh</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+        <h3 style="color:#fff;font-size:15px">🗺️ Restaurant Floor Map</h3>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button id="floorEditBtn" onclick="toggleFloorEdit()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:7px;cursor:pointer;font-size:12px;font-family:var(--font)">✏️ Edit Layout</button>
+          <button onclick="mergeSelectedTables()" id="floorMergeBtn" style="display:none;background:#8b5cf6;color:#fff;border:none;padding:5px 12px;border-radius:7px;cursor:pointer;font-size:12px;font-family:var(--font)">🔗 Merge</button>
+          <button onclick="loadFloorMap()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:7px;cursor:pointer;font-size:12px;font-family:var(--font)">↺ Refresh</button>
+        </div>
       </div>
       <div class="floor-wrap">
-        <div class="floor-legend">
+        <div class="floor-legend" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
           <div class="floor-legend-item"><div class="floor-legend-dot" style="background:#f97316"></div>Occupied</div>
-          <div class="floor-legend-item"><div class="floor-legend-dot" style="background:#2a2a2a;border:1px solid #444"></div>Free</div>
+          <div class="floor-legend-item"><div class="floor-legend-dot" style="background:#333;border:1px solid #555"></div>Free</div>
           <div class="floor-legend-item"><div class="floor-legend-dot" style="background:#3b82f6"></div>Reserved</div>
+          <div class="floor-legend-item"><div class="floor-legend-dot" style="background:#f59e0b"></div>Bill Requested</div>
+          <span id="floorEditHint" style="font-size:11px;color:var(--muted);display:none">✋ Drag tables to rearrange · Click to select · Ctrl+Click multi-select</span>
         </div>
-        <div class="floor-svg-wrap" id="floorSvgWrap"></div>
+        <div class="floor-canvas-wrap" id="floorCanvasWrap"
+          style="background:#1a1a1a;border:1px solid var(--border);border-radius:12px;min-height:400px;position:relative;overflow:hidden">
+          <div id="floorGrid" style="position:relative;width:100%;min-height:400px;padding:16px"></div>
+        </div>
       </div>
       <div id="floorTableDetail" style="margin-top:14px;display:none" class="card">
-        <div class="card-title" id="floorDetailTitle" style="margin-bottom:10px">Table Info</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="card-title" id="floorDetailTitle">Table Info</div>
+          <div style="display:flex;gap:8px">
+            <button id="floorReserveBtn" onclick="reserveFloorTable()" style="background:#3b82f6;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:var(--font)">📅 Reserve</button>
+            <button id="floorSplitBtn" onclick="splitFloorTable()" style="background:#8b5cf6;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:var(--font)">✂️ Split</button>
+            <button onclick="document.getElementById('floorTableDetail').style.display='none'" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px">×</button>
+          </div>
+        </div>
         <div id="floorDetailContent"></div>
       </div>
     </div>
@@ -969,9 +1054,24 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 
     <!-- ══════════ SECTION: REPORTS ══════════ -->
     <div class="section" id="sec-reports">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
         <h3 style="color:#fff;font-size:15px">Reports</h3>
-        <button onclick="loadReports()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:7px;cursor:pointer;font-size:12px;font-family:var(--font)">↺ Refresh</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button onclick="loadReports()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:7px;cursor:pointer;font-size:12px;font-family:var(--font)">↺ Refresh</button>
+          <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px 6px">
+            <span style="font-size:11px;color:var(--muted);white-space:nowrap">📥 Export:</span>
+            <select id="exportPeriod" style="background:var(--bg);border:none;color:#fff;font-family:var(--font);font-size:12px;cursor:pointer;outline:none;padding:2px 4px;border-radius:4px">
+              <option value="all">All Data</option>
+              <option value="weekly">This Week</option>
+              <option value="monthly">This Month</option>
+              <option value="yearly">This Year</option>
+            </select>
+            <button onclick="downloadExcel()" id="excelBtn"
+              style="background:#1a7a3a;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">
+              📊 Download Excel
+            </button>
+          </div>
+        </div>
       </div>
       <!-- KPIs -->
       <div class="report-kpi" id="reportKPI"></div>
@@ -1014,7 +1114,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 
     <!-- ══════════ SECTION: SETTINGS ══════════ -->
     <div class="section" id="sec-settings">
-      <h3 style="color:#fff;font-size:15px;margin-bottom:16px">Settings</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h3 style="color:#fff;font-size:15px">⚙️ Settings</h3>
+        <button onclick="saveAllSettings()" style="background:var(--accent);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;font-family:var(--font)">💾 Save All</button>
+      </div>
       <div class="settings-grid">
         <!-- Restaurant Info -->
         <div class="settings-card">
@@ -1023,16 +1126,55 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           <div class="settings-row"><label>Address</label><input class="settings-input" id="set-address" placeholder="Kathmandu, Nepal"></div>
           <div class="settings-row"><label>Phone</label><input class="settings-input" id="set-phone" placeholder="01-XXXXXXX"></div>
           <div class="settings-row"><label>Email</label><input class="settings-input" id="set-email" placeholder="info@restaurant.com"></div>
-          <button class="settings-save" onclick="saveSettings()">Save Info</button>
+          <button class="settings-save" onclick="saveRestaurantInfo()">Save Info</button>
+        </div>
+        <!-- Tax & Charges -->
+        <div class="settings-card">
+          <h4>💰 Tax & Service Charge</h4>
+          <div class="settings-row"><label>VAT / Tax Rate (%)</label><input class="settings-input" id="set-tax" type="number" placeholder="13" min="0" max="100"></div>
+          <div class="settings-row"><label>Service Charge (%)</label><input class="settings-input" id="set-service-charge" type="number" placeholder="0" min="0" max="50"></div>
+          <div class="settings-row"><label>Currency Symbol</label><input class="settings-input" id="set-currency" placeholder="रू"></div>
+          <div class="settings-row"><label>Daily Revenue Goal</label><input class="settings-input" id="set-goal" type="number" placeholder="5000"></div>
+          <button class="settings-save" onclick="saveTaxSettings()">Save Tax Settings</button>
         </div>
         <!-- Dashboard Config -->
         <div class="settings-card">
-          <h4>⚙️ Dashboard Config</h4>
-          <div class="settings-row"><label>Daily Revenue Goal (Rs)</label><input class="settings-input" id="set-goal" type="number" placeholder="5000"></div>
-          <div class="settings-row"><label>Auto-refresh Interval (seconds)</label><input class="settings-input" id="set-refresh" type="number" placeholder="30" min="10"></div>
-          <div class="settings-row"><label>Currency Symbol</label><input class="settings-input" id="set-currency" placeholder="Rs"></div>
-          <div class="settings-row"><label>Timezone</label><input class="settings-input" id="set-tz" placeholder="Asia/Kathmandu"></div>
-          <button class="settings-save" onclick="saveSettings()">Save Config</button>
+          <h4>⚙️ System Config</h4>
+          <div class="settings-row"><label>Shift Start Time</label><input class="settings-input" id="set-shift-start" type="time" value="09:30"></div>
+          <div class="settings-row"><label>Low Stock Alert (qty)</label><input class="settings-input" id="set-low-stock" type="number" placeholder="5" min="0"></div>
+          <div class="settings-row"><label>Auto-refresh (seconds)</label><input class="settings-input" id="set-refresh" type="number" placeholder="30" min="10"></div>
+          <div class="settings-row">
+            <label>Language</label>
+            <select class="settings-input" id="set-language">
+              <option value="en">English</option>
+              <option value="ne">नेपाली</option>
+            </select>
+          </div>
+          <button class="settings-save" onclick="saveSystemConfig()">Save Config</button>
+        </div>
+        <!-- Printer Settings -->
+        <div class="settings-card">
+          <h4>🖨️ Printer Settings</h4>
+          <div class="settings-row"><label>Printer Name / IP</label><input class="settings-input" id="set-printer-name" placeholder="POS-Printer or 192.168.1.100"></div>
+          <div class="settings-row"><label>Paper Width (mm)</label>
+            <select class="settings-input" id="set-printer-width">
+              <option value="80">80mm (Standard POS)</option>
+              <option value="58">58mm (Small)</option>
+              <option value="a4">A4 Paper</option>
+            </select>
+          </div>
+          <div class="settings-row">
+            <label>Auto Print Receipt</label>
+            <select class="settings-input" id="set-auto-print">
+              <option value="0">Off</option>
+              <option value="1">On (after payment)</option>
+            </select>
+          </div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px">
+            <p style="font-size:11px;color:var(--muted);margin-bottom:8px">Test print preview:</p>
+            <button onclick="testPrint()" style="background:var(--accent);color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-family:var(--font)">🖨️ Test Print</button>
+          </div>
+          <button class="settings-save" onclick="savePrinterSettings()">Save Printer</button>
         </div>
         <!-- Accent Color -->
         <div class="settings-card">
@@ -1066,6 +1208,108 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
         </div>
       </div>
     </div>
+
+    <!-- ══════════ SECTION: PAYMENTS ══════════ -->
+    <div class="section" id="sec-payments">
+
+      <!-- Language toggle + Open Terminal button -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div>
+          <h3 style="color:#fff;font-size:15px" id="pay-heading">Payments / भुक्तानी</h3>
+          <p style="font-size:12px;color:var(--muted);margin-top:2px" id="pay-subheading">Payment history and revenue summary</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <!-- Language toggle -->
+          <div style="display:flex;background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+            <button id="langEN" onclick="setPayLang('en')"
+              style="padding:6px 14px;border:none;background:var(--accent);color:#fff;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer">
+              EN
+            </button>
+            <button id="langNE" onclick="setPayLang('ne')"
+              style="padding:6px 14px;border:none;background:none;color:var(--muted);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer">
+              NE
+            </button>
+          </div>
+          <button onclick="loadPayments()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-family:var(--font)">↺ <span class="t" data-en="Refresh" data-ne="रिफ्रेश">Refresh</span></button>
+          <a href="/payment" target="_blank" style="
+            background:var(--accent);color:#fff;text-decoration:none;
+            padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;
+            font-family:var(--font);display:inline-flex;align-items:center;gap:6px;
+          ">💳 <span class="t" data-en="Open Payment Terminal" data-ne="भुक्तानी टर्मिनल खोल्नुस्">Open Payment Terminal</span></a>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:18px" id="payKPIs">
+        <div class="card" style="text-align:center">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px" class="t" data-en="Total Revenue" data-ne="कुल आम्दानी">Total Revenue</div>
+          <div style="font-size:24px;font-weight:900;color:var(--accent)" id="pkv-total">—</div>
+        </div>
+        <div class="card" style="text-align:center">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px" class="t" data-en="Total Payments" data-ne="कुल भुक्तानी">Total Payments</div>
+          <div style="font-size:24px;font-weight:900;color:#fff" id="pkv-count">—</div>
+        </div>
+        <div class="card" style="text-align:center">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px" class="t" data-en="Cash" data-ne="नगद">Cash</div>
+          <div style="font-size:24px;font-weight:900;color:var(--green)" id="pkv-cash">—</div>
+        </div>
+        <div class="card" style="text-align:center">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px" class="t" data-en="Digital (Card/eSewa/Khalti)" data-ne="डिजिटल">Digital</div>
+          <div style="font-size:24px;font-weight:900;color:var(--blue)" id="pkv-digital">—</div>
+        </div>
+        <div class="card" style="text-align:center">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px" class="t" data-en="Avg. Bill" data-ne="औसत बिल">Avg. Bill</div>
+          <div style="font-size:24px;font-weight:900;color:#f59e0b" id="pkv-avg">—</div>
+        </div>
+      </div>
+
+      <!-- Method breakdown -->
+      <div class="card" style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="card-title t" data-en="Payment Method Breakdown" data-ne="भुक्तानी विधि विवरण">Payment Method Breakdown</div>
+        </div>
+        <div id="payMethodBreakdown" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+      </div>
+
+      <!-- Payments table -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div class="card-title t" data-en="Payment History" data-ne="भुक्तानी इतिहास">Payment History</div>
+          <div style="display:flex;gap:8px">
+            <select id="payMethodFilter" onchange="filterPayments()" class="status-select" style="width:auto;padding:5px 10px;font-size:12px">
+              <option value="all" class="t" data-en="All Methods" data-ne="सबै विधि">All Methods</option>
+              <option value="Cash">Cash / नगद</option>
+              <option value="Card">Card / कार्ड</option>
+              <option value="eSewa">eSewa</option>
+              <option value="Khalti">Khalti</option>
+              <option value="QR Pay">QR Pay</option>
+              <option value="Complimentary">Complimentary / निःशुल्क</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="orders-table" id="paymentsTable">
+            <thead>
+              <tr>
+                <th class="t" data-en="#" data-ne="#">#</th>
+                <th class="t" data-en="Table" data-ne="टेबल">Table</th>
+                <th class="t" data-en="Items" data-ne="सामानहरू">Items</th>
+                <th class="t" data-en="Amount" data-ne="रकम">Amount</th>
+                <th class="t" data-en="Paid" data-ne="तिरेको">Paid</th>
+                <th class="t" data-en="Change" data-ne="फिर्ता">Change</th>
+                <th class="t" data-en="Method" data-ne="विधि">Method</th>
+                <th class="t" data-en="Time" data-ne="समय">Time</th>
+                <th class="t" data-en="Receipt" data-ne="रसिद">Receipt</th>
+              </tr>
+            </thead>
+            <tbody id="paymentsTbody">
+              <tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted)">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /sec-payments -->
 
   </div><!-- /content -->
 </div><!-- /main-wrap -->
@@ -1240,6 +1484,49 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 <div class="toast" id="toast"></div>
 
 <script>
+/* ══════════════════════════════════════════════
+   PAYMENT BELL ALERT
+══════════════════════════════════════════════ */
+function addBellAlert(table, message) {
+  // Create/update floating payment alert banner
+  let alertEl = document.getElementById('payAlertBanner');
+  if (!alertEl) {
+    alertEl = document.createElement('div');
+    alertEl.id = 'payAlertBanner';
+    alertEl.style.cssText = `
+      position:fixed;top:70px;right:20px;z-index:9000;
+      background:#1a1a1a;border:2px solid #f97316;border-radius:12px;
+      padding:14px 18px;min-width:280px;max-width:340px;
+      box-shadow:0 8px 32px rgba(0,0,0,.5);
+      animation:bellPop .4s cubic-bezier(.22,1,.36,1);
+      font-family:'Plus Jakarta Sans',sans-serif;
+    `;
+    document.head.insertAdjacentHTML('beforeend',`<style>@keyframes bellPop{from{opacity:0;transform:translateY(-20px) scale(.9)}to{opacity:1;transform:none}}</style>`);
+    document.body.appendChild(alertEl);
+  }
+  alertEl.innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+      <div>
+        <div style="font-size:18px;margin-bottom:4px">🔔 Table ${table}</div>
+        <div style="font-size:13px;color:#aaa;margin-bottom:10px">${message}</div>
+        <a href="/payment" style="
+          display:inline-flex;align-items:center;gap:6px;
+          background:#f97316;color:#fff;text-decoration:none;
+          padding:9px 20px;border-radius:8px;font-size:14px;font-weight:700;
+          transition:opacity .15s;
+        " onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+          💳 Process Payment
+        </a>
+      </div>
+      <button onclick="document.getElementById('payAlertBanner').remove()"
+        style="background:none;border:none;color:#555;font-size:20px;cursor:pointer;line-height:1;margin-top:-2px">×</button>
+    </div>
+  `;
+  // Auto-dismiss after 30s
+  clearTimeout(alertEl._timer);
+  alertEl._timer = setTimeout(() => alertEl.remove(), 30000);
+}
+
 /* ══════════════════════════════════════════════
    AUTH & USER
 ══════════════════════════════════════════════ */
@@ -2053,8 +2340,27 @@ function connectSSE() {
     es.onmessage = e => {
       try {
         const d = JSON.parse(e.data);
-        if (d.type === 'new_order')    { addNotif(`🆕 New order: Table ${d.order?.table}`, 'order'); if (currentSection==='dashboard') loadRecentOrders(); }
-        if (d.type === 'order_update') { addNotif(`✏️ Order #${d.order?.id} → ${d.order?.status}`, 'update'); }
+        if (d.type === 'new_order') {
+          addNotif(`🆕 New order: Table ${d.order?.table}`, 'order');
+          if (currentSection==='dashboard') loadRecentOrders();
+          if (currentSection==='orders')    loadOrders();
+        }
+        if (d.type === 'order_update') {
+          addNotif(`✏️ Order #${d.order?.id} → ${d.order?.status}`, 'update');
+          if (currentSection==='dashboard') loadRecentOrders();
+          if (currentSection==='orders')    loadOrders();
+        }
+        if (d.type === 'call_bell') {
+          const table   = d.table;
+          const message = d.message || 'Call bell';
+          const isBill  = message.toLowerCase().includes('bill');
+          if (isBill) {
+            // Show prominent payment alert
+            addBellAlert(table, message);
+          }
+          addNotif(`🔔 Table ${table}: ${message}${isBill ? ' — <a href="/payment" style="color:var(--accent);font-weight:700">💳 Pay Now</a>' : ''}`, 'bell');
+          showToast(`🔔 Table ${table}: ${message}`, 'info');
+        }
       } catch{}
     };
     es.onerror = () => { setTimeout(connectSSE, 5000); es.close(); };
@@ -2126,22 +2432,44 @@ async function addGuest() {
    ANALYTICS SECTION
 ══════════════════════════════════════════════ */
 let analyticsCharts = {};
+let analyticsPeriod = 'daily';
+
+function setAnalyticsPeriod(p, btn) {
+  analyticsPeriod = p;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn?.classList.add('active');
+  loadAnalytics();
+}
 
 async function loadAnalytics() {
-  const [summary, reportData] = await Promise.all([
+  const [summary, reportData, exportData] = await Promise.all([
     api('GET','/api/dashboard/summary'),
-    api('GET','/api/reports/summary')
+    api('GET','/api/reports/summary'),
+    api('GET',`/api/reports/orders-export?period=${analyticsPeriod}`),
   ]);
-  const s = summary.stats;
-  const rd = reportData;
+  const s  = summary.stats  || {};
+  const rd = reportData     || {};
+  const ex = exportData     || {};
 
   // KPI row
+  const periodRevenue = ex.summaryRows?.find(r=>r.Metric==='Total Revenue (रू)')?.Value || 0;
+  const periodOrders  = ex.summaryRows?.find(r=>r.Metric==='Total Orders')?.Value || 0;
   document.getElementById('analyticsKPI').innerHTML = `
-    <div class="kpi-card"><div class="kv">${s.totalOrders}</div><div class="kl">Total Orders</div></div>
-    <div class="kpi-card"><div class="kv">Rs ${s.revenue.toLocaleString()}</div><div class="kl">Total Revenue</div></div>
-    <div class="kpi-card"><div class="kv">${s.avgRating}</div><div class="kl">Avg Rating ⭐</div></div>
-    <div class="kpi-card"><div class="kv">${s.totalGuests}</div><div class="kl">Total Guests</div></div>
+    <div class="kpi-card"><div class="kv">${s.totalOrders||0}</div><div class="kl">Total Orders (All)</div></div>
+    <div class="kpi-card"><div class="kv">रू ${(s.revenue||0).toLocaleString()}</div><div class="kl">Total Revenue (All)</div></div>
+    <div class="kpi-card"><div class="kv">${periodOrders}</div><div class="kl">Orders (${analyticsPeriod})</div></div>
+    <div class="kpi-card"><div class="kv">${periodRevenue}</div><div class="kl">Revenue (${analyticsPeriod})</div></div>
+    <div class="kpi-card"><div class="kv">${s.avgRating||'—'}</div><div class="kl">Avg Rating ⭐</div></div>
+    <div class="kpi-card"><div class="kv">${s.totalGuests||0}</div><div class="kl">Total Guests</div></div>
   `;
+
+  // Sales summary cards
+  document.getElementById('salesSummaryCards').innerHTML = `
+    <div class="report-kpi-card"><div class="rv">रू ${(s.todayRevenue||0).toLocaleString()}</div><div class="rl">Today</div></div>
+    <div class="report-kpi-card"><div class="rv">रू ${(s.weekRevenue||0).toLocaleString()}</div><div class="rl">This Week</div></div>
+    <div class="report-kpi-card"><div class="rv">रू ${(s.monthRevenue||0).toLocaleString()}</div><div class="rl">This Month</div></div>
+  `;
+  document.getElementById('revTrendLabel').textContent = `Period: ${analyticsPeriod}`;
 
   // Destroy old charts
   Object.values(analyticsCharts).forEach(c => { try{c.destroy()}catch{} });
@@ -2202,100 +2530,213 @@ async function loadAnalytics() {
       <span style="color:#fff;font-weight:600">${l}</span>
       <span style="color:var(--muted)">${gbData[i]} guests</span>
     </div>`).join('');
+
+  // Revenue Trend — last 7 days from export rows
+  const trendRows = (ex.orderRows||[]);
+  const trendByDay = {};
+  trendRows.forEach(r => {
+    const d = r['Date'] || '';
+    if (!trendByDay[d]) trendByDay[d] = 0;
+    trendByDay[d] += parseInt(r['Total (रू)'])||0;
+  });
+  const trendLabels = Object.keys(trendByDay).slice(-14);
+  const trendData   = trendLabels.map(d => trendByDay[d]);
+  if (analyticsCharts.revTrend) analyticsCharts.revTrend.destroy();
+  if (document.getElementById('revenueTrendChart')) {
+    analyticsCharts.revTrend = new Chart(document.getElementById('revenueTrendChart').getContext('2d'), {
+      type: 'line',
+      data: { labels: trendLabels, datasets: [{
+        label: 'Revenue (रू)',
+        data: trendData,
+        borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,.1)',
+        borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#f97316', tension: 0.3, fill: true,
+      }]},
+      options: { ...co, plugins:{ legend:{display:false} }, scales:{ x:{...co.scales.x}, y:{...co.scales.y} } }
+    });
+  }
+
+  // Customer Growth — guests over time
+  const growthByDay = {};
+  (rd.hourly||{});
+  const allGuests = await api('GET','/api/guests');
+  (Array.isArray(allGuests)?allGuests:[]).forEach(g => {
+    const d = new Date(g.time).toLocaleDateString('en-NP');
+    growthByDay[d] = (growthByDay[d]||0) + g.count;
+  });
+  let cumulative = 0;
+  const growthLabels = Object.keys(growthByDay).slice(-14);
+  const growthData   = growthLabels.map(d => { cumulative += growthByDay[d]; return cumulative; });
+  if (analyticsCharts.custGrowth) analyticsCharts.custGrowth.destroy();
+  if (document.getElementById('customerGrowthChart')) {
+    analyticsCharts.custGrowth = new Chart(document.getElementById('customerGrowthChart').getContext('2d'), {
+      type: 'line',
+      data: { labels: growthLabels, datasets: [{
+        label: 'Cumulative Guests',
+        data: growthData,
+        borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,.1)',
+        borderWidth: 2, pointRadius: 3, tension: 0.4, fill: true,
+      }]},
+      options: { ...co, plugins:{ legend:{display:false} } }
+    });
+  }
 }
 
 /* ══════════════════════════════════════════════
-   ATTENDANCE SECTION
+   ATTENDANCE SECTION — DB-backed
 ══════════════════════════════════════════════ */
-const ATT_KEY = 'restaurant_attendance_' + new Date().toDateString();
+let attRecordsCache = [];
 
-function getAttData() {
-  try { return JSON.parse(localStorage.getItem(ATT_KEY)||'{}'); } catch { return {}; }
-}
-function saveAttData(d) { localStorage.setItem(ATT_KEY, JSON.stringify(d)); }
+async function loadAttendance(date) {
+  const dateStr = date || new Date().toISOString().split('T')[0];
+  const dp = document.getElementById('attDatePicker');
+  if (dp && !date) dp.value = dateStr;
 
-async function loadAttendance() {
-  const staff = await api('GET','/api/staff');
-  const attData = getAttData();
-  const today = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const records = await api('GET', `/api/attendance?date=${dateStr}`);
+  if (!Array.isArray(records)) return;
+  attRecordsCache = records;
+
+  const today = new Date(dateStr).toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   document.getElementById('attDate').textContent = today;
 
-  let present=0, absent=0;
-  const grid = document.getElementById('attendanceGrid');
   const colors = ['#f97316','#3b82f6','#22c55e','#8b5cf6','#f59e0b','#ef4444'];
+  const statusColors = { Present:'#22c55e', Late:'#f59e0b', Absent:'#ef4444', 'Half-Day':'#8b5cf6' };
+  let present=0, late=0, absent=0;
 
-  grid.innerHTML = staff.map((s,i) => {
-    const att = attData[s.id] || {};
-    const hasIn = !!att.checkIn;
-    const hasOut = !!att.checkOut;
-    if (hasIn) present++; else absent++;
-    let hours = '—';
-    if (hasIn && hasOut) {
-      const diff = (new Date(att.checkOut) - new Date(att.checkIn)) / 3600000;
-      hours = diff.toFixed(1) + 'h';
-    }
+  const grid = document.getElementById('attendanceGrid');
+  grid.innerHTML = records.map((r,i) => {
+    const hasIn  = !!r.checkIn;
+    const hasOut = !!r.checkOut;
+    const hours  = r.hoursWorked ? r.hoursWorked + 'h' : '—';
+    if (r.status === 'Present' || r.status === 'Half-Day') present++;
+    else if (r.status === 'Late') { present++; late++; }
+    else absent++;
     const btnHtml = !hasIn
-      ? `<button class="att-btn checkin" onclick="checkIn(${s.id})">✓ Check In</button>`
+      ? `<button class="att-btn checkin" onclick="checkIn(${r.userId})">✓ Check In</button>`
       : !hasOut
-        ? `<button class="att-btn checkout" onclick="checkOut(${s.id})">→ Check Out</button>`
+        ? `<button class="att-btn checkout" onclick="checkOut(${r.userId})">→ Check Out</button>`
         : `<button class="att-btn done" disabled>✓ Done (${hours})</button>`;
+    const statusBadge = hasIn
+      ? `<span style="font-size:10px;background:${statusColors[r.status]||'#555'};color:#fff;padding:2px 8px;border-radius:10px;font-weight:700">${r.status}</span>`
+      : '';
     return `<div class="att-card">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-        <div style="width:38px;height:38px;border-radius:50%;background:${colors[i%colors.length]};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">${(s.name||s.username).slice(0,2).toUpperCase()}</div>
-        <div><div class="a-name">${s.name||s.username}</div><div class="a-role">${s.role}</div></div>
+        <div style="width:38px;height:38px;border-radius:50%;background:${colors[i%colors.length]};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">${r.userName.slice(0,2).toUpperCase()}</div>
+        <div style="flex:1"><div class="a-name">${r.userName}</div><div class="a-role">${r.userRole}</div></div>
+        ${statusBadge}
       </div>
-      ${hasIn?`<div class="att-time">In: <span>${new Date(att.checkIn).toLocaleTimeString()}</span></div>`:'<div class="att-time" style="color:var(--dimmed)">Not checked in</div>'}
-      ${hasOut?`<div class="att-time">Out: <span>${new Date(att.checkOut).toLocaleTimeString()}</span></div>`:''}
+      ${hasIn?`<div class="att-time">In: <span>${new Date(r.checkIn).toLocaleTimeString()}</span></div>`:'<div class="att-time" style="color:var(--dimmed)">Not checked in</div>'}
+      ${hasOut?`<div class="att-time">Out: <span>${new Date(r.checkOut).toLocaleTimeString()}</span></div>`:''}
       ${btnHtml}
     </div>`;
   }).join('');
 
+  // KPI chips
+  document.getElementById('attKPIs').innerHTML = `
+    <div class="report-kpi-card"><div class="rv" style="color:#22c55e">${present}</div><div class="rl">Present</div></div>
+    <div class="report-kpi-card"><div class="rv" style="color:#f59e0b">${late}</div><div class="rl">Late</div></div>
+    <div class="report-kpi-card"><div class="rv" style="color:#ef4444">${absent}</div><div class="rl">Absent</div></div>
+    <div class="report-kpi-card"><div class="rv">${records.length}</div><div class="rl">Total Staff</div></div>
+  `;
   document.getElementById('attSummary').innerHTML = `
-    <span class="att-chip present">✓ Present: ${present}</span>
-    <span class="att-chip absent">✗ Absent: ${absent}</span>
+    <span class="att-chip present">✓ ${present}</span>
+    <span class="att-chip absent" style="background:rgba(239,68,68,.15);color:#ef4444">✗ ${absent}</span>
   `;
 
-  // Log table
-  const tbody = document.getElementById('attLogTbody');
-  tbody.innerHTML = staff.map(s => {
-    const att = attData[s.id]||{};
-    const hasIn=!!att.checkIn, hasOut=!!att.checkOut;
-    let hours='—';
-    if(hasIn&&hasOut){ const d=(new Date(att.checkOut)-new Date(att.checkIn))/3600000; hours=d.toFixed(1)+'h'; }
-    const status = hasIn&&hasOut ? '<span style="color:var(--green);font-weight:600">Complete</span>'
-      : hasIn ? '<span style="color:var(--accent);font-weight:600">Working</span>'
-      : '<span style="color:var(--muted)">Absent</span>';
-    return `<tr>
-      <td style="font-weight:600;color:#fff">${s.name||s.username}</td>
-      <td style="color:var(--muted);text-transform:capitalize">${s.role}</td>
-      <td>${hasIn?new Date(att.checkIn).toLocaleTimeString():'—'}</td>
-      <td>${hasOut?new Date(att.checkOut).toLocaleTimeString():'—'}</td>
-      <td style="color:var(--accent);font-weight:600">${hours}</td>
-      <td>${status}</td>
-    </tr>`;
-  }).join('');
+  renderAttLog(records);
 }
 
-function checkIn(staffId) {
-  const d = getAttData();
-  if (d[staffId]?.checkIn) return;
-  d[staffId] = { ...d[staffId], checkIn: new Date().toISOString() };
-  saveAttData(d);
-  showToast('Checked in!','success');
-  loadAttendance();
+function renderAttLog(records) {
+  const filter = document.getElementById('attStatusFilter')?.value || 'all';
+  const filtered = filter === 'all' ? records : records.filter(r => r.status === filter);
+  const statusColors = { Present:'#22c55e', Late:'#f59e0b', Absent:'#ef4444', 'Half-Day':'#8b5cf6' };
+  document.getElementById('attLogTbody').innerHTML = filtered.map(r => `<tr>
+    <td style="font-weight:600;color:#fff">${r.userName}</td>
+    <td style="color:var(--muted);text-transform:capitalize">${r.userRole}</td>
+    <td>${r.checkIn ? new Date(r.checkIn).toLocaleTimeString() : '—'}</td>
+    <td>${r.checkOut ? new Date(r.checkOut).toLocaleTimeString() : '—'}</td>
+    <td style="color:var(--accent);font-weight:600">${r.hoursWorked ? r.hoursWorked + 'h' : '—'}</td>
+    <td><span style="color:${statusColors[r.status]||'#888'};font-weight:700">${r.status}</span></td>
+    <td><button onclick="overrideAtt(${r.userId},'${r.status}')" style="background:none;border:1px solid var(--border);color:var(--muted);padding:3px 8px;border-radius:5px;cursor:pointer;font-size:11px;font-family:var(--font)">Edit</button></td>
+  </tr>`).join('');
 }
-function checkOut(staffId) {
-  const d = getAttData();
-  if (!d[staffId]?.checkIn || d[staffId]?.checkOut) return;
-  d[staffId] = { ...d[staffId], checkOut: new Date().toISOString() };
-  saveAttData(d);
-  showToast('Checked out!','success');
-  loadAttendance();
+
+function filterAttLog(val) { renderAttLog(attRecordsCache); }
+
+async function checkIn(userId) {
+  const r = await api('POST', '/api/attendance/checkin', { userId });
+  if (r.success) { showToast(r.record.status === 'Late' ? '⚠️ Checked in — Late!' : '✅ Checked in!', r.record.status === 'Late' ? 'error' : 'success'); loadAttendance(); }
+  else showToast(r.message || 'Error', 'error');
+}
+
+async function checkOut(userId) {
+  const r = await api('POST', '/api/attendance/checkout', { userId });
+  if (r.success) { showToast(`✅ Checked out — ${r.record.hoursWorked}h worked`, 'success'); loadAttendance(); }
+  else showToast(r.message || 'Error', 'error');
+}
+
+async function overrideAtt(userId, currentStatus) {
+  const status = prompt('Set status (Present/Late/Absent/Half-Day):', currentStatus);
+  if (!status) return;
+  const r = await api('PATCH', `/api/attendance/${userId}`, { status });
+  if (r.success) { showToast('Status updated', 'success'); loadAttendance(); }
+}
+
+function showAttReport() {
+  const modal = document.getElementById('attReportModal');
+  modal.style.display = 'flex';
+  const now  = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const to   = now.toISOString().split('T')[0];
+  document.getElementById('rptFrom').value = from;
+  document.getElementById('rptTo').value   = to;
+}
+
+async function loadAttReport() {
+  const from = document.getElementById('rptFrom').value;
+  const to   = document.getElementById('rptTo').value;
+  if (!from || !to) return showToast('Select date range', 'error');
+  const records = await api('GET', `/api/attendance/report?from=${from}&to=${to}`);
+  if (!Array.isArray(records)) return;
+  const statusColors = { Present:'#22c55e', Late:'#f59e0b', Absent:'#ef4444', 'Half-Day':'#8b5cf6' };
+  const summary = records.reduce((acc, r) => { acc[r.status] = (acc[r.status]||0)+1; return acc; }, {});
+  document.getElementById('attReportContent').innerHTML = `
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      ${Object.entries(summary).map(([s,c])=>`<div class="report-kpi-card" style="min-width:100px"><div class="rv" style="color:${statusColors[s]||'#888'}">${c}</div><div class="rl">${s}</div></div>`).join('')}
+    </div>
+    <div style="overflow-x:auto">
+    <table class="orders-table"><thead><tr><th>Date</th><th>Name</th><th>Role</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Status</th></tr></thead>
+    <tbody>${records.map(r=>`<tr>
+      <td>${r.date}</td>
+      <td style="color:#fff;font-weight:600">${r.userName}</td>
+      <td style="color:var(--muted)">${r.userRole}</td>
+      <td>${r.checkIn?new Date(r.checkIn).toLocaleTimeString():'—'}</td>
+      <td>${r.checkOut?new Date(r.checkOut).toLocaleTimeString():'—'}</td>
+      <td style="color:var(--accent)">${r.hoursWorked?r.hoursWorked+'h':'—'}</td>
+      <td><span style="color:${statusColors[r.status]||'#888'};font-weight:700">${r.status}</span></td>
+    </tr>`).join('')}</tbody></table></div>`;
 }
 
 /* ══════════════════════════════════════════════
-   FLOOR MAP
+   FLOOR MAP — Drag & Drop + Merge/Split
 ══════════════════════════════════════════════ */
+let floorEditMode = false;
+let floorSelected = new Set();
+let floorPositions = {}; // { tableNo: {x, y} }
+let floorDragState = null;
+window._floorData = {};
+
+function toggleFloorEdit() {
+  floorEditMode = !floorEditMode;
+  const btn  = document.getElementById('floorEditBtn');
+  const hint = document.getElementById('floorEditHint');
+  const mergeBtn = document.getElementById('floorMergeBtn');
+  btn.textContent = floorEditMode ? '✅ Done Editing' : '✏️ Edit Layout';
+  btn.style.background = floorEditMode ? 'rgba(34,197,94,.2)' : 'none';
+  hint.style.display = floorEditMode ? 'inline' : 'none';
+  if (!floorEditMode) { floorSelected.clear(); mergeBtn.style.display='none'; }
+  renderFloorGrid();
+}
+
 async function loadFloorMap() {
   const [tables, orders, reservations] = await Promise.all([
     api('GET','/api/tables'),
@@ -2303,68 +2744,158 @@ async function loadFloorMap() {
     api('GET','/api/reservations')
   ]);
   const today = new Date().toISOString().split('T')[0];
-  const activeOrders = (Array.isArray(orders)?orders:[]).filter(o=>o.status==='Pending'||o.status==='Preparing');
-  const todayReservations = (Array.isArray(reservations)?reservations:[]).filter(r=>r.date===today);
+  window._floorData = {
+    tables,
+    activeOrders:       (Array.isArray(orders)?orders:[]).filter(o=>['Pending','Preparing'].includes(o.status)),
+    todayReservations:  (Array.isArray(reservations)?reservations:[]).filter(r=>r.date===today),
+  };
+  // Load saved positions from localStorage
+  try { floorPositions = JSON.parse(localStorage.getItem('floor_positions')||'{}'); } catch { floorPositions = {}; }
+  renderFloorGrid();
+}
 
-  const cols = 5;
-  const W = 100, H = 80, PAD = 20, RADIUS = 8;
-  const svgW = cols*(W+PAD)+PAD;
-  const svgH = Math.ceil(tables.length/cols)*(H+PAD)+PAD;
+function renderFloorGrid() {
+  const { tables=[], activeOrders=[], todayReservations=[] } = window._floorData;
+  const grid = document.getElementById('floorGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
 
-  const rects = tables.map((no,i) => {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const x = PAD + col*(W+PAD);
-    const y = PAD + row*(H+PAD);
-    const occupied = activeOrders.some(o=>o.table==no);
-    const reserved = todayReservations.some(r=>r.tableNo==no);
-    const color = occupied ? '#f97316' : reserved ? '#3b82f6' : '#2a2a2a';
-    const textColor = occupied||reserved ? '#fff' : '#aaa';
-    const orders = activeOrders.filter(o=>o.table==no);
-    const orderInfo = orders.length ? `${orders.length} order(s)` : reserved ? 'Reserved' : 'Free';
-    return `<g class="floor-table" onclick="showFloorDetail(${no})">
-      <rect x="${x}" y="${y}" width="${W}" height="${H}" rx="${RADIUS}" fill="${color}" stroke="${occupied?'#f97316':reserved?'#3b82f6':'#3a3a3a'}" stroke-width="1.5"/>
-      <text x="${x+W/2}" y="${y+28}" text-anchor="middle" fill="${textColor}" font-size="22" font-weight="800" font-family="Plus Jakarta Sans,sans-serif">${no}</text>
-      <text x="${x+W/2}" y="${y+46}" text-anchor="middle" fill="${occupied?'#fff':reserved?'#fff':'#666'}" font-size="10" font-family="Plus Jakarta Sans,sans-serif">Table ${no}</text>
-      <text x="${x+W/2}" y="${y+60}" text-anchor="middle" fill="${occupied?'rgba(255,255,255,.8)':reserved?'rgba(255,255,255,.7)':'#555'}" font-size="9" font-family="Plus Jakarta Sans,sans-serif">${orderInfo}</text>
-    </g>`;
-  }).join('');
+  tables.forEach((no, i) => {
+    const occupied    = activeOrders.some(o=>o.table==no);
+    const reserved    = todayReservations.some(r=>r.tableNo==no);
+    const billReq     = typeof billRequestedTables !== 'undefined' && billRequestedTables.has?.(no);
+    const isSelected  = floorSelected.has(no);
+    const pos         = floorPositions[no] || { x: (i%5)*140+16, y: Math.floor(i/5)*110+16 };
+    const color       = billReq ? '#f59e0b' : occupied ? '#f97316' : reserved ? '#3b82f6' : '#2a2a2a';
+    const border      = isSelected ? '2px solid #fff' : `2px solid ${color}`;
+    const label       = billReq ? '🔔 Bill' : occupied ? `${activeOrders.filter(o=>o.table==no).length} order(s)` : reserved ? 'Reserved' : 'Free';
 
-  document.getElementById('floorSvgWrap').innerHTML = `
-    <svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">
-      <rect width="100%" height="100%" fill="#111" rx="8"/>
-      ${rects}
-    </svg>`;
+    const card = document.createElement('div');
+    card.id    = `floor-table-${no}`;
+    card.style.cssText = `
+      position:absolute;left:${pos.x}px;top:${pos.y}px;
+      width:120px;height:90px;border-radius:10px;background:${color};border:${border};
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      cursor:${floorEditMode?'grab':'pointer'};user-select:none;
+      transition:${floorEditMode?'none':'box-shadow .2s'};
+      box-shadow:${isSelected?'0 0 0 3px rgba(255,255,255,.5)':'none'};
+    `;
+    card.innerHTML = `
+      <div style="font-size:26px;font-weight:900;color:#fff">${no}</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.8);margin-top:2px">Table ${no}</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.65);margin-top:3px">${label}</div>
+    `;
 
-  // store for detail view
-  window._floorData = { tables, activeOrders, todayReservations };
+    if (floorEditMode) {
+      // Drag
+      card.addEventListener('mousedown', e => startDrag(e, no, card));
+      // Multi-select on click
+      card.addEventListener('click', e => { if (!floorDragState?.moved) toggleFloorSelect(no); });
+    } else {
+      card.addEventListener('click', () => showFloorDetail(no));
+    }
+
+    // Expand height for min-height
+    const gridEl = document.getElementById('floorGrid');
+    const neededH = pos.y + 120;
+    if (neededH > (parseInt(gridEl.style.minHeight)||400)) gridEl.style.minHeight = neededH + 'px';
+
+    grid.appendChild(card);
+  });
+}
+
+function toggleFloorSelect(no) {
+  if (floorSelected.has(no)) floorSelected.delete(no);
+  else floorSelected.add(no);
+  const mergeBtn = document.getElementById('floorMergeBtn');
+  mergeBtn.style.display = floorSelected.size >= 2 ? 'inline-flex' : 'none';
+  renderFloorGrid();
+}
+
+function startDrag(e, no, card) {
+  e.preventDefault();
+  const startX = e.clientX - (floorPositions[no]?.x || 0);
+  const startY = e.clientY - (floorPositions[no]?.y || 0);
+  floorDragState = { no, moved: false };
+
+  function onMove(ev) {
+    floorDragState.moved = true;
+    const x = Math.max(0, ev.clientX - startX);
+    const y = Math.max(0, ev.clientY - startY);
+    floorPositions[no] = { x, y };
+    card.style.left = x + 'px';
+    card.style.top  = y + 'px';
+  }
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    localStorage.setItem('floor_positions', JSON.stringify(floorPositions));
+    setTimeout(() => { floorDragState = null; }, 50);
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function mergeSelectedTables() {
+  if (floorSelected.size < 2) return showToast('Select 2+ tables to merge', 'error');
+  const tables = [...floorSelected];
+  const confirm_msg = `Merge tables ${tables.join(' + ')}? This will show them as a combined table.`;
+  if (!confirm(confirm_msg)) return;
+  // Store merge info in localStorage
+  const merges = JSON.parse(localStorage.getItem('floor_merges')||'[]');
+  merges.push({ tables, createdAt: new Date().toISOString() });
+  localStorage.setItem('floor_merges', JSON.stringify(merges));
+  floorSelected.clear();
+  document.getElementById('floorMergeBtn').style.display = 'none';
+  showToast(`Tables ${tables.join('+')} merged!`, 'success');
+  renderFloorGrid();
+}
+
+function splitFloorTable() {
+  const no = window._selectedFloorTable;
+  if (!no) return;
+  const merges = JSON.parse(localStorage.getItem('floor_merges')||'[]');
+  const updated = merges.filter(m => !m.tables.includes(no));
+  localStorage.setItem('floor_merges', JSON.stringify(updated));
+  showToast(`Table ${no} split from merged group`, 'success');
+  document.getElementById('floorTableDetail').style.display = 'none';
+}
+
+function reserveFloorTable() {
+  const no = window._selectedFloorTable;
+  if (!no) return;
+  showSection('reservations', null);
+  setTimeout(() => {
+    const el = document.getElementById('res-table');
+    if (el) { el.value = no; openModal('addReservationModal'); }
+  }, 300);
 }
 
 function showFloorDetail(no) {
-  const { activeOrders, todayReservations } = window._floorData || {};
-  const orders = (activeOrders||[]).filter(o=>o.table==no);
-  const res    = (todayReservations||[]).filter(r=>r.tableNo==no);
+  window._selectedFloorTable = no;
+  const { activeOrders=[], todayReservations=[] } = window._floorData;
+  const orders = activeOrders.filter(o=>o.table==no);
+  const res    = todayReservations.filter(r=>r.tableNo==no);
   const detail = document.getElementById('floorTableDetail');
-  const title  = document.getElementById('floorDetailTitle');
-  const content= document.getElementById('floorDetailContent');
-  title.textContent = `Table ${no} Details`;
+  document.getElementById('floorDetailTitle').textContent = `Table ${no}`;
   detail.style.display = 'block';
-  if (!orders.length && !res.length) {
-    content.innerHTML = '<p style="color:var(--muted);font-size:13px">Table is free — no active orders or reservations.</p>';
-    return;
-  }
-  content.innerHTML = (orders.length?`<div style="margin-bottom:10px"><div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600">ACTIVE ORDERS</div>`+
-    orders.map(o=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e1e1e;font-size:13px">
-      <span style="color:var(--accent);font-weight:600">#${o.id}</span>
-      <span style="color:var(--text)">${o.items.map(i=>i.name+'×'+i.qty).join(', ')}</span>
-      <span class="status-badge ${o.status}">${o.status}</span>
-    </div>`).join('')+'</div>':'')+
-    (res.length?`<div><div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600">RESERVATIONS</div>`+
-      res.map(r=>`<div style="font-size:13px;padding:6px 0;border-bottom:1px solid #1e1e1e">
+  document.getElementById('floorDetailContent').innerHTML =
+    orders.length ? `<div style="margin-bottom:10px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:700">ACTIVE ORDERS</div>
+      ${orders.map(o=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #1e1e1e;font-size:13px">
+        <span style="color:var(--accent);font-weight:700">#${o.id}</span>
+        <span style="color:var(--text);flex:1;margin:0 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.items.map(i=>i.name+'×'+i.qty).join(', ')}</span>
+        <span class="status-badge ${o.status}">${o.status}</span>
+      </div>`).join('')}
+    </div>` : '' +
+    (res.length ? `<div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:700">RESERVATIONS TODAY</div>
+      ${res.map(r=>`<div style="font-size:13px;padding:7px 0;border-bottom:1px solid #1e1e1e;display:flex;justify-content:space-between">
         <span style="color:#fff;font-weight:600">${r.name}</span>
-        <span style="color:var(--muted);margin:0 8px">${r.time}</span>
-        <span style="color:var(--accent)">👥${r.guests}</span>
-      </div>`).join('')+'</div>':'');
+        <span style="color:var(--muted)">${r.time} · 👥${r.guests}</span>
+      </div>`).join('')}
+    </div>` : '') ||
+    '<p style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Table is free</p>';
 }
 
 /* ══════════════════════════════════════════════
@@ -2461,41 +2992,99 @@ async function loadReports() {
 }
 
 /* ══════════════════════════════════════════════
-   SETTINGS SECTION
+   SETTINGS SECTION — DB-backed
 ══════════════════════════════════════════════ */
-function loadSettings() {
-  const s = JSON.parse(localStorage.getItem('restaurant_settings')||'{}');
-  document.getElementById('set-name').value     = s.name||'';
-  document.getElementById('set-address').value  = s.address||'';
-  document.getElementById('set-phone').value    = s.phone||'';
-  document.getElementById('set-email').value    = s.email||'';
-  document.getElementById('set-goal').value     = s.goal||5000;
-  document.getElementById('set-refresh').value  = s.refresh||30;
-  document.getElementById('set-currency').value = s.currency||'Rs';
-  document.getElementById('set-tz').value       = s.tz||'Asia/Kathmandu';
-  document.getElementById('set-username').value = user.username||'';
-  document.getElementById('set-role').value     = user.role||'';
-  // restore accent color swatch state
-  const accent = s.accent||'#f97316';
+async function loadSettings() {
+  const s = await api('GET', '/api/settings');
+  const user = JSON.parse(localStorage.getItem('user')||'{}');
+  // Populate fields
+  const set = (id, val) => { const el=document.getElementById(id); if(el) el.value=val||''; };
+  set('set-name',           s.restaurant_name);
+  set('set-address',        s.restaurant_address);
+  set('set-phone',          s.restaurant_phone);
+  set('set-email',          s.restaurant_email);
+  set('set-tax',            s.tax_rate||'13');
+  set('set-service-charge', s.service_charge||'0');
+  set('set-currency',       s.currency||'रू');
+  set('set-goal',           s.daily_goal||'5000');
+  set('set-shift-start',    s.shift_start||'09:30');
+  set('set-low-stock',      s.low_stock_alert||'5');
+  set('set-refresh',        s.refresh||'30');
+  set('set-language',       s.language||'en');
+  set('set-printer-name',   s.printer_name||'');
+  set('set-printer-width',  s.printer_width||'80');
+  set('set-auto-print',     s.auto_print||'0');
+  set('set-username',       user.username||'');
+  set('set-role',           user.role||'');
+  // Restore accent color
+  const accent = s.theme_color||localStorage.getItem('accent_color')||'#f97316';
+  setAccent(accent, null);
   document.querySelectorAll('.color-swatch').forEach(sw=>{
-    sw.classList.toggle('selected', sw.style.background===accent||sw.getAttribute('style')===`background: ${accent};`);
+    sw.classList.toggle('selected', sw.style.background===accent);
   });
 }
 
-function saveSettings() {
-  const s = {
-    name:     document.getElementById('set-name').value,
-    address:  document.getElementById('set-address').value,
-    phone:    document.getElementById('set-phone').value,
-    email:    document.getElementById('set-email').value,
-    goal:     parseInt(document.getElementById('set-goal').value)||5000,
-    refresh:  parseInt(document.getElementById('set-refresh').value)||30,
-    currency: document.getElementById('set-currency').value||'Rs',
-    tz:       document.getElementById('set-tz').value||'Asia/Kathmandu',
-    accent:   getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#f97316',
-  };
-  localStorage.setItem('restaurant_settings', JSON.stringify(s));
-  showToast('Settings saved!','success');
+async function saveRestaurantInfo() {
+  const r = await api('POST', '/api/settings', {
+    restaurant_name:    document.getElementById('set-name').value,
+    restaurant_address: document.getElementById('set-address').value,
+    restaurant_phone:   document.getElementById('set-phone').value,
+    restaurant_email:   document.getElementById('set-email').value,
+  });
+  if (r.success) showToast('✅ Restaurant info saved', 'success');
+  else showToast(r.message||'Error', 'error');
+}
+
+async function saveTaxSettings() {
+  const r = await api('POST', '/api/settings', {
+    tax_rate:       document.getElementById('set-tax').value,
+    service_charge: document.getElementById('set-service-charge').value,
+    currency:       document.getElementById('set-currency').value,
+    daily_goal:     document.getElementById('set-goal').value,
+  });
+  if (r.success) showToast('✅ Tax settings saved', 'success');
+  else showToast(r.message||'Error', 'error');
+}
+
+async function saveSystemConfig() {
+  const r = await api('POST', '/api/settings', {
+    shift_start:      document.getElementById('set-shift-start').value,
+    low_stock_alert:  document.getElementById('set-low-stock').value,
+    refresh:          document.getElementById('set-refresh').value,
+    language:         document.getElementById('set-language').value,
+  });
+  if (r.success) showToast('✅ System config saved', 'success');
+  else showToast(r.message||'Error', 'error');
+}
+
+async function savePrinterSettings() {
+  const r = await api('POST', '/api/settings', {
+    printer_name:  document.getElementById('set-printer-name').value,
+    printer_width: document.getElementById('set-printer-width').value,
+    auto_print:    document.getElementById('set-auto-print').value,
+  });
+  if (r.success) showToast('✅ Printer settings saved', 'success');
+  else showToast(r.message||'Error', 'error');
+}
+
+async function saveAllSettings() {
+  await Promise.all([saveRestaurantInfo(), saveTaxSettings(), saveSystemConfig(), savePrinterSettings()]);
+  showToast('✅ All settings saved!', 'success');
+}
+
+// Legacy alias
+function saveSettings() { saveAllSettings(); }
+
+function testPrint() {
+  const w = parseInt(document.getElementById('set-printer-width')?.value||'80');
+  const printWin = window.open('','_blank','width=400,height=600');
+  printWin.document.write(`<html><body style="font-family:monospace;max-width:${w==='a4'?600:w*3.78}px;margin:0 auto;padding:20px">
+    <h2 style="text-align:center">🍽️ TEST PRINT</h2>
+    <p style="text-align:center">${new Date().toLocaleString()}</p>
+    <hr><p>Item 1 × 2 .............. रू 400</p><p>Item 2 × 1 .............. रू 200</p>
+    <hr><p><b>Total: रू 600</b></p><p style="text-align:center">Thank you! 🙏</p>
+  </body></html>`);
+  printWin.print();
 }
 
 function setAccent(color, el) {
@@ -2539,6 +3128,7 @@ showSection = function(name, navEl, filter) {
   if (name==='notifications') renderNotificationsPage();
   if (name==='reports')       loadReports();
   if (name==='settings')      loadSettings();
+  if (name==='payments')      loadPayments();
 
   // Update sidebar notif count
   const cnt = document.getElementById('sidebarNotifCount');
@@ -2564,6 +3154,207 @@ clearNotifs = function() {
 };
 
 /* ══════════════════════════════════════════════
+   PAYMENTS SECTION
+══════════════════════════════════════════════ */
+let allPayments = [];
+let payLang = 'en';
+
+const PAY_TEXT = {
+  en: {
+    heading:    'Payments',
+    subheading: 'Payment history and revenue summary',
+    totalRev:   'Total Revenue',
+    totalPay:   'Total Payments',
+    cash:       'Cash',
+    digital:    'Digital (Card / eSewa / Khalti)',
+    avgBill:    'Avg. Bill',
+    breakdown:  'Payment Method Breakdown',
+    history:    'Payment History',
+    refresh:    'Refresh',
+    terminal:   'Open Payment Terminal',
+    table:      'Table', items: 'Items', amount: 'Amount',
+    paid: 'Paid', change: 'Change', method: 'Method',
+    time: 'Time', receipt: 'Receipt',
+    noData:     'No payments yet',
+    allMethods: 'All Methods',
+    print:      'Print',
+  },
+  ne: {
+    heading:    'भुक्तानी',
+    subheading: 'भुक्तानी इतिहास र राजस्व सारांश',
+    totalRev:   'कुल आम्दानी',
+    totalPay:   'कुल भुक्तानी',
+    cash:       'नगद',
+    digital:    'डिजिटल (कार्ड / eSewa / Khalti)',
+    avgBill:    'औसत बिल',
+    breakdown:  'भुक्तानी विधि विवरण',
+    history:    'भुक्तानी इतिहास',
+    refresh:    'रिफ्रेश',
+    terminal:   'भुक्तानी टर्मिनल खोल्नुस्',
+    table:      'टेबल', items: 'सामानहरू', amount: 'रकम',
+    paid: 'तिरेको', change: 'फिर्ता', method: 'विधि',
+    time: 'समय', receipt: 'रसिद',
+    noData:     'अहिलेसम्म कुनै भुक्तानी छैन',
+    allMethods: 'सबै विधि',
+    print:      'छाप्नुस्',
+  }
+};
+
+function setPayLang(lang) {
+  payLang = lang;
+  const t = PAY_TEXT[lang];
+  // Toggle buttons
+  document.getElementById('langEN').style.background = lang==='en' ? 'var(--accent)' : 'none';
+  document.getElementById('langEN').style.color      = lang==='en' ? '#fff' : 'var(--muted)';
+  document.getElementById('langNE').style.background = lang==='ne' ? 'var(--accent)' : 'none';
+  document.getElementById('langNE').style.color      = lang==='ne' ? '#fff' : 'var(--muted)';
+  // Update all .t elements with data-en/data-ne
+  document.querySelectorAll('#sec-payments .t[data-en]').forEach(el => {
+    el.textContent = el.dataset[lang] || el.dataset.en;
+  });
+  // Re-render table headers and data
+  renderPaymentsTable();
+}
+
+async function loadPayments() {
+  try {
+    const r = await fetch('/api/payments', { headers: authHeaders() });
+    allPayments = await r.json();
+    if (!Array.isArray(allPayments)) allPayments = [];
+    renderPaymentKPIs();
+    renderPaymentBreakdown();
+    renderPaymentsTable();
+  } catch(e) {
+    showToast('भुक्तानी लोड गर्न सकिएन / Failed to load payments', 'error');
+  }
+}
+
+function renderPaymentKPIs() {
+  const total    = allPayments.reduce((s,p)=>s+p.amount, 0);
+  const count    = allPayments.length;
+  const cash     = allPayments.filter(p=>p.method==='Cash').reduce((s,p)=>s+p.amount,0);
+  const digital  = allPayments.filter(p=>p.method!=='Cash'&&p.method!=='Complimentary').reduce((s,p)=>s+p.amount,0);
+  const avg      = count ? Math.round(total/count) : 0;
+  document.getElementById('pkv-total').textContent   = 'Rs '+total.toLocaleString();
+  document.getElementById('pkv-count').textContent   = count;
+  document.getElementById('pkv-cash').textContent    = 'Rs '+cash.toLocaleString();
+  document.getElementById('pkv-digital').textContent = 'Rs '+digital.toLocaleString();
+  document.getElementById('pkv-avg').textContent     = 'Rs '+avg.toLocaleString();
+  // Update KPI labels per language
+  const t = PAY_TEXT[payLang];
+  const labels = document.querySelectorAll('#payKPIs .card > div:first-child');
+  if (labels[0]) labels[0].textContent = t.totalRev;
+  if (labels[1]) labels[1].textContent = t.totalPay;
+  if (labels[2]) labels[2].textContent = t.cash;
+  if (labels[3]) labels[3].textContent = t.digital;
+  if (labels[4]) labels[4].textContent = t.avgBill;
+}
+
+const METHOD_COLORS = {
+  Cash:'#22c55e', Card:'#3b82f6', eSewa:'#10b981',
+  Khalti:'#8b5cf6', 'QR Pay':'#f59e0b', Complimentary:'#6b7280'
+};
+
+function renderPaymentBreakdown() {
+  const byMethod = {};
+  allPayments.forEach(p => { byMethod[p.method] = (byMethod[p.method]||0) + p.amount; });
+  const total = Object.values(byMethod).reduce((s,v)=>s+v,1);
+  document.getElementById('payMethodBreakdown').innerHTML = Object.entries(byMethod)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([m,v])=>`
+      <div style="flex:1;min-width:130px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;border-left:4px solid ${METHOD_COLORS[m]||'var(--accent)'}">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${m}</div>
+        <div style="font-size:18px;font-weight:800;color:#fff">Rs ${v.toLocaleString()}</div>
+        <div style="font-size:11px;color:var(--dimmed);margin-top:2px">${Math.round(v/total*100)}%</div>
+      </div>`).join('') || `<p style="color:var(--muted);font-size:13px">${PAY_TEXT[payLang].noData}</p>`;
+}
+
+function filterPayments() { renderPaymentsTable(); }
+
+function renderPaymentsTable() {
+  const t       = PAY_TEXT[payLang];
+  const filter  = document.getElementById('payMethodFilter')?.value || 'all';
+  const list    = filter==='all' ? allPayments : allPayments.filter(p=>p.method===filter);
+  const tbody   = document.getElementById('paymentsTbody');
+
+  // Update headers
+  const ths = document.querySelectorAll('#paymentsTable thead th');
+  const hdrs = ['#', t.table, t.items, t.amount, t.paid, t.change, t.method, t.time, t.receipt];
+  ths.forEach((th,i) => { if (hdrs[i]) th.textContent = hdrs[i]; });
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--muted)">${t.noData}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = [...list].reverse().map((p,i) => {
+    const order     = p.order || {};
+    const items     = (order.items||[]).map(it=>`${it.name}×${it.qty}`).join(', ') || '—';
+    const tableNo   = order.tableNumber || order.table || '—';
+    const time      = new Date(p.createdAt).toLocaleString(payLang==='ne'?'ne-NP':'en-US',
+      {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const change    = Math.max(0, p.amountPaid - p.amount);
+    const methodCol = `<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;background:${METHOD_COLORS[p.method]||'#555'}22;color:${METHOD_COLORS[p.method]||'#aaa'}">${p.method}</span>`;
+    return `<tr>
+      <td style="color:var(--accent);font-weight:700">#${String(list.length-i).padStart(4,'0')}</td>
+      <td>${payLang==='ne'?'टेबल':'Table'} ${tableNo}</td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:11px">${items}</td>
+      <td style="font-weight:700;color:#fff">Rs ${p.amount.toLocaleString()}</td>
+      <td style="color:var(--green)">Rs ${p.amountPaid.toLocaleString()}</td>
+      <td style="color:${change>0?'var(--blue)':'var(--dimmed)'}">Rs ${change.toLocaleString()}</td>
+      <td>${methodCol}</td>
+      <td style="color:var(--muted);font-size:11px">${time}</td>
+      <td>
+        <button class="table-action-btn" onclick="printPaymentReceipt(${p.id})"
+          title="${t.print}">🖨️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function printPaymentReceipt(payId) {
+  const p = allPayments.find(x=>x.id===payId);
+  if (!p) return;
+  const t      = PAY_TEXT[payLang];
+  const order  = p.order || {};
+  const items  = (order.items||[]);
+  const total  = p.amount;
+  const change = Math.max(0, p.amountPaid - total);
+  const time   = new Date(p.createdAt).toLocaleString();
+  const rows   = items.map(i=>`<tr><td>${i.name}</td><td style="text-align:center">×${i.qty}</td><td style="text-align:right">Rs ${i.price*i.qty}</td></tr>`).join('');
+  const w = window.open('','_blank','width=360,height=580');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>${t.receipt}</title>
+  <style>
+    body{font-family:monospace;max-width:320px;margin:0 auto;padding:20px;color:#000}
+    h2{text-align:center;font-size:18px;margin-bottom:2px}
+    .meta{text-align:center;font-size:11px;color:#555;margin-bottom:12px}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    td{padding:4px 0}
+    .divider{border:none;border-top:1px dashed #999;margin:10px 0}
+    .total{display:flex;justify-content:space-between;font-weight:900;font-size:15px;margin-top:6px}
+    .row{display:flex;justify-content:space-between;font-size:12px;margin:3px 0}
+    .footer{text-align:center;font-size:11px;color:#777;margin-top:14px;padding-top:10px;border-top:1px dashed #999}
+    @media print{button{display:none}}
+  </style></head><body>
+  <h2>🍽️ ${payLang==='ne'?'रसिद':'Receipt'}</h2>
+  <div class="meta">${payLang==='ne'?'टेबल':'Table'} ${order.tableNumber||'—'} · #${String(p.id).padStart(5,'0')}<br>${time}</div>
+  <hr class="divider">
+  <table>${rows||`<tr><td colspan="3" style="text-align:center">—</td></tr>`}</table>
+  <hr class="divider">
+  <div class="total"><span>${t.amount}</span><span>Rs ${total.toLocaleString()}</span></div>
+  <div class="row"><span>${t.method}</span><span>${p.method}</span></div>
+  <div class="row"><span>${t.paid}</span><span>Rs ${p.amountPaid.toLocaleString()}</span></div>
+  <div class="row"><span>${t.change}</span><span>Rs ${change.toLocaleString()}</span></div>
+  <div class="footer">${payLang==='ne'?'धन्यवाद! फेरि आउनुहोस् 🙏':'Thank you! Come again! 🙏'}</div>
+  <br><button onclick="window.print()" style="width:100%;padding:10px;background:#000;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px">${t.print}</button>
+  </body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(()=>w.print(), 500);
+}
+
+/* ══════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════ */
 // Set today's date as default for reservation
@@ -2577,6 +3368,71 @@ connectSSE();
 setInterval(() => {
   if (currentSection === 'dashboard') loadDashboard();
 }, 30000);
+
+/* ══ EXCEL EXPORT ══ */
+async function downloadExcel() {
+  const btn    = document.getElementById('excelBtn');
+  const period = document.getElementById('exportPeriod').value;
+  const labels = { all:'All Data', weekly:'This Week', monthly:'This Month', yearly:'This Year' };
+
+  btn.textContent = '⏳ Generating...';
+  btn.disabled    = true;
+
+  try {
+    // Load SheetJS if not already loaded
+    if (!window.XLSX) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    const res  = await fetch(`/api/reports/orders-export?period=${period}`, {
+      headers: authHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Export failed');
+
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: Orders
+    const ws1 = XLSX.utils.json_to_sheet(data.orderRows.length ? data.orderRows : [{ Info: 'No orders found for this period' }]);
+    styleSheet(ws1, data.orderRows);
+    XLSX.utils.book_append_sheet(wb, ws1, 'Orders');
+
+    // Sheet 2: Summary
+    const ws2 = XLSX.utils.json_to_sheet(data.summaryRows);
+    XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
+
+    // Sheet 3: Top Items
+    const ws3 = XLSX.utils.json_to_sheet(data.topItemRows.length ? data.topItemRows : [{ Info: 'No data' }]);
+    XLSX.utils.book_append_sheet(wb, ws3, 'Top Items');
+
+    // Download
+    const periodLabel = labels[period] || period;
+    const dateStr     = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `Restaurant_Orders_${periodLabel.replace(/\s/g,'_')}_${dateStr}.xlsx`);
+
+    showToast(`✅ Excel downloaded — ${periodLabel}`, 'success');
+  } catch (e) {
+    showToast('Export failed: ' + e.message, 'error');
+  } finally {
+    btn.textContent = '📊 Download Excel';
+    btn.disabled    = false;
+  }
+}
+
+function styleSheet(ws, rows) {
+  if (!rows || !rows.length) return;
+  // Set column widths based on headers
+  const keys = Object.keys(rows[0]);
+  ws['!cols'] = keys.map(k => {
+    const maxLen = Math.max(k.length, ...rows.map(r => String(r[k] ?? '').length));
+    return { wch: Math.min(Math.max(maxLen + 2, 10), 40) };
+  });
+}
 </script>
 </body>
 </html>

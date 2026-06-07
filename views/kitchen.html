@@ -492,7 +492,25 @@ function connectSSE() {
     try {
       const d = JSON.parse(e.data);
       playBell();
+      const isBill = (d.message||'').toLowerCase().includes('bill');
       showToast(`🔔 Table ${d.table}: ${d.message}`);
+      if (isBill) {
+        // Show payment alert banner in kitchen too
+        let el = document.getElementById('kitchenPayAlert');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'kitchenPayAlert';
+          el.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;background:#1e1e1e;border:2px solid var(--accent);border-radius:12px;padding:16px 20px;min-width:260px;box-shadow:0 8px 32px rgba(0,0,0,.5);font-family:"DM Sans",sans-serif;animation:cardIn .4s ease';
+          document.body.appendChild(el);
+        }
+        el.innerHTML = `
+          <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px">💳 Table ${d.table} — Wants to pay!</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Customer requested the bill</div>
+          <a href="/payment" style="display:block;background:var(--accent);color:#000;text-align:center;padding:10px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;">Process Payment →</a>
+          <button onclick="document.getElementById('kitchenPayAlert').remove()" style="width:100%;margin-top:6px;padding:6px;background:none;border:none;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">Dismiss</button>`;
+        clearTimeout(el._t);
+        el._t = setTimeout(() => el.remove(), 30000);
+      }
     } catch {}
   });
 
