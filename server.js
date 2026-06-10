@@ -9,7 +9,7 @@ const {
   orderLimiter,
   paymentLimiter,
   generalLimiter,
-} = require('./middleware/rateLimiter');
+} = require('./middleware/ratelimiter');
 
 const app      = express();
 const PORT     = process.env.PORT || 3000;
