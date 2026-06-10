@@ -20,8 +20,10 @@ function shapeOrder(o) {
 exports.shapeOrder = shapeOrder;
 
 exports.getAll = async (req, res) => {
-  const orders = await prisma.order.findMany({ include: { items: true }, orderBy: { createdAt: 'asc' } });
-  res.json(orders.map(shapeOrder));
+  try {
+    const orders = await prisma.order.findMany({ include: { items: true }, orderBy: { createdAt: 'asc' } });
+    res.json(orders.map(shapeOrder));
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 };
 
 exports.getStats = async (req, res) => {

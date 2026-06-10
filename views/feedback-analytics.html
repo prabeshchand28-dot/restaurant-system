@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Feedback Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:22px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card-header{background:var(--navy);color:#fff;padding:12px 16px;font-size:13px;font-weight:700}
+.card-body{padding:16px}
+.stars{color:#f5a623;font-size:18px;letter-spacing:2px}
+.review-card{border-bottom:1px solid var(--border);padding:12px 14px}
+.review-card:last-child{border-bottom:none}
+.review-card .rating{font-size:13px;margin-bottom:3px}
+.rating-bar{height:10px;border-radius:5px;background:#f0f0f0;overflow:hidden;margin:2px 0}
+.rating-fill{height:100%;border-radius:5px}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+.score-big{font-size:64px;font-weight:900;line-height:1}
+.trend-chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.trend-up{background:#e7f5ed;color:var(--green)}.trend-down{background:#fdecea;color:var(--red)}.trend-flat{background:#f0f0f0;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Feedback Analytics</span></span>
+  <div><a class="nav-btn" href="/feedback">💬 Feedback</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+    <select id="period" onchange="loadAll()">
+      <option value="7">Last 7 days</option>
+      <option value="30" selected>Last 30 days</option>
+      <option value="90">Last 90 days</option>
+      <option value="365">Last year</option>
+    </select>
+    <select id="catFilter" onchange="filterReviews()" style="width:160px">
+      <option value="">All Categories</option>
+      <option value="FOOD">Food</option>
+      <option value="SERVICE">Service</option>
+      <option value="AMBIENCE">Ambience</option>
+      <option value="VALUE">Value</option>
+      <option value="GENERAL">General</option>
+    </select>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-total" style="color:var(--navy)">—</div><div class="lbl">Total Reviews</div></div>
+    <div class="stat"><div class="num" id="s-avg" style="color:#f5a623">—</div><div class="lbl">Avg Rating</div></div>
+    <div class="stat"><div class="num" id="s-5" style="color:var(--green)">—</div><div class="lbl">5★ Reviews</div></div>
+    <div class="stat"><div class="num" id="s-low" style="color:var(--red)">—</div><div class="lbl">1-2★ Reviews</div></div>
+    <div class="stat"><div class="num" id="s-resp" style="color:var(--blue)">—</div><div class="lbl">Response Rate</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-header">⭐ Rating Overview</div>
+      <div class="card-body" style="display:flex;align-items:center;gap:20px">
+        <div style="text-align:center">
+          <div class="score-big" id="bigScore" style="color:#f5a623">—</div>
+          <div class="stars" id="starsDisplay">☆☆☆☆☆</div>
+          <div id="trendChip" style="margin-top:6px"></div>
+        </div>
+        <div style="flex:1" id="ratingBars"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">📈 Ratings Over Time</div>
+      <div class="card-body">
+        <canvas id="trendChart" height="150"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-header">🏷️ By Category</div>
+      <div class="card-body">
+        <canvas id="catChart" height="180"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">💬 Recent Reviews</div>
+      <div style="max-height:320px;overflow-y:auto" id="reviewList">Loading...</div>
+    </div>
+  </div>
+</div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let allFeedback=[],trendChart=null,catChart=null;
+
+async function loadAll(){
+  const days=document.getElementById('period').value;
+  const from=new Date(Date.now()-days*864e5).toISOString().slice(0,10);
+  const r=await fetch(`/api/feedback?from=${from}&limit=500`,{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  allFeedback=d.data||d||[];
+  compute();
+}
+
+function compute(){
+  const cat=document.getElementById('catFilter').value;
+  const data=cat?allFeedback.filter(f=>f.category===cat):allFeedback;
+  if(!data.length){renderEmpty();return;}
+
+  const total=data.length;
+  const avg=data.reduce((s,f)=>s+(f.rating||0),0)/total;
+  const five=data.filter(f=>f.rating>=5).length;
+  const low=data.filter(f=>f.rating<=2).length;
+  const resp=data.filter(f=>f.response||f.respondedAt).length;
+
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-avg').textContent=avg.toFixed(1);
+  document.getElementById('s-5').textContent=five;
+  document.getElementById('s-low').textContent=low;
+  document.getElementById('s-resp').textContent=Math.round(resp/total*100)+'%';
+  document.getElementById('bigScore').textContent=avg.toFixed(1);
+  document.getElementById('starsDisplay').textContent='★'.repeat(Math.round(avg))+'☆'.repeat(5-Math.round(avg));
+
+  // Rating bars
+  const bars=document.getElementById('ratingBars');
+  bars.innerHTML=[5,4,3,2,1].map(r=>{
+    const count=data.filter(f=>Math.round(f.rating)===r).length;
+    const pct=Math.round(count/total*100)||0;
+    const col=r>=4?'#1a7a3a':r>=3?'#e65100':'#c0392b';
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px">
+      <span style="width:16px;font-weight:700">${r}★</span>
+      <div class="rating-bar" style="flex:1"><div class="rating-fill" style="width:${pct}%;background:${col}"></div></div>
+      <span style="width:36px;text-align:right;font-weight:700;color:${col}">${count}</span>
+    </div>`;
+  }).join('');
+
+  // Trend chart (group by week)
+  const weekly={};
+  data.forEach(f=>{
+    const d=new Date(f.createdAt||f.date);
+    const wk=d.toISOString().slice(0,10).slice(0,8)+'01';
+    if(!weekly[wk])weekly[wk]={total:0,sum:0};
+    weekly[wk].total++;weekly[wk].sum+=f.rating||0;
+  });
+  const weeks=Object.keys(weekly).sort();
+  const avgRatings=weeks.map(w=>weekly[w].sum/weekly[w].total);
+
+  if(trendChart)trendChart.destroy();
+  trendChart=new Chart(document.getElementById('trendChart'),{
+    type:'line',
+    data:{labels:weeks,datasets:[{label:'Avg Rating',data:avgRatings,borderColor:'#f5a623',backgroundColor:'rgba(245,166,35,.1)',fill:true,tension:.4,pointRadius:3}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{min:1,max:5,ticks:{stepSize:1}},x:{ticks:{maxTicksLimit:6}}},responsive:true,maintainAspectRatio:true}
+  });
+
+  // Category chart
+  const cats={};
+  data.forEach(f=>{const c=f.category||'GENERAL';if(!cats[c])cats[c]={count:0,sum:0};cats[c].count++;cats[c].sum+=f.rating||0;});
+  const catLabels=Object.keys(cats);
+  const catAvgs=catLabels.map(c=>(cats[c].sum/cats[c].count).toFixed(2));
+  const catCounts=catLabels.map(c=>cats[c].count);
+  if(catChart)catChart.destroy();
+  catChart=new Chart(document.getElementById('catChart'),{
+    type:'bar',
+    data:{labels:catLabels,datasets:[{label:'Avg Rating',data:catAvgs,backgroundColor:['#2653a0','#1a7a3a','#e65100','#c0392b','#b7860a'],borderRadius:6}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{min:0,max:5}},responsive:true,maintainAspectRatio:true}
+  });
+
+  // Recent reviews
+  filterReviews(data);
+}
+
+function filterReviews(data){
+  const items=data||allFeedback;
+  const cat=document.getElementById('catFilter').value;
+  const filtered=(cat?items.filter(f=>f.category===cat):items).sort((a,b)=>new Date(b.createdAt||b.date)-new Date(a.createdAt||a.date)).slice(0,30);
+  if(!filtered.length){document.getElementById('reviewList').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No reviews</div>';return;}
+  document.getElementById('reviewList').innerHTML=filtered.map(f=>`<div class="review-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div class="rating">${'★'.repeat(f.rating||0)}${'☆'.repeat(5-(f.rating||0))} <span style="font-size:11px;font-weight:700;color:var(--muted)">${f.rating}/5</span></div>
+        <div style="font-size:11px;color:var(--muted)">${f.customerName||'Anonymous'} · ${f.category||'GENERAL'} · ${new Date(f.createdAt||f.date).toLocaleDateString()}</div>
+      </div>
+      ${f.response?'<span style="font-size:10px;font-weight:700;background:#e7f5ed;color:var(--green);padding:2px 6px;border-radius:4px">REPLIED</span>':''}
+    </div>
+    ${f.comment||f.feedback?`<div style="font-size:12px;color:#333;margin-top:6px;line-height:1.5">"${f.comment||f.feedback}"</div>`:''}
+    ${f.response?`<div style="font-size:12px;color:var(--green);margin-top:4px;font-style:italic">↩️ ${f.response}</div>`:''}
+  </div>`).join('');
+}
+
+function renderEmpty(){
+  document.getElementById('s-total').textContent=0;
+  document.getElementById('s-avg').textContent='—';
+  document.getElementById('s-5').textContent=0;
+  document.getElementById('s-low').textContent=0;
+  document.getElementById('s-resp').textContent='—';
+  document.getElementById('bigScore').textContent='—';
+  document.getElementById('starsDisplay').textContent='☆☆☆☆☆';
+  document.getElementById('ratingBars').innerHTML='';
+  document.getElementById('reviewList').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No feedback in this period</div>';
+}
+
+loadAll();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

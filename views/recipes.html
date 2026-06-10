@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Recipe Costing</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.grid{display:grid;grid-template-columns:400px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px;font-weight:700;border:none;border-radius:4px;cursor:pointer;font-family:var(--font)}
+.recipe-card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.recipe-card:hover{box-shadow:0 2px 10px rgba(0,0,0,.08);border-color:var(--blue)}
+.recipe-card.active{border-color:var(--blue);background:#f0f4ff}
+.margin-bar{height:8px;border-radius:4px;background:#e0e0e0;overflow:hidden;margin-top:6px}
+.margin-fill{height:100%;border-radius:4px;background:var(--green)}
+.ingredient-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.ingredient-row input{flex:1}
+.ingredient-row select{width:80px;flex-shrink:0}
+.cost-summary{background:linear-gradient(135deg,#1a3a6b,#2653a0);color:#fff;border-radius:10px;padding:16px;margin-top:12px}
+.cost-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
+.cost-row.total{font-size:18px;font-weight:900;border-top:1px solid rgba(255,255,255,.3);margin-top:8px;padding-top:8px}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800}
+.badge-green{background:#e7f5ed;color:var(--green)}
+.badge-red{background:#fce8e7;color:var(--red)}
+.badge-blue{background:#e8efff;color:var(--blue)}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Recipe Costing</span></span>
+  <div><a class="nav-btn" href="/inventory">📦 Inventory</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="grid">
+    <!-- Recipe list + new -->
+    <div>
+      <div class="card">
+        <div class="card-header">
+          🍳 Recipes
+          <button class="btn-sm" style="background:rgba(255,255,255,.2);color:#fff" onclick="showNewForm()">+ New</button>
+        </div>
+        <div class="card-body" id="recipeList">
+          <div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail / form -->
+    <div>
+      <!-- New recipe form (hidden by default) -->
+      <div class="card" id="newForm" style="display:none">
+        <div class="card-header">➕ New Recipe</div>
+        <div class="card-body">
+          <label>Recipe Name</label>
+          <input id="rName" placeholder="e.g. Momo - Buff (8 pcs)"/>
+          <label>Linked Menu Item (optional)</label>
+          <select id="rMenuItem"><option value="">Not linked</option></select>
+          <label>Selling Price (रू)</label>
+          <input type="number" id="rSell" placeholder="e.g. 180"/>
+          <label>Servings</label>
+          <input type="number" id="rServings" value="1" min="1"/>
+          <label>Notes</label>
+          <textarea id="rNotes" rows="2" placeholder="Cooking notes..."></textarea>
+          <div style="margin-top:14px">
+            <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">Ingredients</div>
+            <div id="ingredientRows"></div>
+            <button class="btn" style="background:#f0f2f5;color:var(--navy);width:100%;margin-bottom:12px" onclick="addIngredientRow()">+ Add Ingredient</button>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" style="flex:1" onclick="saveRecipe()">Save Recipe</button>
+            <button class="btn" style="background:#f0f2f5;color:var(--navy)" onclick="document.getElementById('newForm').style.display='none'">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recipe detail -->
+      <div class="card" id="recipeDetail" style="display:none">
+        <div class="card-header" id="detailTitle">Recipe Detail</div>
+        <div class="card-body" id="detailBody">
+        </div>
+      </div>
+
+      <!-- Placeholder -->
+      <div id="placeholder" style="text-align:center;padding:60px 20px;color:var(--muted)">
+        <div style="font-size:40px;margin-bottom:12px">🍳</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">Select a Recipe</div>
+        <div style="font-size:13px">Click a recipe on the left to view its cost breakdown</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let inventoryItems=[];
+
+async function init(){
+  const r=await fetch('/api/inventory',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  inventoryItems=d.items||d||[];
+  await loadRecipes();
+  await loadMenuItems();
+}
+
+async function loadMenuItems(){
+  const r=await fetch('/api/menu',{headers:authH(),cache:'no-store'});
+  const data=await r.json();
+  const items=data.items||data||[];
+  const sel=document.getElementById('rMenuItem');
+  items.forEach(i=>{const o=document.createElement('option');o.value=i.id;o.textContent=i.name;sel.appendChild(o);});
+}
+
+async function loadRecipes(){
+  const r=await fetch('/api/recipes',{headers:authH(),cache:'no-store'});
+  const data=await r.json();
+  const recipes=data.recipes||data||[];
+  if(!recipes.length){
+    document.getElementById('recipeList').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No recipes yet. Click + New to add one.</div>';
+    return;
+  }
+  document.getElementById('recipeList').innerHTML=recipes.map(r=>{
+    const margin=r.sellingPrice&&r.totalCost?Math.round(((r.sellingPrice-r.totalCost)/r.sellingPrice)*100):null;
+    return `<div class="recipe-card" id="rc-${r.id}" onclick="loadRecipeDetail(${r.id})">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="font-weight:800;font-size:14px">${r.name}</div>
+        <div style="display:flex;gap:4px">
+          ${margin!==null?`<span class="badge ${margin>=40?'badge-green':margin>=20?'badge-blue':'badge-red'}">${margin}% margin</span>`:''}
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">
+        Cost: रू ${(r.totalCost||0).toFixed(2)}
+        ${r.sellingPrice?` · Sell: रू ${r.sellingPrice}`:''}
+        · ${(r.items||[]).length} ingredients
+      </div>
+      ${margin!==null?`<div class="margin-bar"><div class="margin-fill" style="width:${Math.min(margin,100)}%"></div></div>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function loadRecipeDetail(id){
+  document.querySelectorAll('.recipe-card').forEach(c=>c.classList.remove('active'));
+  document.getElementById('rc-'+id)?.classList.add('active');
+  document.getElementById('placeholder').style.display='none';
+  document.getElementById('newForm').style.display='none';
+  document.getElementById('recipeDetail').style.display='block';
+  document.getElementById('detailBody').innerHTML='<div style="text-align:center;padding:20px;color:var(--muted)">Loading...</div>';
+
+  const r=await fetch(`/api/recipes/${id}`,{headers:authH(),cache:'no-store'});
+  const rec=await r.json();
+  document.getElementById('detailTitle').textContent=`🍳 ${rec.name}`;
+  const margin=rec.sellingPrice&&rec.totalCost?((rec.sellingPrice-rec.totalCost)/rec.sellingPrice*100).toFixed(1):null;
+  const ingredientRows=(rec.items||[]).map(i=>`
+    <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid #f0f0f0">
+      <span>${i.ingredient||i.inventoryItem?.name||'—'}</span>
+      <span>${i.quantity} ${i.unit}</span>
+      <span style="color:var(--blue)">रू ${(i.cost||0).toFixed(2)}</span>
+    </div>`).join('');
+
+  document.getElementById('detailBody').innerHTML=`
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      ${margin!==null?`<span class="badge ${Number(margin)>=40?'badge-green':Number(margin)>=20?'badge-blue':'badge-red'}">${margin}% margin</span>`:''}
+      <span class="badge badge-blue">${(rec.items||[]).length} ingredients</span>
+      ${rec.servings>1?`<span class="badge badge-blue">${rec.servings} servings</span>`:''}
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">INGREDIENTS</div>
+    ${ingredientRows||'<div style="color:var(--muted);font-size:13px">No ingredients</div>'}
+    <div class="cost-summary">
+      <div class="cost-row"><span>Total Ingredient Cost</span><span>रू ${(rec.totalCost||0).toFixed(2)}</span></div>
+      ${rec.sellingPrice?`<div class="cost-row"><span>Selling Price</span><span>रू ${rec.sellingPrice}</span></div>`:''}
+      ${margin!==null?`<div class="cost-row"><span>Gross Profit</span><span>रू ${(rec.sellingPrice-rec.totalCost).toFixed(2)}</span></div>`:''}
+      ${margin!==null?`<div class="cost-row total"><span>Margin</span><span>${margin}%</span></div>`:''}
+    </div>
+    ${rec.notes?`<div style="font-size:13px;color:var(--muted);margin-top:12px;padding:10px;background:#f8f9fb;border-radius:6px">${rec.notes}</div>`:''}
+    <button class="btn btn-red btn-sm" style="margin-top:14px" onclick="deleteRecipe(${rec.id})">Delete Recipe</button>`;
+}
+
+function showNewForm(){
+  document.getElementById('newForm').style.display='block';
+  document.getElementById('placeholder').style.display='none';
+  document.getElementById('recipeDetail').style.display='none';
+  document.getElementById('ingredientRows').innerHTML='';
+  addIngredientRow();
+  addIngredientRow();
+}
+
+function addIngredientRow(){
+  const div=document.createElement('div');
+  div.className='ingredient-row';
+  div.innerHTML=`
+    <select style="flex:2">
+      <option value="">Select ingredient</option>
+      ${inventoryItems.map(i=>`<option value="${i.id}" data-cost="${i.costPerUnit||0}" data-unit="${i.unit||''}">${i.name}</option>`).join('')}
+    </select>
+    <input type="number" placeholder="Qty" style="width:70px;flex:none" min="0" step="0.01"/>
+    <select style="width:70px;flex:none">
+      <option>g</option><option>kg</option><option>ml</option><option>L</option><option>pcs</option><option>cup</option><option>tbsp</option><option>tsp</option>
+    </select>
+    <button class="btn-sm btn-red" onclick="this.parentElement.remove()">✕</button>`;
+  document.getElementById('ingredientRows').appendChild(div);
+}
+
+async function saveRecipe(){
+  const rows=[...document.querySelectorAll('#ingredientRows .ingredient-row')];
+  const items=rows.filter(r=>r.querySelector('select').value).map(r=>{
+    const sel=r.querySelector('select');
+    const opt=sel.options[sel.selectedIndex];
+    return {
+      inventoryItemId:Number(sel.value),
+      quantity:Number(r.querySelector('input').value)||1,
+      unit:r.querySelectorAll('select')[1].value,
+      cost:Number(opt.dataset.cost)||0,
+    };
+  });
+  const body={
+    name:document.getElementById('rName').value.trim(),
+    menuItemId:document.getElementById('rMenuItem').value?Number(document.getElementById('rMenuItem').value):null,
+    sellingPrice:Number(document.getElementById('rSell').value)||null,
+    servings:Number(document.getElementById('rServings').value)||1,
+    notes:document.getElementById('rNotes').value.trim(),
+    items,
+  };
+  if(!body.name){showToast('Recipe name required','error');return;}
+  const r=await fetch('/api/recipes',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Recipe saved!','success');document.getElementById('newForm').style.display='none';loadRecipes();loadRecipeDetail(d.id);}
+  else showToast(d.message||'Error','error');
+}
+
+async function deleteRecipe(id){
+  if(!confirm('Delete this recipe?'))return;
+  await fetch(`/api/recipes/${id}`,{method:'DELETE',headers:authH()});
+  showToast('Deleted','success');
+  document.getElementById('recipeDetail').style.display='none';
+  document.getElementById('placeholder').style.display='block';
+  loadRecipes();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+init();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

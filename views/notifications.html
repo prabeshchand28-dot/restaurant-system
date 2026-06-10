@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Notification Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.tabs{display:flex;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.pane{display:none}.pane.active{display:block}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:26px;font-weight:900;color:var(--blue)}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:400px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px;font-weight:700;border:none;border-radius:4px;cursor:pointer;font-family:var(--font)}
+.tmpl-item{border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px}
+.log-item{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase}
+.badge-green{background:#e7f5ed;color:var(--green)}
+.badge-blue{background:#e8efff;color:var(--blue)}
+.badge-red{background:#fce8e7;color:var(--red)}
+.badge-orange{background:#fff3e0;color:#e65100}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Notification Center</span></span>
+  <div><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('templates',this)">📝 Templates</div>
+  <div class="tab" onclick="switchTab('send',this)">📤 Send Notification</div>
+  <div class="tab" onclick="switchTab('logs',this)">📋 Send Logs</div>
+</div>
+<div class="content">
+
+  <!-- Templates -->
+  <div class="pane active" id="pane-templates">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="card-header">➕ Create Template</div>
+          <div class="card-body">
+            <label>Template Name</label>
+            <input id="tName" placeholder="e.g. Order Ready SMS"/>
+            <label>Trigger Event</label>
+            <select id="tEvent"></select>
+            <label>Channel</label>
+            <select id="tChannel">
+              <option value="SMS">📱 SMS</option>
+              <option value="EMAIL">📧 Email</option>
+              <option value="BOTH">📱📧 Both</option>
+            </select>
+            <label>Subject (for email)</label>
+            <input id="tSubject" placeholder="e.g. Your order is ready!"/>
+            <label>Message Body</label>
+            <textarea id="tBody" rows="4" placeholder="Use {name}, {order}, {table} as variables..."></textarea>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Variables: {name} {phone} {order} {table} {amount} {date}</div>
+            <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="createTemplate()">Create Template</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header">📝 All Templates</div>
+          <div class="card-body" id="templateList">
+            <div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Send -->
+  <div class="pane" id="pane-send">
+    <div style="max-width:600px">
+      <div class="card">
+        <div class="card-header">📤 Send Notification</div>
+        <div class="card-body">
+          <div style="background:#fff8e1;border:1px solid #ffe0a0;border-radius:8px;padding:12px;font-size:12px;color:#5c4200;margin-bottom:14px">
+            📌 Demo mode: notifications are logged but not actually sent. Connect Twilio/SendGrid in .env to enable real sending.
+          </div>
+          <label>Event Type</label>
+          <select id="sEvent"></select>
+          <label>Channel</label>
+          <select id="sChannel">
+            <option value="SMS">📱 SMS</option>
+            <option value="EMAIL">📧 Email</option>
+          </select>
+          <label>Recipient (phone or email)</label>
+          <input id="sRecipient" placeholder="+977-98XXXXXXXX or user@email.com"/>
+          <label>Subject (email only)</label>
+          <input id="sSubject" placeholder="Email subject..."/>
+          <label>Message</label>
+          <textarea id="sBody" rows="4" placeholder="Message body..."></textarea>
+          <button class="btn btn-green" style="width:100%;margin-top:14px;padding:12px" onclick="sendNotification()">📤 Send Now</button>
+          <div id="sendResult" style="margin-top:12px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logs -->
+  <div class="pane" id="pane-logs">
+    <div class="stats">
+      <div class="stat"><div class="num" id="l-total">—</div><div class="lbl">Total Sent</div></div>
+      <div class="stat"><div class="num" id="l-sent">—</div><div class="lbl">Successful</div></div>
+      <div class="stat"><div class="num" id="l-failed">—</div><div class="lbl">Failed</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">📋 Notification Logs</div>
+      <div class="card-body" id="logList">
+        <div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+async function loadEvents(){
+  const r=await fetch('/api/notifications/events',{headers:authH(),cache:'no-store'});
+  const events=await r.json();
+  ['tEvent','sEvent'].forEach(id=>{
+    const s=document.getElementById(id);
+    s.innerHTML=events.map(e=>`<option value="${e}">${e.replace(/_/g,' ')}</option>`).join('');
+  });
+}
+
+async function loadTemplates(){
+  const r=await fetch('/api/notifications/templates',{headers:authH(),cache:'no-store'});
+  const templates=await r.json();
+  if(!templates.length){document.getElementById('templateList').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No templates yet</div>';return;}
+  const chBadge={SMS:'badge-blue',EMAIL:'badge-orange',BOTH:'badge-green'};
+  document.getElementById('templateList').innerHTML=templates.map(t=>`
+    <div class="tmpl-item${t.active?'':'" style="opacity:.5'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="font-weight:800;font-size:13px">${t.name}</div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <span class="badge ${chBadge[t.channel]||'badge-blue'}">${t.channel}</span>
+          <span class="badge ${t.active?'badge-green':'badge-red'}">${t.active?'ON':'OFF'}</span>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--blue);margin-bottom:6px">${t.event.replace(/_/g,' ')}</div>
+      <div style="font-size:12px;color:var(--muted);background:#f8f9fb;padding:8px;border-radius:6px">${t.body}</div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn-sm" style="background:${t.active?'#999':'var(--green)'};color:#fff" onclick="toggleTemplate(${t.id})">${t.active?'Disable':'Enable'}</button>
+        <button class="btn-sm" style="background:var(--red);color:#fff" onclick="deleteTemplate(${t.id})">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+async function createTemplate(){
+  const body={name:document.getElementById('tName').value.trim(),event:document.getElementById('tEvent').value,channel:document.getElementById('tChannel').value,subject:document.getElementById('tSubject').value.trim(),body:document.getElementById('tBody').value.trim()};
+  if(!body.name||!body.body){showToast('Name and body required','error');return;}
+  const r=await fetch('/api/notifications/templates',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Template created!','success');document.getElementById('tName').value='';document.getElementById('tBody').value='';loadTemplates();}
+  else showToast(d.message||'Error','error');
+}
+
+async function toggleTemplate(id){await fetch(`/api/notifications/templates/${id}/toggle`,{method:'PATCH',headers:authH()});loadTemplates();}
+async function deleteTemplate(id){if(!confirm('Delete template?'))return;await fetch(`/api/notifications/templates/${id}`,{method:'DELETE',headers:authH()});loadTemplates();}
+
+async function sendNotification(){
+  const body={event:document.getElementById('sEvent').value,channel:document.getElementById('sChannel').value,recipient:document.getElementById('sRecipient').value.trim(),subject:document.getElementById('sSubject').value.trim(),body:document.getElementById('sBody').value.trim()};
+  if(!body.recipient||!body.body){showToast('Recipient and message required','error');return;}
+  const r=await fetch('/api/notifications/send',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.success){
+    document.getElementById('sendResult').innerHTML=`<div style="background:#f0f9f0;border:1px solid #a8d5b5;border-radius:8px;padding:12px;font-size:13px">✅ ${d.message}</div>`;
+    showToast('Notification logged!','success');
+  }else showToast(d.message||'Error','error');
+}
+
+async function loadLogs(){
+  const [statsR,logsR]=await Promise.all([
+    fetch('/api/notifications/stats',{headers:authH(),cache:'no-store'}),
+    fetch('/api/notifications/logs?limit=50',{headers:authH(),cache:'no-store'}),
+  ]);
+  const stats=await statsR.json();
+  const logs=await logsR.json();
+  document.getElementById('l-total').textContent=stats.total;
+  document.getElementById('l-sent').textContent=stats.sent;
+  document.getElementById('l-failed').textContent=stats.failed;
+  if(!logs.length){document.getElementById('logList').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No logs yet</div>';return;}
+  document.getElementById('logList').innerHTML=logs.map(l=>`
+    <div class="log-item">
+      <div>
+        <div style="font-weight:700">${l.recipient}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${l.body.slice(0,80)}${l.body.length>80?'…':''}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:12px">
+        <span class="badge ${l.status==='SENT'?'badge-green':'badge-red'}">${l.status}</span>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">${l.channel} · ${new Date(l.createdAt).toLocaleDateString()}</div>
+      </div>
+    </div>`).join('');
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  if(name==='logs') loadLogs();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadEvents();loadTemplates();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

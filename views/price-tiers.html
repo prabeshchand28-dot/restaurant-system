@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Price Tiers</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}
+.tier-card{border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tier-card.inactive{opacity:.5}
+.multiplier-badge{font-size:22px;font-weight:900;min-width:60px;text-align:center}
+.multiplier-up{color:var(--red)}.multiplier-down{color:var(--green)}.multiplier-same{color:var(--navy)}
+.preview-table{width:100%;border-collapse:collapse;font-size:13px}
+.preview-table th,.preview-table td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.preview-table th{background:#f8f9fc;font-weight:800;font-size:11px;color:var(--navy);text-transform:uppercase}
+.preview-table tr:last-child td{border-bottom:none}
+.edit-form{display:none;padding:10px;background:#f8f9fc;border-radius:8px;margin-top:8px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Price Tiers</span></span>
+  <div><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="grid">
+    <div>
+      <div class="card">
+        <div class="card-header">➕ Add Price Tier</div>
+        <div class="card-body">
+          <label>Tier Name</label><input id="tName" placeholder="e.g. Takeout, VIP, Wholesale"/>
+          <label>Description</label><input id="tDesc" placeholder="Brief description..."/>
+          <label>Price Multiplier</label>
+          <input id="tMult" type="number" value="1.00" step="0.01" min="0.1" max="5" placeholder="e.g. 0.9 = 10% off"/>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">1.0 = standard price · 0.9 = 10% discount · 1.15 = 15% surcharge</div>
+          <button class="btn btn-green" style="width:100%;margin-top:14px" onclick="createTier()">Add Tier</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">🔍 Price Preview</div>
+        <div class="card-body">
+          <label>Base Price (रू)</label>
+          <input type="number" id="previewPrice" placeholder="e.g. 500" oninput="previewPrices()"/>
+          <div id="previewResult" style="margin-top:12px"></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-header">📋 Price Tiers</div>
+        <div id="tierList" style="padding:12px">Loading...</div>
+      </div>
+      <div class="card">
+        <div class="card-header">💡 Quick Reference — Common Setups</div>
+        <div class="card-body">
+          <table class="preview-table">
+            <thead><tr><th>Tier</th><th>Multiplier</th><th>Example on रू 500</th><th>Use Case</th></tr></thead>
+            <tbody>
+              <tr><td>Dine-in (Standard)</td><td>1.00×</td><td>रू 500</td><td>Default table price</td></tr>
+              <tr><td>Takeout / Delivery</td><td>0.95×</td><td>रू 475</td><td>No service charge</td></tr>
+              <tr><td>Wholesale / Bulk</td><td>0.80×</td><td>रू 400</td><td>Large orders, caterers</td></tr>
+              <tr><td>VIP Members</td><td>1.00×</td><td>रू 500</td><td>Same price, loyalty benefits</td></tr>
+              <tr><td>Catering (Off-site)</td><td>1.20×</td><td>रू 600</td><td>Travel + setup cost</td></tr>
+              <tr><td>Bar / Lounge</td><td>1.10×</td><td>रू 550</td><td>Premium ambiance surcharge</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+async function loadTiers(){
+  const r=await fetch('/api/price-tiers',{headers:authH(),cache:'no-store'});
+  const tiers=await r.json();
+  if(!tiers.length){document.getElementById('tierList').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No tiers yet. Add your first tier.</div>';return;}
+  document.getElementById('tierList').innerHTML=tiers.map(t=>{
+    const m=t.multiplier;
+    const cls=m>1?'multiplier-up':m<1?'multiplier-down':'multiplier-same';
+    const arrow=m>1?'↑':m<1?'↓':'=';
+    return `<div class="tier-card ${t.active?'':'inactive'}">
+      <div>
+        <div style="font-weight:900;font-size:16px">${t.name}</div>
+        ${t.description?`<div style="font-size:12px;color:var(--muted)">${t.description}</div>`:''}
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="multiplier-badge ${cls}">${arrow} ${m.toFixed(2)}×</div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <button class="btn" style="font-size:11px;padding:4px 10px;background:#f0f0f0;color:#555" onclick="toggleEdit(${t.id})">✏️ Edit</button>
+          <button class="btn" style="font-size:11px;padding:4px 10px;background:${t.active?'#fff3e0':'#e7f5ed'};color:${t.active?'var(--orange)':'var(--green)'}" onclick="toggleActive(${t.id},${!t.active})">${t.active?'Deactivate':'Activate'}</button>
+          <button class="btn btn-red" style="font-size:11px;padding:4px 10px" onclick="deleteTier(${t.id},'${t.name}')">Del</button>
+        </div>
+      </div>
+    </div>
+    <div class="edit-form" id="edit-${t.id}">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div><label style="margin-top:0">Name</label><input id="en-${t.id}" value="${t.name}"/></div>
+        <div><label style="margin-top:0">Multiplier</label><input type="number" id="em-${t.id}" value="${m}" step="0.01" min="0.1"/></div>
+      </div>
+      <label style="margin-top:0">Description</label>
+      <input id="ed-${t.id}" value="${t.description||''}" style="margin-bottom:8px"/>
+      <button class="btn btn-green" style="font-size:12px;padding:6px 14px" onclick="saveTier(${t.id})">Save</button>
+    </div>`;
+  }).join('');
+}
+
+function toggleEdit(id){
+  const el=document.getElementById(`edit-${id}`);
+  el.style.display=el.style.display==='block'?'none':'block';
+}
+
+async function createTier(){
+  const name=document.getElementById('tName').value.trim();
+  if(!name){showToast('Name required','error');return;}
+  const body={name,description:document.getElementById('tDesc').value,multiplier:parseFloat(document.getElementById('tMult').value)||1};
+  const r=await fetch('/api/price-tiers',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Tier created!','success');document.getElementById('tName').value='';document.getElementById('tDesc').value='';document.getElementById('tMult').value='1.00';loadTiers();}
+  else showToast(d.message||'Error','error');
+}
+
+async function saveTier(id){
+  const body={name:document.getElementById(`en-${id}`).value,multiplier:parseFloat(document.getElementById(`em-${id}`).value),description:document.getElementById(`ed-${id}`).value};
+  const r=await fetch(`/api/price-tiers/${id}`,{method:'PUT',headers:authH(),body:JSON.stringify(body)});
+  if((await r.json()).id){showToast('Saved!','success');loadTiers();}
+}
+
+async function toggleActive(id,active){
+  await fetch(`/api/price-tiers/${id}`,{method:'PUT',headers:authH(),body:JSON.stringify({active})});
+  loadTiers();
+}
+
+async function deleteTier(id,name){
+  if(!confirm(`Delete "${name}"?`))return;
+  await fetch(`/api/price-tiers/${id}`,{method:'DELETE',headers:authH()});
+  showToast('Deleted','success');loadTiers();
+}
+
+let previewT;
+function previewPrices(){
+  clearTimeout(previewT);
+  previewT=setTimeout(async()=>{
+    const p=document.getElementById('previewPrice').value;
+    if(!p)return;
+    const r=await fetch(`/api/price-tiers/preview?basePrice=${p}`,{headers:authH(),cache:'no-store'});
+    const tiers=await r.json();
+    if(!tiers.length){document.getElementById('previewResult').innerHTML='<div style="color:var(--muted);font-size:12px">No active tiers</div>';return;}
+    document.getElementById('previewResult').innerHTML=`<table class="preview-table"><thead><tr><th>Tier</th><th>Multiplier</th><th>Price</th></tr></thead><tbody>${tiers.map(t=>`<tr><td style="font-weight:700">${t.name}</td><td>${t.multiplier.toFixed(2)}×</td><td style="font-weight:900">रू ${t.adjustedPrice.toLocaleString()}</td></tr>`).join('')}</tbody></table>`;
+  },300);
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadTiers();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

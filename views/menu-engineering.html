@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Menu Engineering</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--gold:#d4af37;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.card-body{padding:16px}
+.quadrant-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.quadrant{border-radius:12px;padding:16px;min-height:200px}
+.q-star{background:#fff9e6;border:2px solid var(--gold)}
+.q-plow{background:#e8f5e9;border:2px solid var(--green)}
+.q-puzzle{background:#e8efff;border:2px solid var(--blue)}
+.q-dog{background:#f5f5f5;border:2px solid #999}
+.q-title{font-size:15px;font-weight:900;margin-bottom:4px}
+.q-desc{font-size:11px;color:var(--muted);margin-bottom:12px}
+.item-chip{display:inline-block;background:rgba(0,0,0,.06);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:700;margin:3px}
+.item-row{display:grid;grid-template-columns:1fr 60px 60px 80px 80px 100px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.item-row.header{font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border)}
+.class-badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:900;text-transform:uppercase}
+.cb-STAR{background:#fff9e6;color:#b78800}
+.cb-PLOW_HORSE{background:#e8f5e9;color:var(--green)}
+.cb-PUZZLE{background:#e8efff;color:var(--blue)}
+.cb-DOG{background:#f5f5f5;color:#999}
+select{padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Menu Engineering</span></span>
+  <div><a class="nav-btn" href="/recipes">👨‍🍳 Recipes</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
+    <span style="font-size:13px;font-weight:700;color:var(--navy)">Analysis Period:</span>
+    <select id="months" onchange="load()">
+      <option value="1">Last 1 month</option>
+      <option value="3" selected>Last 3 months</option>
+      <option value="6">Last 6 months</option>
+      <option value="12">Last 12 months</option>
+    </select>
+    <span id="avgInfo" style="font-size:12px;color:var(--muted)"></span>
+  </div>
+
+  <!-- Quadrant Matrix -->
+  <div class="quadrant-grid" id="matrix">
+    <div class="quadrant q-star">
+      <div class="q-title">⭐ Stars</div>
+      <div class="q-desc">High popularity + High profit. Keep prominent on menu.</div>
+      <div id="q-STAR"></div>
+    </div>
+    <div class="quadrant q-plow">
+      <div class="q-title">🐴 Plow Horses</div>
+      <div class="q-desc">High popularity + Low profit. Consider raising price or reducing cost.</div>
+      <div id="q-PLOW_HORSE"></div>
+    </div>
+    <div class="quadrant q-puzzle">
+      <div class="q-title">❓ Puzzles</div>
+      <div class="q-desc">Low popularity + High profit. Better placement or promotion needed.</div>
+      <div id="q-PUZZLE"></div>
+    </div>
+    <div class="quadrant q-dog">
+      <div class="q-title">🐶 Dogs</div>
+      <div class="q-desc">Low popularity + Low profit. Consider removing from menu.</div>
+      <div id="q-DOG"></div>
+    </div>
+  </div>
+
+  <!-- Full Table -->
+  <div class="card">
+    <div class="card-header">📋 All Items — Full Analysis</div>
+    <div class="card-body" style="padding:0 16px">
+      <div class="item-row header">
+        <div>Item</div>
+        <div style="text-align:center">Sold</div>
+        <div style="text-align:center">Margin%</div>
+        <div style="text-align:center">Revenue</div>
+        <div style="text-align:center">Profit</div>
+        <div style="text-align:center">Class</div>
+      </div>
+      <div id="fullTable">
+        <div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tips -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+    <div style="background:#fff9e6;border:1px solid var(--gold);border-radius:10px;padding:14px">
+      <div style="font-weight:800;font-size:13px;margin-bottom:6px">⭐ Stars — Keep & Protect</div>
+      <div style="font-size:12px;color:var(--muted)">Feature prominently. Don't change recipes. Maintain quality consistently.</div>
+    </div>
+    <div style="background:#e8f5e9;border:1px solid var(--green);border-radius:10px;padding:14px">
+      <div style="font-weight:800;font-size:13px;margin-bottom:6px">🐴 Plow Horses — Optimize</div>
+      <div style="font-size:12px;color:var(--muted)">Increase price slightly or reduce portion cost without impacting quality.</div>
+    </div>
+    <div style="background:#e8efff;border:1px solid var(--blue);border-radius:10px;padding:14px">
+      <div style="font-weight:800;font-size:13px;margin-bottom:6px">❓ Puzzles — Reposition</div>
+      <div style="font-size:12px;color:var(--muted)">Move to better menu position, rename, add photo, or bundle as combo.</div>
+    </div>
+    <div style="background:#f5f5f5;border:2px solid #ddd;border-radius:10px;padding:14px">
+      <div style="font-weight:800;font-size:13px;margin-bottom:6px">🐶 Dogs — Remove/Revamp</div>
+      <div style="font-size:12px;color:var(--muted)">Consider removing or replacing. If sentimental, lower food cost or rebrand.</div>
+    </div>
+  </div>
+
+</div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token});
+
+async function load(){
+  const months=document.getElementById('months').value;
+  const r=await fetch(`/api/menu-engineering?months=${months}`,{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  if(!d.items||!d.items.length){
+    document.getElementById('fullTable').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No sales data found for this period</div>';
+    ['STAR','PLOW_HORSE','PUZZLE','DOG'].forEach(c=>document.getElementById('q-'+c).innerHTML='<div style="font-size:12px;color:var(--muted)">No items</div>');
+    return;
+  }
+  document.getElementById('avgInfo').textContent=`Avg popularity: ${d.avgPopularity} sold · Avg margin: ${d.avgMargin}%`;
+
+  // Quadrants
+  ['STAR','PLOW_HORSE','PUZZLE','DOG'].forEach(c=>{
+    const items=d.items.filter(i=>i.classification===c);
+    document.getElementById('q-'+c).innerHTML=items.length?items.map(i=>`<span class="item-chip">${i.name}</span>`).join(''):'<div style="font-size:12px;color:var(--muted)">No items</div>';
+  });
+
+  // Full table
+  const classLabel={STAR:'⭐ Star',PLOW_HORSE:'🐴 Plow Horse',PUZZLE:'❓ Puzzle',DOG:'🐶 Dog'};
+  document.getElementById('fullTable').innerHTML=d.items.map(i=>`
+    <div class="item-row">
+      <div>
+        <div style="font-weight:700">${i.name}</div>
+        ${i.category?`<div style="font-size:11px;color:var(--muted)">${i.category}</div>`:''}
+      </div>
+      <div style="text-align:center;font-weight:700">${i.qty}</div>
+      <div style="text-align:center;font-weight:700;color:${i.margin>d.avgMargin?'var(--green)':'var(--red)'}">${i.margin}%</div>
+      <div style="text-align:center">रू ${(i.revenue||0).toLocaleString()}</div>
+      <div style="text-align:center;color:var(--green);font-weight:700">रू ${Math.round(i.profit||0).toLocaleString()}</div>
+      <div style="text-align:center"><span class="class-badge cb-${i.classification}">${classLabel[i.classification]}</span></div>
+    </div>`).join('');
+}
+
+load();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

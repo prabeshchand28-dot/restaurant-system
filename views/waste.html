@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Food Waste Tracking</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.tabs{display:flex;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.pane{display:none}.pane.active{display:block}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select,textarea{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-red{background:var(--red)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:22px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:20px}
+.reason-badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase}
+.reason-SPOILAGE{background:#fce8e7;color:var(--red)}
+.reason-OVERPRODUCTION{background:#fff3e0;color:var(--orange)}
+.reason-DROPPED{background:#e8efff;color:var(--blue)}
+.reason-EXPIRED{background:#f3e5f5;color:#6a1b9a}
+.reason-QUALITY{background:#e7f5ed;color:var(--green)}
+.bar-item{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px}
+.bar-track{flex:1;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--red),var(--orange))}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Food Waste Tracking</span></span>
+  <div><a class="nav-btn" href="/inventory">📦 Inventory</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('log',this)">📋 Waste Log</div>
+  <div class="tab" onclick="switchTab('report',this)">📊 Reports</div>
+</div>
+<div class="content">
+
+  <!-- Log Tab -->
+  <div class="pane active" id="pane-log">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="card-header">🗑️ Log Waste Item</div>
+          <div class="card-body">
+            <label>Item Name</label>
+            <input id="wItemName" placeholder="e.g. Chicken Breast"/>
+            <label>Category</label>
+            <input id="wCategory" placeholder="e.g. Protein, Dairy, Veg"/>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div>
+                <label>Quantity</label>
+                <input type="number" id="wQty" placeholder="0" step="0.5" min="0"/>
+              </div>
+              <div>
+                <label>Unit</label>
+                <select id="wUnit">
+                  <option value="portion">Portion</option>
+                  <option value="kg">kg</option>
+                  <option value="g">g</option>
+                  <option value="liter">Liter</option>
+                  <option value="piece">Piece</option>
+                  <option value="plate">Plate</option>
+                </select>
+              </div>
+            </div>
+            <label>Reason</label>
+            <select id="wReason">
+              <option value="SPOILAGE">🦠 Spoilage</option>
+              <option value="OVERPRODUCTION">🍲 Overproduction</option>
+              <option value="DROPPED">💧 Dropped / Accident</option>
+              <option value="EXPIRED">⏰ Expired</option>
+              <option value="QUALITY">❌ Quality Issue</option>
+            </select>
+            <label>Cost per Unit (रू)</label>
+            <input type="number" id="wCost" placeholder="0" step="0.50" min="0"/>
+            <label>Staff Name</label>
+            <input id="wStaff" placeholder="Who reported this"/>
+            <label>Date</label>
+            <input type="date" id="wDate"/>
+            <label>Notes</label>
+            <input id="wNotes" placeholder="Additional details..."/>
+            <button class="btn" style="width:100%;margin-top:14px" onclick="logWaste()">Log Waste</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+          <input type="date" id="filterFrom" style="width:150px"/>
+          <input type="date" id="filterTo" style="width:150px"/>
+          <select id="filterReason" style="width:160px">
+            <option value="">All Reasons</option>
+            <option value="SPOILAGE">Spoilage</option>
+            <option value="OVERPRODUCTION">Overproduction</option>
+            <option value="DROPPED">Dropped</option>
+            <option value="EXPIRED">Expired</option>
+            <option value="QUALITY">Quality</option>
+          </select>
+          <button class="btn" onclick="loadLogs()">Filter</button>
+        </div>
+        <div class="card">
+          <div class="card-header">📋 Waste Log <span id="logCount" style="font-size:11px;opacity:.8"></span></div>
+          <div class="card-body" style="padding:0">
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead><tr style="border-bottom:2px solid var(--border)">
+                <th style="padding:10px;text-align:left">Item</th>
+                <th style="padding:10px">Qty</th>
+                <th style="padding:10px;text-align:left">Reason</th>
+                <th style="padding:10px">Cost</th>
+                <th style="padding:10px;text-align:left">Date</th>
+                <th style="padding:10px"></th>
+              </tr></thead>
+              <tbody id="logTable">
+                <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Tab -->
+  <div class="pane" id="pane-report">
+    <div style="display:flex;gap:10px;margin-bottom:16px;background:var(--white);padding:12px 16px;border-radius:10px;border:1px solid var(--border)">
+      <label style="margin:0;font-size:13px;font-weight:700;color:var(--navy)">Period:</label>
+      <select id="repMonths" onchange="loadSummary()" style="width:160px">
+        <option value="1">Last 1 month</option>
+        <option value="3" selected>Last 3 months</option>
+        <option value="6">Last 6 months</option>
+      </select>
+    </div>
+    <div class="stats" id="summaryStats">
+      <div class="stat"><div class="num" id="s-total">—</div><div class="lbl">Total Incidents</div></div>
+      <div class="stat"><div class="num" id="s-cost" style="color:var(--red)">—</div><div class="lbl">Total Cost (रू)</div></div>
+      <div class="stat"><div class="num" id="s-top-reason">—</div><div class="lbl">Top Reason</div></div>
+      <div class="stat"><div class="num" id="s-avg-cost">—</div><div class="lbl">Avg Cost / Incident</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <div class="card-header">🥩 Top Waste Items</div>
+        <div class="card-body" id="topItems">Loading...</div>
+      </div>
+      <div class="card">
+        <div class="card-header">📊 By Reason</div>
+        <div class="card-body" id="byReason">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+document.getElementById('wDate').value=new Date().toISOString().slice(0,10);
+
+async function logWaste(){
+  const body={itemName:document.getElementById('wItemName').value,category:document.getElementById('wCategory').value,quantity:document.getElementById('wQty').value,unit:document.getElementById('wUnit').value,reason:document.getElementById('wReason').value,costPerUnit:document.getElementById('wCost').value,staffName:document.getElementById('wStaff').value,notes:document.getElementById('wNotes').value,date:document.getElementById('wDate').value};
+  if(!body.itemName||!body.quantity){showToast('Item name and quantity required','error');return;}
+  const r=await fetch('/api/waste',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Waste logged!','success');document.getElementById('wItemName').value='';document.getElementById('wQty').value='';document.getElementById('wNotes').value='';loadLogs();}
+  else showToast(d.message||'Error','error');
+}
+
+async function loadLogs(){
+  const from=document.getElementById('filterFrom').value;
+  const to=document.getElementById('filterTo').value;
+  const reason=document.getElementById('filterReason').value;
+  let url='/api/waste?a=1';
+  if(from)url+=`&from=${from}`;if(to)url+=`&to=${to}`;if(reason)url+=`&reason=${reason}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const logs=await r.json();
+  document.getElementById('logCount').textContent=`(${logs.length})`;
+  const reasonLabel={SPOILAGE:'Spoilage',OVERPRODUCTION:'Overproduction',DROPPED:'Dropped',EXPIRED:'Expired',QUALITY:'Quality'};
+  document.getElementById('logTable').innerHTML=logs.map(l=>`
+    <tr style="border-bottom:1px solid #f0f0f0">
+      <td style="padding:10px"><strong>${l.itemName}</strong>${l.category?`<div style="font-size:11px;color:var(--muted)">${l.category}</div>`:''}</td>
+      <td style="padding:10px;text-align:center;font-weight:700">${l.quantity} ${l.unit}</td>
+      <td style="padding:10px"><span class="reason-badge reason-${l.reason}">${reasonLabel[l.reason]||l.reason}</span></td>
+      <td style="padding:10px;text-align:center;color:var(--red);font-weight:700">${l.totalCost?'रू '+l.totalCost.toLocaleString():'—'}</td>
+      <td style="padding:10px;font-size:11px;color:var(--muted)">${new Date(l.date).toLocaleDateString()}</td>
+      <td style="padding:10px"><button class="btn btn-red" style="font-size:11px;padding:4px 10px" onclick="removeLog(${l.id},this)">Del</button></td>
+    </tr>`).join('');
+}
+
+async function removeLog(id,btn){
+  if(!confirm('Delete this entry?'))return;
+  await fetch(`/api/waste/${id}`,{method:'DELETE',headers:authH()});
+  btn.closest('tr').remove();
+  showToast('Deleted','success');
+}
+
+async function loadSummary(){
+  const months=document.getElementById('repMonths').value;
+  const r=await fetch(`/api/waste/summary?months=${months}`,{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-total').textContent=d.totalItems;
+  document.getElementById('s-cost').textContent='रू '+(d.totalCost||0).toLocaleString();
+  document.getElementById('s-avg-cost').textContent=d.totalItems?'रू '+Math.round(d.totalCost/d.totalItems).toLocaleString():'—';
+  const topR=Object.entries(d.byReason||{}).sort((a,b)=>b[1].cost-a[1].cost)[0];
+  document.getElementById('s-top-reason').textContent=topR?topR[0].replace('_',' '):'—';
+
+  const max=d.topItems[0]?.cost||1;
+  document.getElementById('topItems').innerHTML=d.topItems.map((item,i)=>`
+    <div class="bar-item">
+      <div style="width:16px;font-weight:900;font-size:11px;color:var(--muted)">${i+1}</div>
+      <div style="flex:1"><div style="font-weight:700">${item.name}</div><div class="bar-track"><div class="bar-fill" style="width:${item.cost/max*100}%"></div></div></div>
+      <div style="text-align:right;min-width:80px"><div style="color:var(--red);font-weight:700">रू ${(item.cost||0).toLocaleString()}</div><div style="font-size:11px;color:var(--muted)">${item.qty} units</div></div>
+    </div>`).join('');
+
+  const reasonColors={SPOILAGE:'var(--red)',OVERPRODUCTION:'var(--orange)',DROPPED:'var(--blue)',EXPIRED:'#6a1b9a',QUALITY:'var(--green)'};
+  const reasonEmoji={SPOILAGE:'🦠',OVERPRODUCTION:'🍲',DROPPED:'💧',EXPIRED:'⏰',QUALITY:'❌'};
+  const maxRC=Math.max(...Object.values(d.byReason||{}).map(v=>v.cost))||1;
+  document.getElementById('byReason').innerHTML=Object.entries(d.byReason||{}).sort((a,b)=>b[1].cost-a[1].cost).map(([reason,v])=>`
+    <div class="bar-item">
+      <div style="width:24px">${reasonEmoji[reason]||''}</div>
+      <div style="flex:1"><div style="font-weight:700">${reason.replace('_',' ')}</div><div class="bar-track"><div class="bar-fill" style="width:${v.cost/maxRC*100}%;background:${reasonColors[reason]}"></div></div></div>
+      <div style="text-align:right"><div style="font-weight:700;color:var(--red)">रू ${(v.cost||0).toLocaleString()}</div><div style="font-size:11px;color:var(--muted)">${v.count} cases</div></div>
+    </div>`).join('');
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  if(name==='report')loadSummary();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadLogs();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

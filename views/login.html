@@ -106,6 +106,17 @@
       border: 1.5px solid var(--border); margin-top: 10px;
     }
     .btn-ghost:hover { border-color: var(--accent); background: rgba(232,160,32,0.05); }
+    .btn-demo {
+      background: rgba(232,160,32,0.08); color: var(--accent);
+      border: 1.5px dashed rgba(232,160,32,0.35); margin-top: 0;
+      font-size: 13.5px;
+    }
+    .btn-demo:hover { background: rgba(232,160,32,0.16); border-color: var(--accent); border-style: solid; }
+    .or-row {
+      display: flex; align-items: center; gap: 10px;
+      margin: 14px 0 10px; color: var(--muted); font-size: 12px;
+    }
+    .or-row::before, .or-row::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
     .link-btn {
       background: none; border: none; color: var(--accent);
@@ -197,6 +208,8 @@
       <button class="link-btn" onclick="goTo('page-forgot')">Password birse?</button>
     </div>
     <button class="btn btn-primary" id="btn-login" onclick="handleLogin()">🔐 Login</button>
+    <div class="or-row"><span>or</span></div>
+    <button class="btn btn-demo" onclick="tryDemo()">🚀 Try Demo &nbsp;—&nbsp; admin / restaurant123</button>
   </div>
 
   <!-- PAGE 2: CHANGE PASSWORD -->
@@ -253,6 +266,9 @@
       <div class="field-error" id="err-forgot"></div>
     </div>
     <div class="info-box" id="forgot-info">💡 OTP code email ma pathauncha</div>
+    <div class="info-box" style="background:rgba(232,160,32,0.08);border-color:rgba(232,160,32,0.3);color:#c8901a;margin-top:-10px">
+      ⚠️ Email vaa phone set xena bhane आफ्नो <strong>username</strong> (e.g. <code style="background:rgba(0,0,0,.2);padding:1px 5px;border-radius:4px">admin</code>) halnus — OTP server console ma dekhincha
+    </div>
     <button class="btn btn-primary" id="btn-forgot" onclick="handleForgot()" style="margin-bottom:10px">📤 OTP Pathaunus</button>
     <button class="btn btn-ghost" onclick="goTo('page-login')">← Login ma Farknu</button>
   </div>
@@ -359,6 +375,7 @@ const S = {
   token:        localStorage.getItem('token') || '',
   resetContact: '',
   resetMethod:  'email',
+  resetToken:   '',
   timerInterval: null,
 };
 
@@ -480,13 +497,17 @@ async function handleChangePass() {
   const confirm         = document.getElementById('cp-confirm').value;
   let valid = true;
   if (!currentPassword) { showError('err-cp-old', 'Purano password halnus'); valid = false; }
-  if (!newPassword || newPassword.length < 8) { showError('err-cp-new', 'Kam se kam 8 characters chahincha'); valid = false; }
+  if (!newPassword || newPassword.length < 6) { showError('err-cp-new', 'Kam se kam 6 characters chahincha'); valid = false; }
   if (newPassword !== confirm) { showError('err-cp-confirm', 'Password match gardaina'); valid = false; }
   if (!valid) return;
 
+  // Token is required — username is read server-side from the JWT
+  const token = S.token || localStorage.getItem('token') || '';
+  if (!token) { showToast('Login garna parcha pahile', 'error'); return; }
+
   setBtn('btn-cp', true, '✓ Password Update Garus');
   try {
-    const { ok, data } = await api('/change-password', { currentPassword, newPassword }, S.token);
+    const { ok, data } = await api('/change-password', { currentPassword, newPassword }, token);
     if (ok && data.success) {
       showToast('Password change bhayo! ✓', 'success');
       ['cp-old','cp-new','cp-confirm'].forEach(id => document.getElementById(id).value = '');
@@ -522,13 +543,16 @@ async function handleForgot() {
   try {
     const { ok, data } = await api('/forgot-password', { contact, method: S.resetMethod });
     if (ok && data.success) {
-      S.resetContact = contact;
-      const masked = S.resetMethod === 'email'
+      S.resetContact = contact.trim();
+      const masked = contact.includes('@')
         ? contact.replace(/(.{2}).+(@.+)/, '$1***$2')
-        : contact.replace(/(\d{2})\d{6}(\d{2})/, '$1******$2');
+        : contact.replace(/(\d{2})\d+(\d{2})/, '$1****$2');
+      const hint = data.hint || '';
       document.getElementById('otp-sent-label').textContent =
-        `6-digit code ${S.resetMethod === 'email' ? '📧' : '📱'} ${masked} ma pathiyo`;
-      showToast('OTP pathaiyo! Check garus', 'info');
+        hint
+          ? '⚠️ Email/SMS set xena — OTP server console ma check garus'
+          : `6-digit code ${contact.includes('@') ? '📧' : '📱'} ma pathiyo`;
+      showToast(hint ? '⚠️ OTP server console ma xa' : 'OTP pathaiyo! Check garus', hint ? 'error' : 'info');
       goTo('page-otp');
       startTimer();
       setupOTPInputs();
@@ -600,6 +624,7 @@ async function handleVerifyOTP() {
     const { ok, data } = await api('/verify-otp', { contact: S.resetContact, otp });
     if (ok && data.success) {
       clearInterval(S.timerInterval);
+      S.resetToken = data.resetToken || '';
       showToast('OTP verified! ✓', 'success');
       goTo('page-reset');
     } else {
@@ -621,12 +646,9 @@ async function handleResetPass() {
   if (newPassword !== confirm) { showError('err-rp-confirm', 'Password match gardaina'); valid = false; }
   if (!valid) return;
 
-  const inputs = document.querySelectorAll('.otp-input');
-  const otp    = [...inputs].map(i => i.value).join('');
-
   setBtn('btn-rp', true, '🔐 Password Reset Garus');
   try {
-    const { ok, data } = await api('/reset-password', { contact: S.resetContact, otp, newPassword });
+    const { ok, data } = await api('/reset-password', { resetToken: S.resetToken, newPassword });
     if (ok && data.success) {
       showToast('Password reset bhayo! Login garus 🎉', 'success');
       ['rp-new','rp-confirm'].forEach(id => document.getElementById(id).value = '');
@@ -644,6 +666,14 @@ async function handleResetPass() {
   if (cb) cb.checked = localStorage.getItem('remember_me') !== '0';
 })();
 
+// ── DEMO LOGIN ──
+function tryDemo() {
+  document.getElementById('login-user').value = 'admin';
+  document.getElementById('login-pass').value = 'restaurant123';
+  showToast('Demo credentials filled! Logging in...', 'info');
+  setTimeout(handleLogin, 400);
+}
+
 // ── ENTER KEY ──
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
@@ -655,5 +685,6 @@ document.addEventListener('keydown', e => {
   else if (active === 'page-reset')       handleResetPass();
 });
 </script>
+<script src="/js/autoupdate.js"></script>
 </body>
 </html>

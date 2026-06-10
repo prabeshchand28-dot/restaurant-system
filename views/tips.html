@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Tip Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--gold:#d4af37;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.tabs{display:flex;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.pane{display:none}.pane.active{display:block}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:22px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:20px}
+.staff-check{display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid #f0f0f0;cursor:pointer;user-select:none}
+.staff-check:hover{background:#f8f9fb}
+.staff-check input[type=checkbox]{width:16px;height:16px;cursor:pointer}
+.tip-row{border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px}
+.dist-chip{display:inline-block;background:#e8efff;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;margin:2px;color:var(--blue)}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Tip Management</span></span>
+  <div><a class="nav-btn" href="/shifts">⏱️ Shifts</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('log',this)">💵 Log Tips</div>
+  <div class="tab" onclick="switchTab('history',this)">📋 History</div>
+  <div class="tab" onclick="switchTab('summary',this)">📊 Summary</div>
+</div>
+<div class="content">
+
+  <!-- Log Tips -->
+  <div class="pane active" id="pane-log">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="card-header">💵 Log Today's Tips</div>
+          <div class="card-body">
+            <label>Date</label>
+            <input type="date" id="tipDate"/>
+            <label>Shift</label>
+            <select id="tipShift">
+              <option value="LUNCH">🌞 Lunch</option>
+              <option value="DINNER" selected>🌙 Dinner</option>
+              <option value="ALL_DAY">📅 All Day</option>
+            </select>
+            <label>Total Tips Collected (रू)</label>
+            <input type="number" id="tipTotal" placeholder="0" min="0" step="0.50"/>
+            <label>Collection Method</label>
+            <select id="tipMethod">
+              <option value="CASH">💵 Cash</option>
+              <option value="CARD">💳 Card</option>
+              <option value="SPLIT">🔀 Split (Cash + Card)</option>
+            </select>
+            <label>Notes</label>
+            <input id="tipNotes" placeholder="Any notes..."/>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">👥 Staff on Shift</div>
+          <div class="card-body" style="padding:0">
+            <div id="staffList">Loading...</div>
+          </div>
+          <div style="padding:12px 16px;border-top:1px solid var(--border);background:#f8f9fb">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="splitPreview">Select staff to see equal split</div>
+            <button class="btn btn-green" style="width:100%" onclick="logTips()">💵 Log & Distribute Tips</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header">ℹ️ How Tip Distribution Works</div>
+          <div class="card-body">
+            <div style="display:grid;gap:10px">
+              <div style="background:#f8f9fb;border-radius:8px;padding:12px;border-left:4px solid var(--blue)">
+                <div style="font-weight:800;font-size:13px">Equal Split</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px">Select all staff on shift. Tips are divided equally among selected staff members.</div>
+              </div>
+              <div style="background:#f8f9fb;border-radius:8px;padding:12px;border-left:4px solid var(--green)">
+                <div style="font-weight:800;font-size:13px">Example</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px">रू 1,500 ÷ 3 staff = रू 500 each (33.33%)</div>
+              </div>
+              <div style="background:#fff9e6;border-radius:8px;padding:12px;border-left:4px solid var(--gold)">
+                <div style="font-weight:800;font-size:13px">⭐ Tip Pool</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px">All tips are pooled and split equally by default. Custom amounts can be set after recording.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">📅 Recent Tip Records</div>
+          <div class="card-body" style="padding:0 16px">
+            <div id="recentTips">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="pane" id="pane-history">
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <input type="date" id="hFrom" style="width:150px"/>
+      <input type="date" id="hTo" style="width:150px"/>
+      <button class="btn" onclick="loadHistory()">Filter</button>
+    </div>
+    <div id="historyList">Loading...</div>
+  </div>
+
+  <!-- Summary -->
+  <div class="pane" id="pane-summary">
+    <div style="display:flex;gap:10px;margin-bottom:16px;background:var(--white);padding:12px 16px;border-radius:10px;border:1px solid var(--border)">
+      <select id="sumMonths" onchange="loadSummary()" style="width:160px">
+        <option value="1" selected>This month</option>
+        <option value="3">Last 3 months</option>
+        <option value="6">Last 6 months</option>
+      </select>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="num" id="s-total" style="color:var(--gold)">—</div><div class="lbl">Total Tips (रू)</div></div>
+      <div class="stat"><div class="num" id="s-count">—</div><div class="lbl">Tip Records</div></div>
+      <div class="stat"><div class="num" id="s-avg" style="color:var(--green)">—</div><div class="lbl">Avg Per Record (रू)</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">👤 Per Staff Earnings</div>
+      <div class="card-body" id="perStaff">Loading...</div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+document.getElementById('tipDate').value=new Date().toISOString().slice(0,10);
+let allStaff=[];
+
+async function loadStaff(){
+  const r=await fetch('/api/staff',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  allStaff=d.data||d;
+  document.getElementById('staffList').innerHTML=allStaff.map(s=>`
+    <label class="staff-check" style="cursor:pointer">
+      <input type="checkbox" class="staff-cb" value="${s.id}" onchange="updateSplit()"/>
+      <div><div style="font-weight:700;font-size:13px">${s.name}</div><div style="font-size:11px;color:var(--muted)">${s.position||s.role||''}</div></div>
+    </label>`).join('');
+}
+
+function updateSplit(){
+  const selected=[...document.querySelectorAll('.staff-cb:checked')].length;
+  const total=parseFloat(document.getElementById('tipTotal').value||0);
+  if(selected&&total){
+    document.getElementById('splitPreview').textContent=`${selected} staff × रू ${(total/selected).toFixed(2)} each`;
+  } else {
+    document.getElementById('splitPreview').textContent=selected?`${selected} staff selected`:'Select staff to see split';
+  }
+}
+
+document.getElementById('tipTotal').addEventListener('input',updateSplit);
+
+async function logTips(){
+  const staffIds=[...document.querySelectorAll('.staff-cb:checked')].map(cb=>parseInt(cb.value));
+  if(!staffIds.length){showToast('Select at least one staff member','error');return;}
+  const total=parseFloat(document.getElementById('tipTotal').value||0);
+  if(!total){showToast('Enter tip amount','error');return;}
+  const body={date:document.getElementById('tipDate').value,shiftType:document.getElementById('tipShift').value,totalTips:total,method:document.getElementById('tipMethod').value,notes:document.getElementById('tipNotes').value,staffIds};
+  const r=await fetch('/api/tips',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast(`Tips logged! रू ${total} split among ${staffIds.length} staff`,'success');document.getElementById('tipTotal').value='';loadRecent();}
+  else showToast(d.message||'Error','error');
+}
+
+async function loadRecent(){
+  const r=await fetch('/api/tips',{headers:authH(),cache:'no-store'});
+  const tips=(await r.json()).slice(0,5);
+  document.getElementById('recentTips').innerHTML=tips.map(t=>`
+    <div style="padding:10px 0;border-bottom:1px solid #f0f0f0">
+      <div style="display:flex;justify-content:space-between">
+        <div style="font-weight:700;font-size:13px">${new Date(t.date).toLocaleDateString()} · ${t.shiftType}</div>
+        <div style="font-weight:900;color:var(--gold)">रू ${(t.totalTips||0).toLocaleString()}</div>
+      </div>
+      <div style="margin-top:4px">${(t.distributions||[]).map(d=>`<span class="dist-chip">${d.staffName}: रू ${d.amount.toFixed(0)}</span>`).join('')}</div>
+    </div>`).join('') || '<div style="text-align:center;padding:20px;color:var(--muted)">No records</div>';
+}
+
+async function loadHistory(){
+  const from=document.getElementById('hFrom').value;
+  const to=document.getElementById('hTo').value;
+  let url='/api/tips?a=1';
+  if(from)url+=`&from=${from}`;if(to)url+=`&to=${to}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const tips=await r.json();
+  document.getElementById('historyList').innerHTML=tips.map(t=>`
+    <div class="tip-row">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-weight:800">${new Date(t.date).toLocaleDateString()} · ${t.shiftType}</div>
+          <div style="font-size:11px;color:var(--muted)">💳 ${t.method}${t.notes?` · ${t.notes}`:''}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:900;color:var(--gold)">रू ${(t.totalTips||0).toLocaleString()}</div>
+          <div style="font-size:11px;color:var(--muted)">${(t.distributions||[]).length} staff</div>
+        </div>
+      </div>
+      <div style="margin-top:8px">${(t.distributions||[]).map(d=>`<span class="dist-chip">${d.staffName}: रू ${d.amount.toFixed(0)} (${d.percentage.toFixed(0)}%)</span>`).join('')}</div>
+    </div>`).join('') || '<div style="text-align:center;padding:40px;color:var(--muted)">No records found</div>';
+}
+
+async function loadSummary(){
+  const months=document.getElementById('sumMonths').value;
+  const r=await fetch(`/api/tips/summary?months=${months}`,{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-total').textContent='रू '+(d.total||0).toLocaleString();
+  document.getElementById('s-count').textContent=d.count;
+  document.getElementById('s-avg').textContent=d.count?'रू '+Math.round(d.total/d.count).toLocaleString():'—';
+  const max=d.perStaff[0]?.total||1;
+  document.getElementById('perStaff').innerHTML=d.perStaff.map((s,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="width:20px;font-weight:900;color:var(--muted);font-size:12px">${i+1}</div>
+      <div style="flex:1">
+        <div style="font-weight:700">${s.name}</div>
+        <div style="height:6px;background:#f0f0f0;border-radius:3px;margin-top:3px;overflow:hidden"><div style="height:100%;border-radius:3px;background:var(--gold);width:${s.total/max*100}%"></div></div>
+      </div>
+      <div style="font-weight:900;color:var(--gold)">रू ${(s.total||0).toLocaleString()}</div>
+    </div>`).join('') || '<div style="text-align:center;padding:20px;color:var(--muted)">No data</div>';
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  if(name==='history')loadHistory();
+  if(name==='summary')loadSummary();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadStaff();loadRecent();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

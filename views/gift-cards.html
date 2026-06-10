@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Gift Cards</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--gold:#b8860b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:20px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}.btn-gold{background:var(--gold)}
+.gc-card{border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.gc-top{background:linear-gradient(135deg,#1a3a6b,#2e5ca6);color:#fff;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+.gc-code{font-family:monospace;font-size:13px;font-weight:900;letter-spacing:2px}
+.gc-body{padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gc-field{font-size:12px}.gc-field .k{color:var(--muted)}.gc-field .v{font-weight:800;font-size:13px}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800}
+.s-ACTIVE{background:#e7f5ed;color:var(--green)}.s-REDEEMED{background:#e8efff;color:var(--blue)}.s-EXPIRED{background:#fff3e0;color:#856404}.s-VOID{background:#f0f0f0;color:#888}
+.tab-bar{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px}
+.tab{padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--muted)}
+.tab.active{border-bottom-color:var(--blue);color:var(--blue)}
+.pane{display:none}.pane.active{display:block}
+.redeem-result{background:#e7f5ed;border-radius:10px;padding:14px;margin-top:12px;display:none}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Gift Cards</span></span>
+  <div><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-total">—</div><div class="lbl">Total Cards</div></div>
+    <div class="stat"><div class="num" id="s-active" style="color:var(--green)">—</div><div class="lbl">Active</div></div>
+    <div class="stat"><div class="num" id="s-issued" style="color:var(--blue)">—</div><div class="lbl">Total Issued (रू)</div></div>
+    <div class="stat"><div class="num" id="s-redeemed" style="color:var(--gold)">—</div><div class="lbl">Total Redeemed (रू)</div></div>
+    <div class="stat"><div class="num" id="s-outstanding" style="color:var(--red)">—</div><div class="lbl">Outstanding (रू)</div></div>
+  </div>
+
+  <div class="grid">
+    <!-- Left panel -->
+    <div>
+      <div class="card">
+        <div class="card-header">🎁 Issue Gift Card</div>
+        <div class="card-body">
+          <label>Amount (रू)</label><input id="gAmount" type="number" min="100" placeholder="e.g. 1000"/>
+          <label>Recipient Name</label><input id="gName" placeholder="Customer name"/>
+          <label>Recipient Phone</label><input id="gPhone" type="tel" placeholder="Optional"/>
+          <label>Purchased By</label><input id="gBy" placeholder="Staff name"/>
+          <label>Expiry Date (optional)</label><input id="gExpiry" type="date"/>
+          <label>Notes</label><input id="gNotes" placeholder="e.g. Birthday gift"/>
+          <button class="btn btn-green" style="width:100%;margin-top:14px" onclick="issueCard()">🎁 Issue Card</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">💳 Redeem Gift Card</div>
+        <div class="card-body">
+          <label>Card Code</label><input id="rCode" placeholder="XXXX-XXXX-XXXX-XXXX" style="font-family:monospace;font-size:14px;letter-spacing:1px"/>
+          <label>Amount to Redeem (रू)</label><input id="rAmount" type="number" min="1" placeholder="Amount"/>
+          <label>Reference / Order #</label><input id="rRef" placeholder="Order number or table"/>
+          <label>Processed By</label><input id="rBy" placeholder="Staff name"/>
+          <button class="btn btn-gold" style="width:100%;margin-top:14px" onclick="redeemCard()">💳 Redeem</button>
+          <div id="redeemResult" class="redeem-result"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Card List -->
+    <div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <select id="fStatus" onchange="loadCards()" style="width:130px">
+          <option value="">All Status</option>
+          <option value="ACTIVE">Active</option>
+          <option value="REDEEMED">Redeemed</option>
+          <option value="EXPIRED">Expired</option>
+          <option value="VOID">Void</option>
+        </select>
+        <input id="fSearch" placeholder="Search code or name..." style="width:200px" onkeyup="debounce(loadCards,400)()"/>
+      </div>
+      <div id="cardList">Loading...</div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+async function loadStats(){
+  const r=await fetch('/api/gift-cards/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-total').textContent=d.total;
+  document.getElementById('s-active').textContent=d.active;
+  document.getElementById('s-issued').textContent='रू '+Math.round(d.totalIssued).toLocaleString();
+  document.getElementById('s-redeemed').textContent='रू '+Math.round(d.totalRedeemed).toLocaleString();
+  document.getElementById('s-outstanding').textContent='रू '+Math.round(d.outstanding).toLocaleString();
+}
+
+async function loadCards(){
+  const status=document.getElementById('fStatus').value;
+  const search=document.getElementById('fSearch').value;
+  let url='/api/gift-cards?a=1';
+  if(status)url+=`&status=${status}`;if(search)url+=`&search=${encodeURIComponent(search)}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const cards=await r.json();
+  if(!cards.length){document.getElementById('cardList').innerHTML='<div style="text-align:center;padding:60px;background:var(--white);border-radius:12px;color:var(--muted)">No gift cards found</div>';return;}
+  document.getElementById('cardList').innerHTML=cards.map(c=>`
+    <div class="gc-card">
+      <div class="gc-top">
+        <div>
+          <div class="gc-code">${c.code}</div>
+          ${c.recipientName?`<div style="font-size:11px;opacity:.8;margin-top:2px">For: ${c.recipientName}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <span class="badge s-${c.status}">${c.status}</span>
+          <div style="font-size:20px;font-weight:900;margin-top:4px">रू ${c.balance.toLocaleString()}</div>
+          <div style="font-size:10px;opacity:.7">of रू ${c.initialValue.toLocaleString()}</div>
+        </div>
+      </div>
+      <div class="gc-body">
+        <div class="gc-field"><div class="k">Issued</div><div class="v">${new Date(c.createdAt).toLocaleDateString()}</div></div>
+        <div class="gc-field"><div class="k">Expires</div><div class="v">${c.expiresAt?new Date(c.expiresAt).toLocaleDateString():'No expiry'}</div></div>
+        ${c.purchasedBy?`<div class="gc-field"><div class="k">Purchased By</div><div class="v">${c.purchasedBy}</div></div>`:''}
+        ${c.recipientPhone?`<div class="gc-field"><div class="k">Phone</div><div class="v">${c.recipientPhone}</div></div>`:''}
+      </div>
+      ${c.transactions&&c.transactions.length?`<div style="padding:8px 14px;border-top:1px solid #f0f0f0;font-size:11px;color:var(--muted)">Last: ${c.transactions[0].type} रू${c.transactions[0].amount} on ${new Date(c.transactions[0].createdAt).toLocaleDateString()}</div>`:''}
+      <div style="padding:8px 14px;border-top:1px solid #f0f0f0;display:flex;gap:6px">
+        ${c.status==='ACTIVE'?`<button class="btn" style="font-size:11px;padding:4px 10px;background:var(--gold)" onclick="reloadPrompt(${c.id})">+ Reload</button>`:''}
+        ${c.status==='ACTIVE'?`<button class="btn btn-red" style="font-size:11px;padding:4px 10px" onclick="voidCard(${c.id})">Void</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+async function issueCard(){
+  const amount=document.getElementById('gAmount').value;
+  if(!amount){showToast('Enter amount','error');return;}
+  const body={amount,recipientName:document.getElementById('gName').value,recipientPhone:document.getElementById('gPhone').value,purchasedBy:document.getElementById('gBy').value,expiresAt:document.getElementById('gExpiry').value||null,notes:document.getElementById('gNotes').value};
+  const r=await fetch('/api/gift-cards/issue',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){
+    showToast(`Card issued: ${d.code}`,'success');
+    alert(`🎁 Gift Card Issued!\n\nCode: ${d.code}\nBalance: रू ${d.balance}\n\nGive this code to the customer.`);
+    document.getElementById('gAmount').value='';document.getElementById('gName').value='';document.getElementById('gPhone').value='';document.getElementById('gBy').value='';document.getElementById('gExpiry').value='';document.getElementById('gNotes').value='';
+    loadCards();loadStats();
+  }else showToast(d.message||'Error','error');
+}
+
+async function redeemCard(){
+  const code=document.getElementById('rCode').value.trim();
+  const amount=document.getElementById('rAmount').value;
+  if(!code||!amount){showToast('Code and amount required','error');return;}
+  const body={code,amount,reference:document.getElementById('rRef').value,processedBy:document.getElementById('rBy').value};
+  const r=await fetch('/api/gift-cards/redeem',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  const el=document.getElementById('redeemResult');
+  if(d.id){
+    el.style.display='block';
+    el.innerHTML=`✅ <strong>Redeemed रू ${amount}</strong><br>Remaining balance: <strong>रू ${d.balance}</strong><br>Status: ${d.status}`;
+    el.style.background='#e7f5ed';
+    loadCards();loadStats();
+  }else{
+    el.style.display='block';el.innerHTML=`❌ ${d.message}`;el.style.background='#fce8e7';
+    showToast(d.message||'Error','error');
+  }
+}
+
+async function reloadPrompt(id){
+  const amount=prompt('Amount to add (रू):');
+  if(!amount||isNaN(amount))return;
+  const by=prompt('Your name:');
+  const r=await fetch(`/api/gift-cards/${id}/reload`,{method:'POST',headers:authH(),body:JSON.stringify({amount:parseFloat(amount),processedBy:by||''})});
+  const d=await r.json();
+  if(d.id){showToast('Card reloaded!','success');loadCards();loadStats();}
+  else showToast(d.message||'Error','error');
+}
+
+async function voidCard(id){
+  if(!confirm('Void this gift card? This cannot be undone.'))return;
+  const r=await fetch(`/api/gift-cards/${id}/void`,{method:'PATCH',headers:authH()});
+  const d=await r.json();
+  if(d.id){showToast('Card voided','success');loadCards();loadStats();}
+}
+
+let debT={};
+function debounce(fn,delay){return function(...args){clearTimeout(debT[fn]);debT[fn]=setTimeout(()=>fn(...args),delay);}}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadStats();loadCards();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

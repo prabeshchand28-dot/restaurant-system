@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Payment Settings</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--stripe:#635bff;--esewa:#60bb46;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:900px;margin:0 auto}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.gw-header{padding:16px 20px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border)}
+.gw-logo{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff}
+.gw-title{font-size:16px;font-weight:800}
+.gw-desc{font-size:12px;color:var(--muted);margin-top:2px}
+.card-body{padding:20px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:14px}
+label:first-child{margin-top:0}
+.field-wrap{position:relative}
+input[type=text],input[type=password]{padding:8px 36px 8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus{border-color:var(--blue)}
+.eye-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;line-height:1}
+.btn{padding:9px 18px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:800}
+.status-live{background:#e7f5ed;color:var(--green)}
+.status-demo{background:#fffbf0;color:#b45309}
+.status-off{background:#fce8e7;color:var(--red)}
+.toggle-wrap{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.toggle{width:44px;height:24px;background:#ddd;border-radius:12px;cursor:pointer;position:relative;transition:background .2s}
+.toggle.on{background:var(--green)}
+.toggle::after{content:'';position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on::after{transform:translateX(20px)}
+.info-box{background:#f0f4ff;border-left:4px solid var(--blue);border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:var(--navy);line-height:1.6;margin-top:12px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Payment Settings</span></span>
+  <div><a class="nav-btn" href="/payment">💳 Terminal</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+
+  <!-- Stripe -->
+  <div class="card">
+    <div class="gw-header">
+      <div class="gw-logo" style="background:var(--stripe)">S</div>
+      <div>
+        <div class="gw-title">Stripe</div>
+        <div class="gw-desc">International cards, wallets, and online payments</div>
+      </div>
+      <div style="margin-left:auto" id="stripeStatus"><span class="status-badge status-demo">⚪ DEMO</span></div>
+    </div>
+    <div class="card-body">
+      <div class="toggle-wrap">
+        <div class="toggle" id="stripeToggle" onclick="this.classList.toggle('on')"></div>
+        <span style="font-size:13px;font-weight:700">Enable Stripe Payments</span>
+      </div>
+      <label>Publishable Key</label>
+      <div class="field-wrap">
+        <input type="text" id="stripePubKey" placeholder="pk_live_... or pk_test_..."/>
+      </div>
+      <label>Secret Key</label>
+      <div class="field-wrap">
+        <input type="password" id="stripeSecKey" placeholder="sk_live_... or sk_test_..."/>
+        <button class="eye-btn" onclick="toggleVis('stripeSecKey',this)">👁</button>
+      </div>
+      <label>Webhook Secret</label>
+      <div class="field-wrap">
+        <input type="password" id="stripeWebhook" placeholder="whsec_..."/>
+        <button class="eye-btn" onclick="toggleVis('stripeWebhook',this)">👁</button>
+      </div>
+      <div class="info-box">
+        🔗 Webhook URL: <strong>https://your-domain.com/api/payments/gateway/webhook</strong><br>
+        Events to listen: <code>checkout.session.completed</code><br>
+        Use <strong>pk_test_</strong> / <strong>sk_test_</strong> keys for testing mode.
+      </div>
+      <button class="btn" style="margin-top:14px" onclick="saveGateway('stripe')">💾 Save Stripe Settings</button>
+    </div>
+  </div>
+
+  <!-- eSewa -->
+  <div class="card">
+    <div class="gw-header">
+      <div class="gw-logo" style="background:var(--esewa)">e</div>
+      <div>
+        <div class="gw-title">eSewa</div>
+        <div class="gw-desc">Nepal's most popular digital wallet & payment gateway</div>
+      </div>
+      <div style="margin-left:auto" id="esewaStatus"><span class="status-badge status-demo">⚪ DEMO</span></div>
+    </div>
+    <div class="card-body">
+      <div class="toggle-wrap">
+        <div class="toggle" id="esewaToggle" onclick="this.classList.toggle('on')"></div>
+        <span style="font-size:13px;font-weight:700">Enable eSewa Payments</span>
+      </div>
+      <label>Merchant ID (Product Code)</label>
+      <input type="text" id="esewaId" placeholder="EPAYTEST (test) or your merchant code"/>
+      <label>Secret Key</label>
+      <div class="field-wrap">
+        <input type="password" id="esewaSecret" placeholder="8gBm/:&EnhH.1/q (test) or your secret"/>
+        <button class="eye-btn" onclick="toggleVis('esewaSecret',this)">👁</button>
+      </div>
+      <label>Environment</label>
+      <select id="esewaEnv">
+        <option value="sandbox">🧪 Sandbox (Test)</option>
+        <option value="live">🚀 Live (Production)</option>
+      </select>
+      <div class="info-box">
+        Test credentials: Merchant ID <strong>EPAYTEST</strong>, Secret <strong>8gBm/:&EnhH.1/q</strong><br>
+        Test eSewa account: <strong>9806800001</strong> · Password: <strong>Nepal@123</strong> · MPIN: <strong>1122</strong>
+      </div>
+      <button class="btn" style="margin-top:14px" onclick="saveGateway('esewa')">💾 Save eSewa Settings</button>
+    </div>
+  </div>
+
+  <!-- Cash on Delivery -->
+  <div class="card">
+    <div class="gw-header">
+      <div class="gw-logo" style="background:#4caf50">💵</div>
+      <div>
+        <div class="gw-title">Cash on Delivery</div>
+        <div class="gw-desc">Accept cash payment at delivery or pickup</div>
+      </div>
+      <div style="margin-left:auto"><span class="status-badge status-live">✅ ALWAYS ON</span></div>
+    </div>
+    <div class="card-body">
+      <div style="color:var(--muted);font-size:13px">Cash on delivery is always enabled. Orders using this method will be marked as pending payment until manually confirmed.</div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+async function loadSettings(){
+  const r=await fetch('/api/payments/gateway/settings',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  if(!d||!d.length) return;
+  d.forEach(s=>{
+    if(s.gateway==='stripe'){
+      if(s.publishableKey)document.getElementById('stripePubKey').value=s.publishableKey;
+      if(s.secretKey)document.getElementById('stripeSecKey').value=s.secretKey;
+      if(s.webhookSecret)document.getElementById('stripeWebhook').value=s.webhookSecret;
+      if(s.enabled)document.getElementById('stripeToggle').classList.add('on');
+      document.getElementById('stripeStatus').innerHTML=s.enabled?`<span class="status-badge ${s.secretKey?.startsWith('sk_live')?'status-live':'status-demo'}">${s.secretKey?.startsWith('sk_live')?'🟢 LIVE':'🧪 TEST'}</span>`:`<span class="status-badge status-off">🔴 OFF</span>`;
+    }
+    if(s.gateway==='esewa'){
+      if(s.merchantId)document.getElementById('esewaId').value=s.merchantId;
+      if(s.secretKey)document.getElementById('esewaSecret').value=s.secretKey;
+      if(s.environment)document.getElementById('esewaEnv').value=s.environment;
+      if(s.enabled)document.getElementById('esewaToggle').classList.add('on');
+      document.getElementById('esewaStatus').innerHTML=s.enabled?`<span class="status-badge ${s.environment==='live'?'status-live':'status-demo'}">${s.environment==='live'?'🟢 LIVE':'🧪 TEST'}</span>`:`<span class="status-badge status-off">🔴 OFF</span>`;
+    }
+  });
+}
+
+async function saveGateway(gw){
+  let body={gateway:gw,enabled:false};
+  if(gw==='stripe'){
+    body={...body,publishableKey:document.getElementById('stripePubKey').value,secretKey:document.getElementById('stripeSecKey').value,webhookSecret:document.getElementById('stripeWebhook').value,enabled:document.getElementById('stripeToggle').classList.contains('on')};
+  } else {
+    body={...body,merchantId:document.getElementById('esewaId').value,secretKey:document.getElementById('esewaSecret').value,environment:document.getElementById('esewaEnv').value,enabled:document.getElementById('esewaToggle').classList.contains('on')};
+  }
+  const r=await fetch('/api/payments/gateway/settings',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id||d.gateway){showToast(`${gw} settings saved!`,'success');}
+  else showToast(d.message||'Error saving','error');
+}
+
+function toggleVis(id,btn){
+  const el=document.getElementById(id);
+  el.type=el.type==='password'?'text':'password';
+  btn.textContent=el.type==='password'?'👁':'🔒';
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadSettings();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

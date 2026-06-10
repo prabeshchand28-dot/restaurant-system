@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Menu Modifiers</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.grid{display:grid;grid-template-columns:360px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}
+.group-card{border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden}
+.group-head{background:#f8f9fa;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.group-name{font-weight:800;font-size:14px}
+.type-badge{font-size:10px;font-weight:800;padding:2px 7px;border-radius:100px;background:#e8efff;color:var(--blue)}
+.option-row{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:1px solid #f5f5f5}
+.option-row:last-child{border-bottom:none}
+.opt-name{font-size:13px;font-weight:600}
+.opt-price{font-size:12px;font-weight:800;color:var(--green)}
+.opt-price.negative{color:var(--red)}
+.add-option-row{display:flex;gap:8px;padding:10px 14px;background:#fafafa;border-top:1px solid #f0f0f0}
+.add-option-row input{padding:6px 8px;font-size:12px}
+.mini-btn{padding:5px 10px;font-size:11px;font-weight:700;border:none;border-radius:5px;cursor:pointer;font-family:var(--font)}
+.info-tip{font-size:11px;color:var(--muted);margin-top:4px}
+.toggle{display:flex;align-items:center;gap:8px;cursor:pointer}
+.toggle input{width:auto;accent-color:var(--blue)}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Menu Modifiers</span></span>
+  <div><a class="nav-btn" href="/menu-engineering">📊 Menu Engineering</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div style="background:#fff8e6;border:1px solid #ffe080;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#856404">
+    💡 <strong>Modifier groups</strong> let you add customisable options to menu items — e.g. Size (Small/Medium/Large), Extras (Egg +रू20), Spice Level. Leave <em>Apply to Items</em> blank to apply to all items.
+  </div>
+  <div class="grid">
+    <!-- Create Group -->
+    <div>
+      <div class="card">
+        <div class="card-header">➕ New Modifier Group</div>
+        <div class="card-body">
+          <label>Group Name</label><input id="gName" placeholder="e.g. Size, Extras, Spice Level"/>
+          <label>Selection Type</label>
+          <select id="gType">
+            <option value="SINGLE">Single (pick one)</option>
+            <option value="MULTI">Multi (pick many)</option>
+          </select>
+          <div style="display:flex;gap:12px;margin-top:10px">
+            <div style="flex:1"><label>Min Select</label><input id="gMin" type="number" value="0" min="0"/></div>
+            <div style="flex:1"><label>Max Select</label><input id="gMax" type="number" value="1" min="1"/></div>
+          </div>
+          <label style="margin-top:10px">
+            <div style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="gRequired" style="width:auto"/> <span style="font-size:12px;font-weight:700;color:var(--navy)">Required (must choose)</span></div>
+          </label>
+          <label>Apply to Menu Item IDs (comma-separated)</label>
+          <input id="gItems" placeholder="e.g. 1,2,5 — leave blank for all"/>
+          <div class="info-tip">You'll add options after creating the group</div>
+          <button class="btn btn-green" style="width:100%;margin-top:14px" onclick="createGroup()">Create Group</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group List -->
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:16px;font-weight:900;color:var(--navy)" id="groupCount">Modifier Groups</div>
+        <button class="btn" style="font-size:12px;padding:6px 12px" onclick="loadGroups()">↻ Refresh</button>
+      </div>
+      <div id="groupList">Loading...</div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+async function loadGroups(){
+  const r=await fetch('/api/modifiers',{headers:authH(),cache:'no-store'});
+  const groups=await r.json();
+  document.getElementById('groupCount').textContent=`Modifier Groups (${groups.length})`;
+  if(!groups.length){document.getElementById('groupList').innerHTML='<div style="text-align:center;padding:60px;background:var(--white);border-radius:12px;color:var(--muted)">No modifier groups yet. Create one to get started.</div>';return;}
+  document.getElementById('groupList').innerHTML=groups.map(g=>`
+    <div class="group-card" id="grp-${g.id}">
+      <div class="group-head">
+        <div>
+          <span class="group-name">${g.name}</span>
+          <span class="type-badge" style="margin-left:8px">${g.type}</span>
+          ${g.required?'<span class="type-badge" style="margin-left:4px;background:#fce8e7;color:var(--red)">Required</span>':''}
+          ${!g.active?'<span class="type-badge" style="margin-left:4px;background:#f0f0f0;color:#888">Inactive</span>':''}
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="mini-btn" style="background:#f0f0f0;color:#333" onclick="toggleActive(${g.id},${!g.active})">${g.active?'Disable':'Enable'}</button>
+          <button class="mini-btn" style="background:#fce8e7;color:var(--red)" onclick="deleteGroup(${g.id})">Del</button>
+        </div>
+      </div>
+      ${g.menuItemIds?`<div style="padding:6px 14px;font-size:11px;color:var(--muted);background:#fafafa;border-bottom:1px solid #f0f0f0">📌 Items: ${g.menuItemIds||'All items'}</div>`:''}
+      ${g.options.map(o=>`
+        <div class="option-row">
+          <span class="opt-name">${o.name}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="opt-price ${o.priceAdjustment<0?'negative':''}">${o.priceAdjustment>=0?'+':''}रू${o.priceAdjustment}</span>
+            <button class="mini-btn" style="background:#fce8e7;color:var(--red)" onclick="deleteOption(${o.id})">✕</button>
+          </div>
+        </div>`).join('')}
+      <div class="add-option-row">
+        <input id="oName-${g.id}" placeholder="Option name" style="flex:1"/>
+        <input id="oPrice-${g.id}" type="number" placeholder="+/- price" style="width:100px"/>
+        <button class="mini-btn" style="background:var(--green);color:#fff" onclick="addOption(${g.id})">+ Add</button>
+      </div>
+    </div>`).join('');
+}
+
+async function createGroup(){
+  const name=document.getElementById('gName').value.trim();
+  if(!name){showToast('Group name required','error');return;}
+  const body={name,type:document.getElementById('gType').value,required:document.getElementById('gRequired').checked,minSelect:parseInt(document.getElementById('gMin').value)||0,maxSelect:parseInt(document.getElementById('gMax').value)||1,menuItemIds:document.getElementById('gItems').value.trim()};
+  const r=await fetch('/api/modifiers',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Group created!','success');document.getElementById('gName').value='';document.getElementById('gItems').value='';loadGroups();}
+  else showToast(d.message||'Error','error');
+}
+
+async function addOption(groupId){
+  const name=document.getElementById(`oName-${groupId}`).value.trim();
+  const price=parseFloat(document.getElementById(`oPrice-${groupId}`).value)||0;
+  if(!name){showToast('Option name required','error');return;}
+  const r=await fetch(`/api/modifiers/${groupId}/options`,{method:'POST',headers:authH(),body:JSON.stringify({name,priceAdjustment:price})});
+  const d=await r.json();
+  if(d.id){showToast('Option added!','success');loadGroups();}
+  else showToast(d.message||'Error','error');
+}
+
+async function deleteOption(optId){
+  if(!confirm('Delete this option?'))return;
+  await fetch(`/api/modifiers/options/${optId}`,{method:'DELETE',headers:authH()});
+  loadGroups();
+}
+
+async function deleteGroup(id){
+  if(!confirm('Delete this modifier group and all its options?'))return;
+  await fetch(`/api/modifiers/${id}`,{method:'DELETE',headers:authH()});
+  loadGroups();
+}
+
+async function toggleActive(id,active){
+  await fetch(`/api/modifiers/${id}`,{method:'PATCH',headers:authH(),body:JSON.stringify({active})});
+  loadGroups();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadGroups();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

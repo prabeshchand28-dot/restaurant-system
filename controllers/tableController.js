@@ -4,8 +4,10 @@ const { generateQRDataUrl } = require('../utils/qrGenerator');
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 exports.getAll = async (req, res) => {
-  const tables = await prisma.restaurantTable.findMany({ where: { active: true }, orderBy: { number: 'asc' } });
-  res.json(tables.map(t => t.number));
+  try {
+    const tables = await prisma.restaurantTable.findMany({ where: { active: true }, orderBy: { number: 'asc' } });
+    res.json(tables.map(t => t.number));
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 };
 
 exports.create = async (req, res) => {

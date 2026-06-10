@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Shift Revenue Snapshot</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.shift-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.shift-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center;cursor:pointer;transition:all .2s}
+.shift-card:hover,.shift-card.active{border-color:var(--blue);background:#e8efff;transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.1)}
+.shift-card .emoji{font-size:32px;display:block;margin-bottom:6px}
+.shift-card .name{font-size:14px;font-weight:800;color:var(--navy)}
+.shift-card .time{font-size:11px;color:var(--muted)}
+.shift-card .revenue{font-size:20px;font-weight:900;color:var(--green);margin-top:6px}
+.shift-card .orders{font-size:12px;color:var(--muted)}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.metric{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.metric .val{font-size:20px;font-weight:900}.metric .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:13px;font-weight:700}
+.card-body{padding:16px}
+input,select{padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Shift Revenue Snapshot</span></span>
+  <div><a class="nav-btn" href="/reports">📈 Reports</a><a class="nav-btn" href="/night-audit">🌙 Audit</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+    <input type="date" id="snapDate" onchange="loadSnapshot()"/>
+    <button class="btn" onclick="loadSnapshot()">📊 Load Snapshot</button>
+    <span style="font-size:12px;color:var(--muted);margin-left:auto" id="lastUpdated"></span>
+  </div>
+
+  <div class="shift-grid">
+    <div class="shift-card active" id="sc-morning" onclick="selectShift('morning')">
+      <span class="emoji">☀️</span>
+      <div class="name">Morning</div>
+      <div class="time">6am – 2pm</div>
+      <div class="revenue" id="r-morning">रू —</div>
+      <div class="orders" id="o-morning">— orders</div>
+    </div>
+    <div class="shift-card" id="sc-afternoon" onclick="selectShift('afternoon')">
+      <span class="emoji">🌤️</span>
+      <div class="name">Afternoon</div>
+      <div class="time">2pm – 7pm</div>
+      <div class="revenue" id="r-afternoon">रू —</div>
+      <div class="orders" id="o-afternoon">— orders</div>
+    </div>
+    <div class="shift-card" id="sc-evening" onclick="selectShift('evening')">
+      <span class="emoji">🌙</span>
+      <div class="name">Evening</div>
+      <div class="time">7pm – Close</div>
+      <div class="revenue" id="r-evening">रू —</div>
+      <div class="orders" id="o-evening">— orders</div>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric"><div class="val" id="m-total" style="color:var(--green)">—</div><div class="lbl">Day Total (रू)</div></div>
+    <div class="metric"><div class="val" id="m-orders" style="color:var(--blue)">—</div><div class="lbl">Total Orders</div></div>
+    <div class="metric"><div class="val" id="m-avg" style="color:var(--orange)">—</div><div class="lbl">Avg Order Value</div></div>
+    <div class="metric"><div class="val" id="m-top" style="color:var(--navy)">—</div><div class="lbl">Top Shift</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-header">📊 Revenue by Shift</div>
+      <div class="card-body"><canvas id="shiftChart" height="180"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header">📋 Orders by Status</div>
+      <div class="card-body"><canvas id="statusChart" height="180"></canvas></div>
+    </div>
+  </div>
+</div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let shiftChart=null,statusChart=null,selectedShift='morning';
+const today=new Date().toISOString().slice(0,10);
+document.getElementById('snapDate').value=today;
+
+function selectShift(shift){
+  selectedShift=shift;
+  document.querySelectorAll('.shift-card').forEach(c=>c.classList.remove('active'));
+  document.getElementById('sc-'+shift).classList.add('active');
+}
+
+async function loadSnapshot(){
+  const date=document.getElementById('snapDate').value;
+  const [ordersR,reportsR]=await Promise.all([
+    fetch(`/api/orders?from=${date}&to=${date}&limit=500`,{headers:authH(),cache:'no-store'}).catch(()=>null),
+    fetch(`/api/reports/daily?date=${date}`,{headers:authH(),cache:'no-store'}).catch(()=>null)
+  ]);
+
+  let orders=[];
+  if(ordersR&&ordersR.ok){const d=await ordersR.json();orders=d.data||d||[];}
+
+  // Group by time into shifts
+  function getShift(dateStr){
+    const h=new Date(dateStr).getHours();
+    if(h<14)return'morning';if(h<19)return'afternoon';return'evening';
+  }
+
+  const shifts={morning:{revenue:0,orders:0},afternoon:{revenue:0,orders:0},evening:{revenue:0,orders:0}};
+  const statusCounts={};
+
+  orders.forEach(o=>{
+    const shift=getShift(o.createdAt||o.date||date);
+    if(shifts[shift]){shifts[shift].revenue+=(o.total||o.totalAmount||0);shifts[shift].orders++;}
+    const st=o.status||'UNKNOWN';
+    statusCounts[st]=(statusCounts[st]||0)+1;
+  });
+
+  ['morning','afternoon','evening'].forEach(s=>{
+    document.getElementById(`r-${s}`).textContent='रू '+Math.round(shifts[s].revenue).toLocaleString();
+    document.getElementById(`o-${s}`).textContent=shifts[s].orders+' orders';
+  });
+
+  const dayTotal=Object.values(shifts).reduce((s,v)=>s+v.revenue,0);
+  const dayOrders=Object.values(shifts).reduce((s,v)=>s+v.orders,0);
+  document.getElementById('m-total').textContent='रू '+Math.round(dayTotal).toLocaleString();
+  document.getElementById('m-orders').textContent=dayOrders;
+  document.getElementById('m-avg').textContent='रू '+Math.round(dayOrders>0?dayTotal/dayOrders:0);
+  const topShift=Object.entries(shifts).sort((a,b)=>b[1].revenue-a[1].revenue)[0];
+  document.getElementById('m-top').textContent=topShift[0].charAt(0).toUpperCase()+topShift[0].slice(1);
+  document.getElementById('lastUpdated').textContent='Updated: '+new Date().toLocaleTimeString();
+
+  // Shift chart
+  if(shiftChart)shiftChart.destroy();
+  shiftChart=new Chart(document.getElementById('shiftChart'),{
+    type:'bar',
+    data:{labels:['☀️ Morning','🌤️ Afternoon','🌙 Evening'],datasets:[{label:'Revenue (रू)',data:[shifts.morning.revenue,shifts.afternoon.revenue,shifts.evening.revenue],backgroundColor:['#f5a623','#2653a0','#1a3a6b'],borderRadius:8}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}},responsive:true,maintainAspectRatio:true}
+  });
+
+  // Status chart
+  if(statusChart)statusChart.destroy();
+  const statLabels=Object.keys(statusCounts);
+  const statColors=['#2653a0','#1a7a3a','#c0392b','#e65100','#b7860a','#888'];
+  statusChart=new Chart(document.getElementById('statusChart'),{
+    type:'doughnut',
+    data:{labels:statLabels.length?statLabels:['No orders'],datasets:[{data:statLabels.length?Object.values(statusCounts):[1],backgroundColor:statLabels.length?statColors:['#f0f0f0'],borderWidth:0}]},
+    options:{plugins:{legend:{position:'right'}},responsive:true,maintainAspectRatio:true}
+  });
+}
+
+loadSnapshot();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

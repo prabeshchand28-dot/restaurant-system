@@ -70,7 +70,8 @@ const OfflineManager = (() => {
 
   // ── Auto Sync ─────────────────────────────────────────
   async function sync() {
-    if (!isOnline || syncInProgress) return;
+    if (!navigator.onLine || syncInProgress) return;
+    if (!db) return;
     const queue = await getQueue();
     if (!queue.length) { updateStatus(); return; }
 
@@ -127,12 +128,20 @@ const OfflineManager = (() => {
     `;
     bar.innerHTML = `
       <span id="offline-status-text">📴 Offline</span>
-      <span id="offline-queue-count" style="opacity:.8"></span>
-      <button id="offline-sync-btn" onclick="OfflineManager.sync()" 
-        style="background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.4);
-        color:#fff;padding:3px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit">
-        🔄 Sync Now
-      </button>
+      <span id="offline-queue-count" style="opacity:.8;margin:0 auto"></span>
+      <div style="display:flex;gap:6px">
+        <button id="offline-sync-btn" onclick="OfflineManager.sync()"
+          style="background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.4);
+          color:#fff;padding:3px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-family:inherit">
+          🔄 Sync Now
+        </button>
+        <button onclick="OfflineManager.clearQueue()"
+          style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);
+          color:rgba(255,255,255,.7);padding:3px 8px;border-radius:5px;cursor:pointer;font-size:10px;font-family:inherit"
+          title="Clear pending queue">
+          ✕ Clear
+        </button>
+      </div>
     `;
     document.body.appendChild(bar);
     statusEl = bar;
@@ -145,7 +154,7 @@ const OfflineManager = (() => {
     const textEl  = document.getElementById('offline-status-text');
     const countEl = document.getElementById('offline-queue-count');
 
-    if (!isOnline) {
+    if (!navigator.onLine) {
       statusEl.style.display    = 'flex';
       statusEl.style.background = '#dc2626';
       textEl.textContent        = '📴 Offline Mode — Data saved locally';
@@ -184,13 +193,13 @@ const OfflineManager = (() => {
 
   // ── Online / Offline Events ───────────────────────────
   window.addEventListener('online', () => {
-    isOnline = true;
+    showToast('🌐 Internet आयो! Sync गर्दैछ...', 'success');
     updateStatus();
-    setTimeout(sync, 1000); // sync after 1s delay
+    setTimeout(sync, 1500);
   });
 
   window.addEventListener('offline', () => {
-    isOnline = false;
+    showToast('📴 Internet गयो — Offline mode', 'error');
     updateStatus();
   });
 
@@ -231,7 +240,7 @@ const OfflineManager = (() => {
 
   // ── Offline-aware fetch wrapper ───────────────────────
   async function apiFetch(method, url, body) {
-    if (!isOnline && ['POST','PATCH','PUT','DELETE'].includes(method)) {
+    if (!navigator.onLine && ['POST','PATCH','PUT','DELETE'].includes(method)) {
       await queueRequest(method, url, body);
       if (method === 'POST' && url.includes('/api/orders')) {
         return saveOrderOffline(body);
@@ -243,6 +252,7 @@ const OfflineManager = (() => {
         method,
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         ...(body ? { body: JSON.stringify(body) } : {}),
+        cache: 'no-store',
       });
       return res.json();
     } catch (e) {
@@ -254,7 +264,18 @@ const OfflineManager = (() => {
     }
   }
 
-  return { init, sync, apiFetch, saveOrderOffline, getOfflineOrders, getQueue, isOnline: () => isOnline };
+  // ── Clear Queue (stuck items) ─────────────────────────
+  async function clearQueue() {
+    if (!confirm('Clear all pending sync items? (offline data will be lost)')) return;
+    const queue = await getQueue();
+    for (const item of queue) await removeFromQueue(item.id);
+    const offOrders = await getOfflineOrders();
+    for (const o of offOrders) await dbOp(STORES.orders, 'readwrite', st => st.delete(o.localId));
+    updateStatus();
+    showToast('Queue cleared', 'info');
+  }
+
+  return { init, sync, apiFetch, clearQueue, saveOrderOffline, getOfflineOrders, getQueue, isOnline: () => isOnline };
 })();
 
 // Auto-init when DOM ready

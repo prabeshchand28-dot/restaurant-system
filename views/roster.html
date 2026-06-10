@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Staff Roster</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1400px;margin:0 auto}
+.toolbar{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:20px}
+.btn{padding:7px 14px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-outline{background:transparent;color:var(--blue);border:1px solid var(--blue)}
+input,select{padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+input:focus,select:focus{border-color:var(--blue)}
+.roster-grid{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow-x:auto}
+.roster-table{width:100%;border-collapse:collapse;min-width:900px}
+.roster-table th{background:var(--navy);color:#fff;padding:10px 12px;font-size:12px;font-weight:700;text-align:left;white-space:nowrap}
+.roster-table th.day{text-align:center;width:140px}
+.roster-table td{border-bottom:1px solid #f0f0f0;padding:8px 12px;vertical-align:middle}
+.roster-table tr:hover td{background:#f8f9fb}
+.shift-cell{background:#e8efff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--blue);cursor:pointer;text-align:center;white-space:nowrap;transition:background .15s}
+.shift-cell:hover{background:var(--blue);color:#fff}
+.empty-cell{width:100%;height:32px;border:2px dashed #ddd;border-radius:6px;cursor:pointer;transition:border-color .15s}
+.empty-cell:hover{border-color:var(--blue)}
+.published-cell{background:#e7f5ed;color:var(--green)}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:1000}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:14px;padding:24px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal h3{font-size:16px;font-weight:900;margin-bottom:16px;color:var(--navy)}
+.modal label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+.modal label:first-of-type{margin-top:0}
+.modal input,.modal select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Weekly Roster</span></span>
+  <div><a class="nav-btn" href="/shifts">⏱️ Shifts</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="toolbar">
+    <button class="btn btn-outline" onclick="prevWeek()">← Prev</button>
+    <input type="date" id="weekPicker" onchange="loadRoster()"/>
+    <button class="btn btn-outline" onclick="nextWeek()">Next →</button>
+    <span id="weekLabel" style="font-weight:700;font-size:14px;color:var(--navy);min-width:220px"></span>
+    <button class="btn btn-green" onclick="publish()">✅ Publish Week</button>
+    <button class="btn btn-outline" onclick="copyWeek()">📋 Copy from Prev Week</button>
+  </div>
+
+  <div class="roster-grid">
+    <table class="roster-table">
+      <thead>
+        <tr>
+          <th style="width:140px">Staff</th>
+          <th class="day" id="h0">Mon</th>
+          <th class="day" id="h1">Tue</th>
+          <th class="day" id="h2">Wed</th>
+          <th class="day" id="h3">Thu</th>
+          <th class="day" id="h4">Fri</th>
+          <th class="day" id="h5">Sat</th>
+          <th class="day" id="h6">Sun</th>
+        </tr>
+      </thead>
+      <tbody id="rosterBody">
+        <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted)">Loading staff...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Legend -->
+  <div style="margin-top:12px;display:flex;gap:12px;font-size:12px;align-items:center;flex-wrap:wrap">
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:16px;height:12px;background:#e8efff;border-radius:3px;display:inline-block"></span>Scheduled</span>
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:16px;height:12px;background:#e7f5ed;border-radius:3px;display:inline-block"></span>Published</span>
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:16px;height:12px;border:2px dashed #ddd;border-radius:3px;display:inline-block"></span>Click to assign</span>
+  </div>
+</div>
+
+<!-- Assign Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>🗓️ Assign Shift</h3>
+    <p id="modalInfo" style="font-size:13px;color:var(--muted);margin-bottom:12px"></p>
+    <label>Start Time</label>
+    <input type="time" id="mStart" value="09:00"/>
+    <label>End Time</label>
+    <input type="time" id="mEnd" value="17:00"/>
+    <label>Role Override (optional)</label>
+    <input id="mRole" placeholder="e.g. Floor Manager"/>
+    <label>Note</label>
+    <input id="mNote" placeholder="Any notes..."/>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-green" style="flex:1" onclick="saveEntry()">Save</button>
+      <button class="btn" style="flex:1;background:var(--red)" id="deleteBtn" onclick="deleteEntry()">Remove</button>
+      <button class="btn" style="flex:1;background:#eee;color:#555" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+let staff=[];
+let currentEntries=[];
+let editTarget=null; // {staffId, dayOfWeek, entryId?}
+
+function getMonday(d=new Date()){
+  const dt=new Date(d);
+  const day=dt.getDay();
+  const diff=day===0?-6:1-day;
+  dt.setDate(dt.getDate()+diff);
+  return dt.toISOString().slice(0,10);
+}
+
+document.getElementById('weekPicker').value=getMonday();
+
+async function loadStaff(){
+  const r=await fetch('/api/staff',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  staff=d.data||d;
+}
+
+async function loadRoster(){
+  const week=document.getElementById('weekPicker').value;
+  const monday=new Date(week);
+  const label=DAYS.map((_,i)=>{const d=new Date(monday);d.setDate(d.getDate()+i);return `${DAYS[i]} ${d.getDate()}/${d.getMonth()+1}`;});
+  document.getElementById('weekLabel').textContent=`Week of ${monday.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}`;
+  label.forEach((l,i)=>document.getElementById('h'+i).textContent=l);
+
+  const r=await fetch(`/api/roster?weekStart=${week}`,{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  currentEntries=d.entries||[];
+  renderTable(week);
+}
+
+function renderTable(week){
+  if(!staff.length){document.getElementById('rosterBody').innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted)">No staff found</td></tr>';return;}
+  const entryMap={};
+  currentEntries.forEach(e=>{entryMap[`${e.staffId}_${e.dayOfWeek}`]=e;});
+  document.getElementById('rosterBody').innerHTML=staff.map(s=>`
+    <tr>
+      <td>
+        <div style="font-weight:700;font-size:13px">${s.name}</div>
+        <div style="font-size:10px;color:var(--muted)">${s.position||s.role||''}</div>
+      </td>
+      ${DAYS.map((_,di)=>{
+        const e=entryMap[`${s.id}_${di}`];
+        if(e){
+          return `<td style="text-align:center;padding:6px"><div class="shift-cell ${e.published?'published-cell':''}" onclick="openModal(${s.id},${di},${e.id},'${e.startTime}','${e.endTime}','${e.role||''}','${e.note||''}')">${e.startTime}<br/>${e.endTime}${e.role?`<br/><span style="font-size:9px;opacity:.8">${e.role}</span>`:''}</div></td>`;
+        }
+        return `<td style="text-align:center;padding:6px"><button class="empty-cell" onclick="openModal(${s.id},${di},null,'','','','')"></button></td>`;
+      }).join('')}
+    </tr>`).join('');
+}
+
+function openModal(staffId,dayOfWeek,entryId,start,end,role,note){
+  editTarget={staffId,dayOfWeek,entryId};
+  const s=staff.find(x=>x.id===staffId);
+  document.getElementById('modalInfo').textContent=`${s?.name||''} — ${DAYS[dayOfWeek]}`;
+  document.getElementById('mStart').value=start||'09:00';
+  document.getElementById('mEnd').value=end||'17:00';
+  document.getElementById('mRole').value=role||'';
+  document.getElementById('mNote').value=note||'';
+  document.getElementById('deleteBtn').style.display=entryId?'block':'none';
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');editTarget=null;}
+
+async function saveEntry(){
+  const week=document.getElementById('weekPicker').value;
+  const body={staffId:editTarget.staffId,weekStart:week,dayOfWeek:editTarget.dayOfWeek,startTime:document.getElementById('mStart').value,endTime:document.getElementById('mEnd').value,role:document.getElementById('mRole').value,note:document.getElementById('mNote').value};
+  const r=await fetch('/api/roster',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Shift saved!','success');closeModal();loadRoster();}
+  else showToast(d.message||'Error','error');
+}
+
+async function deleteEntry(){
+  if(!editTarget.entryId)return;
+  await fetch(`/api/roster/${editTarget.entryId}`,{method:'DELETE',headers:authH()});
+  showToast('Shift removed','success');closeModal();loadRoster();
+}
+
+async function publish(){
+  const week=document.getElementById('weekPicker').value;
+  const r=await fetch('/api/roster/publish',{method:'POST',headers:authH(),body:JSON.stringify({weekStart:week})});
+  const d=await r.json();
+  showToast(`${d.published} shifts published!`,'success');loadRoster();
+}
+
+async function copyWeek(){
+  const week=document.getElementById('weekPicker').value;
+  const from=new Date(week);from.setDate(from.getDate()-7);
+  const fromStr=from.toISOString().slice(0,10);
+  const r=await fetch('/api/roster/copy',{method:'POST',headers:authH(),body:JSON.stringify({fromWeek:fromStr,toWeek:week})});
+  const d=await r.json();
+  showToast(`Copied ${d.copied} entries from previous week`,'success');loadRoster();
+}
+
+function prevWeek(){const d=new Date(document.getElementById('weekPicker').value);d.setDate(d.getDate()-7);document.getElementById('weekPicker').value=d.toISOString().slice(0,10);loadRoster();}
+function nextWeek(){const d=new Date(document.getElementById('weekPicker').value);d.setDate(d.getDate()+7);document.getElementById('weekPicker').value=d.toISOString().slice(0,10);loadRoster();}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+
+(async()=>{await loadStaff();await loadRoster();})();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

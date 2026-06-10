@@ -880,7 +880,8 @@ function printKitchenTicket(orderId) {
   <div class="total"><span>Total</span><span>Rs ${total.toLocaleString()}</span></div>
   <div style="text-align:center;margin-top:14px;font-size:12px">Status: ${o.status} · Guests: ${o.guests||'—'}</div>
   <div style="text-align:center;margin-top:8px"><button onclick="window.print()">Print</button></div>
-  </body></html>`);
+  <script src="/js/autoupdate.js"></script>
+</body></html>`);
   w.document.close();
   w.focus();
   w.print();
@@ -929,5 +930,6 @@ loadOrders();
 // Auto-refresh every 20s
 setInterval(loadOrders, 20000);
 </script>
+<script src="/js/autoupdate.js"></script>
 </body>
 </html>

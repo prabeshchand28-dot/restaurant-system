@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Staff Advances</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:20px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}
+.adv-card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px}
+.adv-card.outstanding{border-left:4px solid var(--red)}
+.adv-card.partial{border-left:4px solid var(--orange)}
+.adv-card.cleared{border-left:4px solid var(--green);opacity:.7}
+.badge{display:inline-block;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:800}
+.s-OUTSTANDING{background:#fce8e7;color:var(--red)}.s-PARTIAL{background:#fff3e0;color:var(--orange)}.s-CLEARED{background:#e7f5ed;color:var(--green)}
+.progress-bar{height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:4px;background:var(--green);transition:width .4s}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Staff Advances</span></span>
+  <div><a class="nav-btn" href="/payroll">💰 Payroll</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-outstanding" style="color:var(--red)">—</div><div class="lbl">Outstanding</div></div>
+    <div class="stat"><div class="num" id="s-partial" style="color:var(--orange)">—</div><div class="lbl">Partial</div></div>
+    <div class="stat"><div class="num" id="s-issued" style="color:var(--blue)">—</div><div class="lbl">Total Issued (रू)</div></div>
+    <div class="stat"><div class="num" id="s-balance" style="color:var(--red)">—</div><div class="lbl">Outstanding (रू)</div></div>
+  </div>
+  <div class="grid">
+    <!-- Issue Advance -->
+    <div>
+      <div class="card">
+        <div class="card-header">💸 Issue Advance</div>
+        <div class="card-body">
+          <label>Staff Member</label>
+          <select id="aStaff"><option value="">Select staff...</option></select>
+          <label>Amount (रू)</label>
+          <input type="number" id="aAmount" placeholder="e.g. 5000" min="100"/>
+          <label>Reason</label>
+          <input id="aReason" placeholder="e.g. Medical emergency"/>
+          <label>Issued By</label>
+          <input id="aBy" placeholder="Manager name"/>
+          <label>Repayment Type</label>
+          <select id="aRepay">
+            <option value="DEDUCTION">💼 Salary Deduction</option>
+            <option value="CASH">💵 Cash Repayment</option>
+            <option value="INSTALLMENT">📅 Installments</option>
+          </select>
+          <label>Installments (if applicable)</label>
+          <input type="number" id="aInstall" value="1" min="1" max="12"/>
+          <label>Notes</label>
+          <input id="aNotes" placeholder="Optional notes..."/>
+          <button class="btn btn-red" style="width:100%;margin-top:14px" onclick="issueAdvance()">💸 Issue Advance</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <select id="fStatus" onchange="loadAdvances()" style="width:140px">
+          <option value="">All Status</option>
+          <option value="OUTSTANDING">Outstanding</option>
+          <option value="PARTIAL">Partial</option>
+          <option value="CLEARED">Cleared</option>
+        </select>
+        <select id="fStaff" onchange="loadAdvances()" style="width:160px"><option value="">All Staff</option></select>
+      </div>
+      <div id="advanceList">Loading...</div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+async function init(){
+  const r=await fetch('/api/staff',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  const staff=d.data||d;
+  [document.getElementById('aStaff'),document.getElementById('fStaff')].forEach((sel,idx)=>{
+    sel.innerHTML=idx===0?'<option value="">Select staff...</option>':'<option value="">All Staff</option>';
+    staff.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.name;sel.appendChild(o);});
+  });
+  loadStats();loadAdvances();
+}
+
+async function loadStats(){
+  const r=await fetch('/api/advances/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-outstanding').textContent=d.outstanding;
+  document.getElementById('s-partial').textContent=d.partial;
+  document.getElementById('s-issued').textContent='रू '+Math.round(d.totalIssued).toLocaleString();
+  document.getElementById('s-balance').textContent='रू '+Math.round(d.totalOutstanding).toLocaleString();
+}
+
+async function loadAdvances(){
+  const status=document.getElementById('fStatus').value;
+  const staffId=document.getElementById('fStaff').value;
+  let url='/api/advances?a=1';
+  if(status)url+=`&status=${status}`;if(staffId)url+=`&staffId=${staffId}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const advances=await r.json();
+  if(!advances.length){document.getElementById('advanceList').innerHTML='<div style="text-align:center;padding:60px;background:var(--white);border-radius:12px;color:var(--muted)">No advances found</div>';return;}
+  document.getElementById('advanceList').innerHTML=advances.map(a=>{
+    const pct=Math.min(100,Math.round(a.amountRepaid/a.amount*100));
+    const remaining=a.amount-a.amountRepaid;
+    return `<div class="adv-card ${a.status.toLowerCase()}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:800;font-size:14px">👤 ${a.staffName}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${a.reason||'No reason given'} · ${new Date(a.issuedAt).toLocaleDateString()}</div>
+          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+            <span class="badge s-${a.status}">${a.status}</span>
+            <span style="font-size:11px;background:#f0f0f0;border-radius:20px;padding:2px 7px;font-weight:700">${a.repaymentType}</span>
+            ${a.installments>1?`<span style="font-size:11px;background:#f0f0f0;border-radius:20px;padding:2px 7px;font-weight:700">${a.installments} installments</span>`:''}
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:900;color:var(--red)">रू ${a.amount.toLocaleString()}</div>
+          <div style="font-size:11px;color:var(--muted)">Remaining: रू ${remaining.toLocaleString()}</div>
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:3px">
+          <span>Repaid: रू ${a.amountRepaid.toLocaleString()}</span><span>${pct}%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+      ${a.status!=='CLEARED'?`<div style="margin-top:10px;display:flex;gap:6px">
+        <button class="btn btn-green" style="font-size:11px;padding:5px 10px" onclick="recordRepayment(${a.id})">💵 Record Repayment</button>
+        <button class="btn btn-red" style="font-size:11px;padding:5px 10px" onclick="deleteAdv(${a.id})">Del</button>
+      </div>`:`<div style="margin-top:8px"><button class="btn btn-red" style="font-size:11px;padding:5px 10px" onclick="deleteAdv(${a.id})">Del</button></div>`}
+    </div>`;
+  }).join('');
+}
+
+async function issueAdvance(){
+  const staffId=document.getElementById('aStaff').value;
+  const amount=document.getElementById('aAmount').value;
+  if(!staffId||!amount){showToast('Staff and amount required','error');return;}
+  const body={staffId,amount:parseFloat(amount),reason:document.getElementById('aReason').value,issuedBy:document.getElementById('aBy').value,repaymentType:document.getElementById('aRepay').value,installments:parseInt(document.getElementById('aInstall').value)||1,notes:document.getElementById('aNotes').value};
+  const r=await fetch('/api/advances',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Advance issued!','success');document.getElementById('aAmount').value='';document.getElementById('aReason').value='';document.getElementById('aNotes').value='';loadStats();loadAdvances();}
+  else showToast(d.message||'Error','error');
+}
+
+async function recordRepayment(id){
+  const amount=prompt('Repayment amount (रू):');
+  if(!amount||isNaN(amount))return;
+  const r=await fetch(`/api/advances/${id}/repay`,{method:'POST',headers:authH(),body:JSON.stringify({amount:parseFloat(amount)})});
+  const d=await r.json();
+  if(d.id){showToast('Repayment recorded!','success');loadStats();loadAdvances();}
+  else showToast(d.message||'Error','error');
+}
+
+async function deleteAdv(id){
+  if(!confirm('Delete this advance record?'))return;
+  await fetch(`/api/advances/${id}`,{method:'DELETE',headers:authH()});
+  loadStats();loadAdvances();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+init();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

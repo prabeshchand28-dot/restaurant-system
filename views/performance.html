@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Staff Performance</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--gold:#d4af37;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.tabs{display:flex;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.pane{display:none}.pane.active{display:block}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.staff-row{display:grid;grid-template-columns:40px 1fr 70px 70px 70px 70px 80px;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.staff-row.header{font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);padding-bottom:8px}
+.rank{font-size:20px;font-weight:900;text-align:center}
+.score-bar{height:6px;border-radius:3px;background:#e0e0e0;margin-top:4px;overflow:hidden}
+.score-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--blue),var(--green))}
+.star{color:var(--gold);font-size:12px}
+.medal-1{color:#ffd700}.medal-2{color:#c0c0c0}.medal-3{color:#cd7f32}
+.grid{display:grid;grid-template-columns:360px 1fr;gap:20px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Staff Performance</span></span>
+  <div><a class="nav-btn" href="/staff">👥 Staff</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('board',this)">🏆 Leaderboard</div>
+  <div class="tab" onclick="switchTab('log',this)">📋 Log Performance</div>
+</div>
+<div class="content">
+
+  <!-- Leaderboard -->
+  <div class="pane active" id="pane-board">
+    <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;background:var(--white);padding:12px 16px;border-radius:10px;border:1px solid var(--border)">
+      <label style="margin:0;font-size:13px;font-weight:700;color:var(--navy)">Month:</label>
+      <input type="month" id="perfMonth" style="width:180px" onchange="loadLeaderboard()"/>
+      <button class="btn" onclick="loadLeaderboard()">Load</button>
+      <span style="font-size:12px;color:var(--muted)">Leave blank for all-time</span>
+    </div>
+    <div class="card">
+      <div class="card-header">🏆 Performance Leaderboard</div>
+      <div class="card-body" style="padding:0 16px">
+        <div class="staff-row header">
+          <div>Rank</div><div>Staff</div><div>Score</div><div>Attend%</div><div>Rating</div><div>Commend</div><div>Complaints</div>
+        </div>
+        <div id="leaderboard">
+          <div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="pane" id="pane-log">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="card-header">📋 Log Performance Event</div>
+          <div class="card-body">
+            <label>Staff Member</label>
+            <select id="logStaff"><option value="">Select staff...</option></select>
+            <label>Event Type</label>
+            <select id="logMetric">
+              <option value="COMMENDATION">⭐ Commendation</option>
+              <option value="COMPLAINT">⚠️ Complaint</option>
+              <option value="ORDERS_SERVED">📦 Orders Served</option>
+              <option value="UPSELL">💰 Successful Upsell</option>
+            </select>
+            <label>Value / Count</label>
+            <input type="number" id="logValue" value="1" min="1"/>
+            <label>Note</label>
+            <input id="logNote" placeholder="Details..."/>
+            <label>Recorded By</label>
+            <input id="logBy" placeholder="Manager name"/>
+            <button class="btn" style="width:100%;margin-top:14px" onclick="logEvent()">Log Event</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header">📋 Recent Performance Logs</div>
+          <div class="card-body" style="padding:0">
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead><tr style="border-bottom:2px solid var(--border)"><th style="padding:10px;text-align:left">Staff</th><th style="padding:10px;text-align:left">Event</th><th style="padding:10px">Value</th><th style="padding:10px;text-align:left">Note</th><th style="padding:10px;text-align:left">Date</th></tr></thead>
+              <tbody id="logsTable">
+                <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted)">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+document.getElementById('perfMonth').value=new Date().toISOString().slice(0,7);
+
+async function loadLeaderboard(){
+  const month=document.getElementById('perfMonth').value;
+  const r=await fetch(`/api/performance/leaderboard?month=${month}`,{headers:authH(),cache:'no-store'});
+  const staff=await r.json();
+  if(!staff.length){document.getElementById('leaderboard').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No staff data</div>';return;}
+  const medals=['🥇','🥈','🥉'];
+  const medalCls=['medal-1','medal-2','medal-3'];
+  document.getElementById('leaderboard').innerHTML=staff.map((s,i)=>`
+    <div class="staff-row">
+      <div class="rank ${medalCls[i]||''}">${medals[i]||'#'+(i+1)}</div>
+      <div>
+        <div style="font-weight:800">${s.name}</div>
+        <div style="font-size:11px;color:var(--muted)">${s.role||s.position||''}</div>
+        <div class="score-bar"><div class="score-fill" style="width:${s.score}%"></div></div>
+      </div>
+      <div style="font-weight:900;color:var(--blue);font-size:16px">${s.score}</div>
+      <div style="color:${(s.attPct||0)>=80?'var(--green)':'var(--red)'}">
+        ${s.attPct!==null?s.attPct+'%':'—'}
+        ${s.total?`<div style="font-size:10px;color:var(--muted)">${s.present}P ${s.late}L ${s.absent}A</div>`:''}
+      </div>
+      <div>
+        ${s.avgRating?`<span class="star">★</span><strong>${s.avgRating}</strong><div style="font-size:10px;color:var(--muted)">${s.ratingCount} reviews</div>`:'—'}
+      </div>
+      <div style="color:var(--green);font-weight:700">${s.commendations||0}</div>
+      <div style="color:var(--red);font-weight:700">${s.complaints||0}</div>
+    </div>`).join('');
+}
+
+async function loadStaff(){
+  const r=await fetch('/api/staff',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  const staff=d.data||d;
+  const s=document.getElementById('logStaff');
+  s.innerHTML='<option value="">Select staff...</option>';
+  staff.forEach(st=>{const o=document.createElement('option');o.value=st.id;o.textContent=st.name;s.appendChild(o);});
+}
+
+async function logEvent(){
+  const body={staffId:document.getElementById('logStaff').value,metric:document.getElementById('logMetric').value,value:document.getElementById('logValue').value,note:document.getElementById('logNote').value,recordedBy:document.getElementById('logBy').value};
+  if(!body.staffId){showToast('Select a staff member','error');return;}
+  const r=await fetch('/api/performance/log',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Event logged!','success');loadLogs();}
+  else showToast(d.message||'Error','error');
+}
+
+async function loadLogs(){
+  const r=await fetch('/api/performance/logs',{headers:authH(),cache:'no-store'});
+  const logs=await r.json();
+  const staff=await fetch('/api/staff',{headers:authH(),cache:'no-store'}).then(r=>r.json()).then(d=>d.data||d);
+  const staffMap=Object.fromEntries(staff.map(s=>[s.id,s.name]));
+  const metricEmoji={COMMENDATION:'⭐',COMPLAINT:'⚠️',ORDERS_SERVED:'📦',UPSELL:'💰'};
+  document.getElementById('logsTable').innerHTML=logs.map(l=>`
+    <tr style="border-bottom:1px solid #f0f0f0">
+      <td style="padding:10px;font-weight:700">${staffMap[l.staffId]||'#'+l.staffId}</td>
+      <td style="padding:10px">${metricEmoji[l.metric]||''} ${l.metric}</td>
+      <td style="padding:10px;text-align:center;font-weight:700">${l.value}</td>
+      <td style="padding:10px;color:var(--muted);font-size:12px">${l.note||'—'}</td>
+      <td style="padding:10px;font-size:11px;color:var(--muted)">${new Date(l.createdAt).toLocaleDateString()}</td>
+    </tr>`).join('');
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  if(name==='log'){loadStaff();loadLogs();}
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadLeaderboard();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

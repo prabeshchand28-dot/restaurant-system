@@ -212,3 +212,1467 @@ model Setting {
 
   @@map("settings")
 }
+
+// ─────────────────────────────────────
+// LOYALTY PROGRAM
+// ─────────────────────────────────────
+model LoyaltyAccount {
+  id           Int            @id @default(autoincrement())
+  phone        String         @unique
+  name         String
+  email        String         @default("")
+  totalPoints  Int            @default(0)
+  totalSpent   Int            @default(0)
+  tier         String         @default("Bronze") // Bronze | Silver | Gold | Platinum
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  transactions LoyaltyTx[]
+
+  @@map("loyalty_accounts")
+}
+
+model LoyaltyTx {
+  id          Int            @id @default(autoincrement())
+  accountId   Int
+  type        String         // earn | redeem | adjust
+  points      Int
+  description String         @default("")
+  orderId     Int?
+  createdAt   DateTime       @default(now())
+  account     LoyaltyAccount @relation(fields: [accountId], references: [id])
+
+  @@map("loyalty_transactions")
+}
+
+// ─────────────────────────────────────
+// COUPONS & DISCOUNTS
+// ─────────────────────────────────────
+model Coupon {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  type        String   // percent | fixed
+  value       Float
+  minOrder    Int      @default(0)
+  maxUses     Int      @default(0) // 0 = unlimited
+  usedCount   Int      @default(0)
+  active      Boolean  @default(true)
+  expiresAt   DateTime?
+  description String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@map("coupons")
+}
+
+// ─────────────────────────────────────
+// CUSTOMER PROFILES (CRM)
+// ─────────────────────────────────────
+model CustomerProfile {
+  id             Int      @id @default(autoincrement())
+  name           String
+  phone          String   @unique
+  email          String   @default("")
+  birthday       String   @default("") // MM-DD
+  allergyNotes   String   @default("")
+  preferences    String   @default("")
+  visitCount     Int      @default(0)
+  totalSpent     Int      @default(0)
+  lastVisit      DateTime?
+  segment        String   @default("Regular") // New | Regular | VIP | Inactive
+  notes          String   @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("customer_profiles")
+}
+
+// ─────────────────────────────────────
+// SUPPLIERS
+// ─────────────────────────────────────
+model Supplier {
+  id             Int             @id @default(autoincrement())
+  name           String
+  contact        String          @default("")
+  phone          String          @default("")
+  email          String          @default("")
+  address        String          @default("")
+  category       String          @default("General")
+  active         Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  @@map("suppliers")
+}
+
+// ─────────────────────────────────────
+// SHIFT SCHEDULING
+// ─────────────────────────────────────
+model Shift {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  userName  String
+  userRole  String
+  date      String   // YYYY-MM-DD
+  startTime String   // HH:MM
+  endTime   String   // HH:MM
+  position  String   @default("")
+  notes     String   @default("")
+  status    String   @default("Scheduled") // Scheduled | Completed | NoShow
+  createdAt DateTime @default(now())
+
+  @@map("shifts")
+}
+
+// ─────────────────────────────────────
+// EXPENSE TRACKING
+// ─────────────────────────────────────
+model Expense {
+  id          Int      @id @default(autoincrement())
+  category    String   // Rent | Utilities | Supplies | Staff | Marketing | Other
+  description String
+  amount      Int
+  date        String   // YYYY-MM-DD
+  paymentMode String   @default("Cash") // Cash | Bank | Card
+  receiptRef  String   @default("")
+  createdBy   String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@map("expenses")
+}
+
+// ─────────────────────────────────────
+// AUDIT LOG
+// ─────────────────────────────────────
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  userName   String   @default("")
+  userRole   String   @default("")
+  action     String   // CREATE | UPDATE | DELETE | LOGIN | LOGOUT | PAYMENT
+  resource   String   // orders | payments | menu | staff | etc.
+  resourceId String   @default("")
+  details    String   @default("")
+  ip         String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────
+// PAYROLL
+// ─────────────────────────────────────
+model StaffPayRate {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique
+  userName   String
+  userRole   String
+  hourlyRate Int      @default(0)
+  monthlyRate Int     @default(0)
+  payType    String   @default("hourly") // hourly | monthly
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("staff_pay_rates")
+}
+
+model Payroll {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  userName    String
+  userRole    String
+  month       String   // YYYY-MM
+  hoursWorked Float    @default(0)
+  basePay     Int      @default(0)
+  overtime    Int      @default(0)
+  deductions  Int      @default(0)
+  bonus       Int      @default(0)
+  netPay      Int      @default(0)
+  status      String   @default("Draft") // Draft | Approved | Paid
+  notes       String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, month])
+  @@map("payrolls")
+}
+
+// ─────────────────────────────────────
+// LEAVE MANAGEMENT
+// ─────────────────────────────────────
+model LeaveRequest {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  userName    String
+  userRole    String
+  type        String   // Annual | Sick | Emergency | Unpaid
+  startDate   String   // YYYY-MM-DD
+  endDate     String   // YYYY-MM-DD
+  days        Int      @default(1)
+  reason      String   @default("")
+  status      String   @default("Pending") // Pending | Approved | Rejected
+  reviewedBy  String   @default("")
+  reviewNote  String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@map("leave_requests")
+}
+
+// ─────────────────────────────────────
+// RECIPE COSTING
+// ─────────────────────────────────────
+model Recipe {
+  id          Int           @id @default(autoincrement())
+  menuItemId  Int?
+  name        String
+  servings    Int           @default(1)
+  totalCost   Float         @default(0)
+  salePrice   Int           @default(0)
+  profitMargin Float        @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  ingredients RecipeItem[]
+
+  @@map("recipes")
+}
+
+model RecipeItem {
+  id           Int      @id @default(autoincrement())
+  recipeId     Int
+  ingredientName String
+  qty          Float
+  unit         String
+  costPerUnit  Float
+  totalCost    Float
+  recipe       Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@map("recipe_items")
+}
+
+// ─────────────────────────────────────
+// HAPPY HOUR & PROMOTIONS
+// ─────────────────────────────────────
+model Promotion {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String   @default("")
+  type        String   // happyhour | seasonal | combo | bogo | flatdiscount
+  discountPct Int      @default(0)
+  discountAmt Int      @default(0)
+  startDate   String?  // YYYY-MM-DD
+  endDate     String?
+  startTime   String?  // HH:MM (for happy hour)
+  endTime     String?
+  days        String   @default("") // comma-separated: Mon,Tue,Wed...
+  active      Boolean  @default(true)
+  applyTo     String   @default("all") // all | category | item
+  applyValue  String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@map("promotions")
+}
+
+// ─────────────────────────────────────
+// CUSTOMER WALLET
+// ─────────────────────────────────────
+model CustomerWallet {
+  id           Int         @id @default(autoincrement())
+  phone        String      @unique
+  name         String
+  balance      Int         @default(0)
+  totalTopUp   Int         @default(0)
+  totalSpent   Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  transactions WalletTx[]
+
+  @@map("customer_wallets")
+}
+
+model WalletTx {
+  id          Int            @id @default(autoincrement())
+  walletId    Int
+  type        String         // topup | spend | refund
+  amount      Int
+  description String         @default("")
+  orderId     Int?
+  createdAt   DateTime       @default(now())
+  wallet      CustomerWallet @relation(fields: [walletId], references: [id])
+
+  @@map("wallet_transactions")
+}
+
+// ─────────────────────────────────────
+// MEMBERSHIP PROGRAM
+// ─────────────────────────────────────
+model Membership {
+  id           Int      @id @default(autoincrement())
+  phone        String   @unique
+  name         String
+  email        String   @default("")
+  tier         String   @default("Basic") // Basic | Silver | Gold | Platinum
+  startDate    String
+  expiryDate   String
+  autoDiscount Int      @default(0) // % discount on all orders
+  perks        String   @default("") // comma-separated perks
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@map("memberships")
+}
+
+// ─────────────────────────────────────
+// PHASE 3: MULTI-BRANCH
+// ─────────────────────────────────────
+model Branch {
+  id        Int      @id @default(autoincrement())
+  name      String
+  address   String   @default("")
+  phone     String   @default("")
+  email     String   @default("")
+  manager   String   @default("")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("branches")
+}
+
+// ─────────────────────────────────────
+// PHASE 3: DELIVERY MANAGEMENT
+// ─────────────────────────────────────
+model DeliveryZone {
+  id            Int      @id @default(autoincrement())
+  name          String
+  minDistance   Float    @default(0)
+  maxDistance   Float
+  deliveryFee   Float    @default(0)
+  estimatedMins Int      @default(30)
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  orders DeliveryOrder[]
+
+  @@map("delivery_zones")
+}
+
+model DeliveryOrder {
+  id             Int      @id @default(autoincrement())
+  orderId        Int?
+  customerName   String
+  customerPhone  String
+  address        String
+  zoneId         Int?
+  driverName     String   @default("")
+  driverPhone    String   @default("")
+  status         String   @default("PENDING") // PENDING | ASSIGNED | PICKED | DELIVERED | CANCELLED
+  deliveryFee    Float    @default(0)
+  estimatedMins  Int      @default(30)
+  notes          String   @default("")
+  createdAt      DateTime @default(now())
+  deliveredAt    DateTime?
+
+  zone DeliveryZone? @relation(fields: [zoneId], references: [id])
+
+  @@map("delivery_orders")
+}
+
+// ─────────────────────────────────────
+// PHASE 3: NOTIFICATIONS
+// ─────────────────────────────────────
+model NotificationTemplate {
+  id        Int      @id @default(autoincrement())
+  name      String
+  event     String   // ORDER_READY | RESERVATION_CONFIRMED | LOW_STOCK | etc.
+  channel   String   @default("SMS") // SMS | EMAIL | BOTH
+  subject   String   @default("")
+  body      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("notification_templates")
+}
+
+model NotificationLog {
+  id         Int      @id @default(autoincrement())
+  event      String
+  channel    String
+  recipient  String
+  subject    String   @default("")
+  body       String
+  status     String   @default("SENT") // SENT | FAILED | PENDING
+  error      String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@map("notification_logs")
+}
+
+// ─────────────────────────────────────
+// PHASE 3: TAX CONFIGURATION
+// ─────────────────────────────────────
+model TaxRate {
+  id          Int      @id @default(autoincrement())
+  name        String
+  rate        Float    // percentage e.g. 13
+  category    String   @default("ALL") // ALL | FOOD | BEVERAGE | SERVICE
+  inclusive   Boolean  @default(false) // tax included in price?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("tax_rates")
+}
+
+// ─────────────────────────────────────
+// PHASE 3: STOCK HISTORY
+// ─────────────────────────────────────
+model StockHistory {
+  id              Int      @id @default(autoincrement())
+  inventoryItemId Int
+  changeType      String   // ADD | REMOVE | ADJUST | REORDER
+  quantityBefore  Float
+  quantityAfter   Float
+  change          Float
+  reason          String   @default("")
+  staffName       String   @default("")
+  createdAt       DateTime @default(now())
+
+  @@map("stock_history")
+}
+
+// ─────────────────────────────────────
+// PHASE 3: DAILY CLOSING REPORT
+// ─────────────────────────────────────
+model ClosingReport {
+  id            Int      @id @default(autoincrement())
+  date          String   @unique
+  totalOrders   Int      @default(0)
+  totalRevenue  Float    @default(0)
+  totalExpenses Float    @default(0)
+  netProfit     Float    @default(0)
+  cashSales     Float    @default(0)
+  cardSales     Float    @default(0)
+  topItems      String   @default("") // JSON
+  notes         String   @default("")
+  closedBy      String   @default("")
+  createdAt     DateTime @default(now())
+
+  @@map("closing_reports")
+}
+
+// ─────────────────────────────────────
+// PHASE 4: ONLINE ORDERING
+// ─────────────────────────────────────
+model OnlineOrder {
+  id            Int      @id @default(autoincrement())
+  customerName  String
+  customerPhone String
+  customerEmail String   @default("")
+  orderType     String   @default("DELIVERY") // DELIVERY | PICKUP
+  address       String   @default("")
+  status        String   @default("PENDING") // PENDING | CONFIRMED | PREPARING | READY | DELIVERED | CANCELLED
+  subtotal      Float    @default(0)
+  deliveryFee   Float    @default(0)
+  tax           Float    @default(0)
+  total         Float    @default(0)
+  paymentMethod String   @default("CASH") // CASH | STRIPE | ESEWA | KHALTI
+  paymentStatus String   @default("PENDING") // PENDING | PAID | FAILED
+  stripePaymentId String @default("")
+  notes         String   @default("")
+  estimatedMins Int      @default(30)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  items OnlineOrderItem[]
+
+  @@map("online_orders")
+}
+
+model OnlineOrderItem {
+  id           Int    @id @default(autoincrement())
+  onlineOrderId Int
+  menuItemId   Int?
+  name         String
+  price        Float
+  quantity     Int
+  notes        String @default("")
+
+  order OnlineOrder @relation(fields: [onlineOrderId], references: [id], onDelete: Cascade)
+
+  @@map("online_order_items")
+}
+
+// ─────────────────────────────────────
+// PHASE 4: MARKETING CAMPAIGNS
+// ─────────────────────────────────────
+model MarketingCampaign {
+  id           Int      @id @default(autoincrement())
+  name         String
+  channel      String   @default("SMS") // SMS | EMAIL | BOTH
+  subject      String   @default("")
+  message      String
+  targetGroup  String   @default("ALL") // ALL | LOYALTY | VIP | INACTIVE
+  status       String   @default("DRAFT") // DRAFT | SCHEDULED | SENT | CANCELLED
+  sentCount    Int      @default(0)
+  scheduledAt  DateTime?
+  sentAt       DateTime?
+  createdAt    DateTime @default(now())
+
+  @@map("marketing_campaigns")
+}
+
+// ─────────────────────────────────────
+// PHASE 4: STAFF PERFORMANCE
+// ─────────────────────────────────────
+model StaffPerformanceLog {
+  id          Int      @id @default(autoincrement())
+  staffId     Int
+  metric      String   // ORDERS_SERVED | RATING | UPSELL | COMPLAINT | COMMENDATION
+  value       Float    @default(0)
+  note        String   @default("")
+  recordedBy  String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@map("staff_performance_logs")
+}
+
+// ─────────────────────────────────────
+// PHASE 4: STRIPE / PAYMENT GATEWAY
+// ─────────────────────────────────────
+model PaymentGatewaySetting {
+  id        Int      @id @default(autoincrement())
+  gateway   String   @unique // STRIPE | ESEWA | KHALTI
+  enabled   Boolean  @default(false)
+  publicKey String   @default("")
+  secretKey String   @default("") // stored encrypted in production
+  webhookSecret String @default("")
+  testMode  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+
+  @@map("payment_gateway_settings")
+}
+
+// ─────────────────────────────────────
+// PHASE 5: FOOD WASTE TRACKING
+// ─────────────────────────────────────
+model WasteLog {
+  id         Int      @id @default(autoincrement())
+  menuItemId Int?
+  itemName   String
+  category   String   @default("")
+  quantity   Float
+  unit       String   @default("portion")
+  reason     String   @default("SPOILAGE") // SPOILAGE | OVERPRODUCTION | DROPPED | EXPIRED | QUALITY
+  costPerUnit Float   @default(0)
+  totalCost  Float    @default(0)
+  staffId    Int?
+  staffName  String   @default("")
+  notes      String   @default("")
+  date       DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@map("waste_logs")
+}
+
+// ─────────────────────────────────────
+// PHASE 5: EVENT / BANQUET MANAGEMENT
+// ─────────────────────────────────────
+model Event {
+  id           Int      @id @default(autoincrement())
+  name         String
+  type         String   @default("PRIVATE") // PRIVATE | BANQUET | CATERING | CORPORATE | WEDDING
+  clientName   String
+  clientPhone  String   @default("")
+  clientEmail  String   @default("")
+  eventDate    DateTime
+  startTime    String   @default("")
+  endTime      String   @default("")
+  venue        String   @default("")
+  guestCount   Int      @default(0)
+  status       String   @default("INQUIRY") // INQUIRY | CONFIRMED | DEPOSIT_PAID | COMPLETED | CANCELLED
+  totalAmount  Float    @default(0)
+  depositPaid  Float    @default(0)
+  notes        String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  items EventItem[]
+
+  @@map("events")
+}
+
+model EventItem {
+  id          Int    @id @default(autoincrement())
+  eventId     Int
+  description String
+  quantity    Int    @default(1)
+  unitPrice   Float  @default(0)
+  total       Float  @default(0)
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_items")
+}
+
+// ─────────────────────────────────────
+// PHASE 5: STAFF WEEKLY ROSTER
+// ─────────────────────────────────────
+model RosterEntry {
+  id          Int      @id @default(autoincrement())
+  staffId     Int
+  weekStart   DateTime // always a Monday
+  dayOfWeek   Int      // 0=Mon … 6=Sun
+  startTime   String
+  endTime     String
+  role        String   @default("")
+  note        String   @default("")
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([staffId, weekStart, dayOfWeek])
+  @@map("roster_entries")
+}
+
+// ─────────────────────────────────────
+// PHASE 5: VENDOR INVOICE MANAGEMENT
+// ─────────────────────────────────────
+model VendorInvoice {
+  id          Int      @id @default(autoincrement())
+  supplierId  Int?
+  supplierName String  @default("")
+  invoiceNo   String
+  invoiceDate DateTime @default(now())
+  dueDate     DateTime?
+  status      String   @default("UNPAID") // UNPAID | PARTIAL | PAID | OVERDUE
+  subtotal    Float    @default(0)
+  tax         Float    @default(0)
+  total       Float    @default(0)
+  amountPaid  Float    @default(0)
+  notes       String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items VendorInvoiceItem[]
+
+  @@map("vendor_invoices")
+}
+
+model VendorInvoiceItem {
+  id          Int    @id @default(autoincrement())
+  invoiceId   Int
+  description String
+  quantity    Float  @default(1)
+  unitPrice   Float  @default(0)
+  total       Float  @default(0)
+
+  invoice VendorInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_invoice_items")
+}
+
+// ─────────────────────────────────────
+// PHASE 5: CUSTOMER FEEDBACK PORTAL
+// ─────────────────────────────────────
+model FeedbackEntry {
+  id           Int      @id @default(autoincrement())
+  tableNo      Int?
+  orderId      Int?
+  customerName String   @default("Anonymous")
+  foodRating   Int      @default(0) // 1-5
+  serviceRating Int     @default(0)
+  ambienceRating Int    @default(0)
+  overallRating Int     @default(0)
+  comment      String   @default("")
+  highlights   String   @default("") // JSON array of tags
+  status       String   @default("NEW") // NEW | REVIEWED | RESPONDED
+  response     String   @default("")
+  respondedBy  String   @default("")
+  respondedAt  DateTime?
+  createdAt    DateTime @default(now())
+
+  @@map("feedback_entries")
+}
+
+// ─────────────────────────────────────
+// PHASE 6: TIP MANAGEMENT
+// ─────────────────────────────────────
+model TipRecord {
+  id           Int      @id @default(autoincrement())
+  date         DateTime @default(now())
+  shiftType    String   @default("LUNCH") // LUNCH | DINNER | ALL_DAY
+  totalTips    Float    @default(0)
+  method       String   @default("CASH") // CASH | CARD | SPLIT
+  notes        String   @default("")
+  distributedAt DateTime?
+  createdAt    DateTime @default(now())
+
+  distributions TipDistribution[]
+
+  @@map("tip_records")
+}
+
+model TipDistribution {
+  id          Int    @id @default(autoincrement())
+  tipRecordId Int
+  staffId     Int
+  staffName   String @default("")
+  amount      Float  @default(0)
+  percentage  Float  @default(0)
+
+  tipRecord TipRecord @relation(fields: [tipRecordId], references: [id], onDelete: Cascade)
+
+  @@map("tip_distributions")
+}
+
+// ─────────────────────────────────────
+// PHASE 6: STAFF TRAINING MODULE
+// ─────────────────────────────────────
+model TrainingModule {
+  id          Int      @id @default(autoincrement())
+  title       String
+  category    String   @default("GENERAL") // GENERAL | SAFETY | SERVICE | KITCHEN | HYGIENE
+  description String   @default("")
+  durationMin Int      @default(30)
+  mandatory   Boolean  @default(false)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  records TrainingRecord[]
+
+  @@map("training_modules")
+}
+
+model TrainingRecord {
+  id          Int      @id @default(autoincrement())
+  moduleId    Int
+  staffId     Int
+  staffName   String   @default("")
+  status      String   @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED | FAILED
+  score       Int?
+  completedAt DateTime?
+  expiresAt   DateTime?
+  notes       String   @default("")
+  assignedBy  String   @default("")
+  createdAt   DateTime @default(now())
+
+  module TrainingModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, staffId])
+  @@map("training_records")
+}
+
+// ─────────────────────────────────────
+// PHASE 6: BUDGET PLANNER
+// ─────────────────────────────────────
+model BudgetPlan {
+  id        Int      @id @default(autoincrement())
+  month     String   // YYYY-MM
+  category  String   // FOOD_COST | LABOR | UTILITIES | MARKETING | MAINTENANCE | OTHER
+  budgeted  Float    @default(0)
+  notes     String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([month, category])
+  @@map("budget_plans")
+}
+
+// ─────────────────────────────────────
+// PHASE 6: INTERNAL TASK MANAGER
+// ─────────────────────────────────────
+model InternalTask {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String   @default("")
+  category     String   @default("GENERAL") // GENERAL | CLEANING | MAINTENANCE | ORDERING | TRAINING | EVENT
+  priority     String   @default("NORMAL") // LOW | NORMAL | HIGH | URGENT
+  assignedToId Int?
+  assignedToName String @default("")
+  assignedBy   String   @default("")
+  dueDate      DateTime?
+  status       String   @default("OPEN") // OPEN | IN_PROGRESS | DONE | CANCELLED
+  completedAt  DateTime?
+  completedBy  String   @default("")
+  notes        String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("internal_tasks")
+}
+
+// ─────────────────────────────────────
+// PHASE 7: STAFF CLOCK-IN/OUT
+// ─────────────────────────────────────
+model ClockEntry {
+  id         Int       @id @default(autoincrement())
+  staffId    Int
+  staffName  String    @default("")
+  clockIn    DateTime  @default(now())
+  clockOut   DateTime?
+  hoursWorked Float?
+  breakMinutes Int     @default(0)
+  shiftType  String    @default("REGULAR") // REGULAR | OVERTIME | HOLIDAY
+  notes      String    @default("")
+  approvedBy String    @default("")
+  createdAt  DateTime  @default(now())
+
+  @@map("clock_entries")
+}
+
+// ─────────────────────────────────────
+// PHASE 7: GIFT CARDS
+// ─────────────────────────────────────
+model GiftCard {
+  id           Int      @id @default(autoincrement())
+  code         String   @unique
+  initialValue Float    @default(0)
+  balance      Float    @default(0)
+  status       String   @default("ACTIVE") // ACTIVE | REDEEMED | EXPIRED | VOID
+  recipientName String  @default("")
+  recipientPhone String @default("")
+  purchasedBy  String   @default("")
+  expiresAt    DateTime?
+  notes        String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  transactions GiftCardTransaction[]
+
+  @@map("gift_cards")
+}
+
+model GiftCardTransaction {
+  id         Int      @id @default(autoincrement())
+  giftCardId Int
+  type       String   // ISSUE | REDEEM | RELOAD | VOID
+  amount     Float
+  balanceAfter Float  @default(0)
+  reference  String   @default("")
+  processedBy String  @default("")
+  createdAt  DateTime @default(now())
+  giftCard   GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+
+  @@map("gift_card_transactions")
+}
+
+// ─────────────────────────────────────
+// PHASE 7: MENU MODIFIERS
+// ─────────────────────────────────────
+model ModifierGroup {
+  id          Int      @id @default(autoincrement())
+  name        String   // e.g. "Size", "Extras", "Spice Level"
+  type        String   @default("SINGLE") // SINGLE | MULTI
+  required    Boolean  @default(false)
+  minSelect   Int      @default(0)
+  maxSelect   Int      @default(1)
+  menuItemIds String   @default("") // comma-separated item IDs
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  options     ModifierOption[]
+
+  @@map("modifier_groups")
+}
+
+model ModifierOption {
+  id              Int           @id @default(autoincrement())
+  modifierGroupId Int
+  name            String
+  priceAdjustment Float         @default(0) // +/- on base price
+  available       Boolean       @default(true)
+  sortOrder       Int           @default(0)
+  group           ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+
+  @@map("modifier_options")
+}
+
+// ─────────────────────────────────────
+// PHASE 7: EQUIPMENT / ASSET TRACKER
+// ─────────────────────────────────────
+model EquipmentAsset {
+  id               Int       @id @default(autoincrement())
+  name             String
+  category         String    @default("KITCHEN") // KITCHEN | REFRIGERATION | POS | FURNITURE | HVAC | OTHER
+  brand            String    @default("")
+  model            String    @default("")
+  serialNo         String    @default("")
+  location         String    @default("")
+  purchaseDate     DateTime?
+  purchasePrice    Float     @default(0)
+  warrantyExpiry   DateTime?
+  lastMaintenanceAt DateTime?
+  nextMaintenanceAt DateTime?
+  status           String    @default("OPERATIONAL") // OPERATIONAL | MAINTENANCE | FAULTY | RETIRED
+  notes            String    @default("")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@map("equipment_assets")
+}
+
+// ─────────────────────────────────────
+// PHASE 7: SHIFT HANDOVER NOTES
+// ─────────────────────────────────────
+model ShiftHandover {
+  id              Int       @id @default(autoincrement())
+  shiftType       String    @default("LUNCH") // MORNING | LUNCH | DINNER | NIGHT
+  date            DateTime  @default(now())
+  writtenBy       String    @default("")
+  cashFloat       Float     @default(0)
+  coversServed    Int       @default(0)
+  totalRevenue    Float     @default(0)
+  incidents       String    @default("")
+  pendingTasks    String    @default("")
+  stockAlerts     String    @default("")
+  generalNotes    String    @default("")
+  readBy          String    @default("") // comma-separated names who acknowledged
+  readAt          DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@map("shift_handovers")
+}
+
+// ─────────────────────────────────────
+// PHASE 8: PURCHASE ORDERS
+// ─────────────────────────────────────
+model PurchaseOrder {
+  id           Int      @id @default(autoincrement())
+  poNumber     String   @unique
+  supplierId   Int?
+  supplierName String   @default("")
+  orderDate    DateTime @default(now())
+  expectedDate DateTime?
+  receivedDate DateTime?
+  status       String   @default("DRAFT") // DRAFT | SENT | PARTIAL | RECEIVED | CANCELLED
+  subtotal     Float    @default(0)
+  tax          Float    @default(0)
+  total        Float    @default(0)
+  notes        String   @default("")
+  createdBy    String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  items        PurchaseOrderItem[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id          Int      @id @default(autoincrement())
+  poId        Int
+  itemName    String
+  unit        String   @default("kg")
+  quantity    Float    @default(1)
+  unitPrice   Float    @default(0)
+  total       Float    @default(0)
+  receivedQty Float    @default(0)
+  po          PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+
+  @@map("purchase_order_items")
+}
+
+// ─────────────────────────────────────
+// PHASE 8: DAILY SPECIALS
+// ─────────────────────────────────────
+model DailySpecial {
+  id           Int      @id @default(autoincrement())
+  date         DateTime @default(now())
+  menuItemId   Int?
+  itemName     String
+  description  String   @default("")
+  originalPrice Float   @default(0)
+  specialPrice Float    @default(0)
+  availableQty Int?
+  soldQty      Int      @default(0)
+  mealType     String   @default("ALL") // BREAKFAST | LUNCH | DINNER | ALL
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@map("daily_specials")
+}
+
+// ─────────────────────────────────────
+// PHASE 8: STAFF ADVANCES
+// ─────────────────────────────────────
+model StaffAdvance {
+  id            Int      @id @default(autoincrement())
+  staffId       Int
+  staffName     String   @default("")
+  amount        Float    @default(0)
+  reason        String   @default("")
+  issuedAt      DateTime @default(now())
+  issuedBy      String   @default("")
+  repaymentType String   @default("DEDUCTION") // DEDUCTION | CASH | INSTALLMENT
+  installments  Int      @default(1)
+  amountRepaid  Float    @default(0)
+  status        String   @default("OUTSTANDING") // OUTSTANDING | PARTIAL | CLEARED
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("staff_advances")
+}
+
+// ─────────────────────────────────────
+// PHASE 8: LOST & FOUND
+// ─────────────────────────────────────
+model LostFound {
+  id           Int      @id @default(autoincrement())
+  itemName     String
+  description  String   @default("")
+  foundAt      DateTime @default(now())
+  foundBy      String   @default("")
+  location     String   @default("")
+  category     String   @default("OTHER") // ELECTRONICS | CLOTHING | JEWELLERY | DOCUMENTS | OTHER
+  status       String   @default("UNCLAIMED") // UNCLAIMED | CLAIMED | DONATED | DISPOSED
+  claimedBy    String   @default("")
+  claimedAt    DateTime?
+  claimantPhone String  @default("")
+  notes        String   @default("")
+  createdAt    DateTime @default(now())
+
+  @@map("lost_found")
+}
+
+// ─────────────────────────────────────
+// PHASE 8: MEAL PLAN SUBSCRIPTIONS
+// ─────────────────────────────────────
+model SubscriptionPlan {
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String   @default("")
+  duration      String   @default("MONTHLY") // WEEKLY | MONTHLY | QUARTERLY
+  mealsPerDay   Int      @default(1)
+  daysPerWeek   Int      @default(5)
+  price         Float    @default(0)
+  includes      String   @default("") // comma-separated meal types
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  subscriptions CustomerSubscription[]
+
+  @@map("subscription_plans")
+}
+
+model CustomerSubscription {
+  id         Int      @id @default(autoincrement())
+  planId     Int
+  customerId Int?
+  customerName String @default("")
+  customerPhone String @default("")
+  startDate  DateTime
+  endDate    DateTime
+  status     String   @default("ACTIVE") // ACTIVE | PAUSED | CANCELLED | EXPIRED
+  amountPaid Float    @default(0)
+  notes      String   @default("")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  plan       SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("customer_subscriptions")
+}
+
+// ─────────────────────────────────────
+// PHASE 9: ALLERGEN & DIETARY TAGS
+// ─────────────────────────────────────
+model AllergenTag {
+  id       Int    @id @default(autoincrement())
+  name     String @unique
+  icon     String @default("")
+  color    String @default("#888888")
+  type     String @default("ALLERGEN") // ALLERGEN | DIETARY
+  active   Boolean @default(true)
+  menuItemTags MenuItemTag[]
+
+  @@map("allergen_tags")
+}
+
+model MenuItemTag {
+  id         Int    @id @default(autoincrement())
+  menuItemId Int
+  tagId      Int
+  tag        AllergenTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([menuItemId, tagId])
+  @@map("menu_item_tags")
+}
+
+// ─────────────────────────────────────
+// PHASE 9: WAITLIST MANAGER
+// ─────────────────────────────────────
+model WaitlistEntry {
+  id            Int      @id @default(autoincrement())
+  customerName  String
+  phone         String   @default("")
+  partySize     Int      @default(2)
+  preference    String   @default("") // window, quiet, bar, etc.
+  addedAt       DateTime @default(now())
+  estimatedWait Int      @default(15) // minutes
+  status        String   @default("WAITING") // WAITING | NOTIFIED | SEATED | CANCELLED | NO_SHOW
+  seatedAt      DateTime?
+  notifiedAt    DateTime?
+  notes         String   @default("")
+
+  @@map("waitlist_entries")
+}
+
+// ─────────────────────────────────────
+// PHASE 9: VOID & REFUND LOG
+// ─────────────────────────────────────
+model VoidLog {
+  id          Int      @id @default(autoincrement())
+  orderId     Int?
+  orderRef    String   @default("")
+  type        String   @default("VOID") // VOID | REFUND | COMP
+  amount      Float    @default(0)
+  reason      String   @default("")
+  items       String   @default("") // JSON description of affected items
+  requestedBy String   @default("")
+  approvedBy  String   @default("")
+  status      String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  notes       String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("void_logs")
+}
+
+// ─────────────────────────────────────
+// PHASE 9: PRICE TIERS
+// ─────────────────────────────────────
+model PriceTier {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String  @default("")
+  multiplier  Float   @default(1.0)
+  active      Boolean @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("price_tiers")
+}
+
+// ─────────────────────────────────────
+// PHASE 9: STAFF COMMISSION
+// ─────────────────────────────────────
+model StaffCommission {
+  id               Int      @id @default(autoincrement())
+  staffId          Int
+  staffName        String   @default("")
+  period           String   // YYYY-MM format
+  salesAmount      Float    @default(0)
+  commissionRate   Float    @default(0) // percentage e.g. 2.5
+  commissionAmount Float    @default(0)
+  status           String   @default("PENDING") // PENDING | APPROVED | PAID
+  paidAt           DateTime?
+  paidBy           String   @default("")
+  notes            String   @default("")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([staffId, period])
+  @@map("staff_commissions")
+}
+
+// ─────────────────────────────────────
+// PHASE 10: RESERVATION DEPOSITS
+// ─────────────────────────────────────
+model ReservationDeposit {
+  id            Int      @id @default(autoincrement())
+  reservationId Int?
+  customerName  String
+  phone         String   @default("")
+  reservationDate DateTime?
+  partySize     Int      @default(2)
+  amount        Float    @default(0)
+  paymentMethod String   @default("CASH") // CASH | CARD | TRANSFER | WALLET
+  status        String   @default("RECEIVED") // RECEIVED | APPLIED | REFUNDED | FORFEITED
+  refundReason  String   @default("")
+  receivedBy    String   @default("")
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("reservation_deposits")
+}
+
+// ─────────────────────────────────────
+// PHASE 10: STAFF DISCIPLINARY RECORDS
+// ─────────────────────────────────────
+model DisciplinaryRecord {
+  id            Int      @id @default(autoincrement())
+  staffId       Int
+  staffName     String   @default("")
+  type          String   @default("VERBAL_WARNING") // VERBAL_WARNING | WRITTEN_WARNING | SUSPENSION | TERMINATION
+  incident      String
+  incidentDate  DateTime @default(now())
+  issuedBy      String   @default("")
+  witnesses     String   @default("")
+  actionTaken   String   @default("")
+  followUpDate  DateTime?
+  status        String   @default("OPEN") // OPEN | RESOLVED | ESCALATED
+  attachmentUrl String   @default("")
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("disciplinary_records")
+}
+
+// ─────────────────────────────────────
+// PHASE 10: CUSTOMER BIRTHDAY TRACKER
+// ─────────────────────────────────────
+model CustomerBirthday {
+  id           Int      @id @default(autoincrement())
+  customerId   Int?
+  customerName String
+  phone        String   @default("")
+  email        String   @default("")
+  birthDate    DateTime
+  offerSent    Boolean  @default(false)
+  offerSentAt  DateTime?
+  offerCode    String   @default("")
+  notes        String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("customer_birthdays")
+}
+
+// ─────────────────────────────────────
+// PHASE 10: INVENTORY BATCH TRACKING
+// ─────────────────────────────────────
+model InventoryBatch {
+  id           Int      @id @default(autoincrement())
+  itemName     String
+  inventoryId  Int?
+  batchNumber  String   @default("")
+  supplier     String   @default("")
+  quantity     Float    @default(0)
+  remaining    Float    @default(0)
+  unit         String   @default("kg")
+  costPerUnit  Float    @default(0)
+  expiryDate   DateTime?
+  receivedAt   DateTime @default(now())
+  status       String   @default("ACTIVE") // ACTIVE | CONSUMED | EXPIRED | DISCARDED
+  notes        String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("inventory_batches")
+}
+
+// ─────────────────────────────────────
+// PHASE 10: TABLE HYGIENE LOG
+// ─────────────────────────────────────
+model TableCleaningLog {
+  id          Int      @id @default(autoincrement())
+  tableNumber Int
+  cleanedBy   String   @default("")
+  cleanedAt   DateTime @default(now())
+  type        String   @default("STANDARD") // STANDARD | DEEP | POST_EVENT | SANITIZE
+  duration    Int      @default(0) // minutes
+  notes       String   @default("")
+
+  @@map("table_cleaning_logs")
+}
+
+// ─────────────────────────────────────
+// PHASE 11: STAFF MEAL TRACKER
+// ─────────────────────────────────────
+model StaffMeal {
+  id         Int      @id @default(autoincrement())
+  staffId    Int
+  staffName  String   @default("")
+  date       DateTime @default(now())
+  shift      String   @default("MORNING") // MORNING | AFTERNOON | EVENING
+  mealType   String   @default("DUTY_MEAL") // DUTY_MEAL | BREAK_SNACK | MANAGEMENT
+  items      String   @default("") // description of items consumed
+  value      Float    @default(0) // estimated cost
+  approvedBy String   @default("")
+  notes      String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@map("staff_meals")
+}
+
+// ─────────────────────────────────────
+// PHASE 11: TIP POOL
+// ─────────────────────────────────────
+model TipPool {
+  id         Int      @id @default(autoincrement())
+  date       DateTime @default(now())
+  shift      String   @default("ALL") // MORNING | AFTERNOON | EVENING | ALL
+  totalTips  Float    @default(0)
+  status     String   @default("OPEN") // OPEN | DISTRIBUTED
+  closedBy   String   @default("")
+  notes      String   @default("")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  entries    TipPoolEntry[]
+
+  @@map("tip_pools")
+}
+
+model TipPoolEntry {
+  id          Int      @id @default(autoincrement())
+  poolId      Int
+  staffId     Int
+  staffName   String   @default("")
+  hoursWorked Float    @default(0)
+  tipShare    Float    @default(0)
+  pool        TipPool  @relation(fields: [poolId], references: [id], onDelete: Cascade)
+
+  @@map("tip_pool_entries")
+}
+
+// ─────────────────────────────────────
+// PHASE 11: NIGHT AUDIT
+// ─────────────────────────────────────
+model NightAudit {
+  id              Int      @id @default(autoincrement())
+  auditDate       DateTime @unique
+  expectedRevenue Float    @default(0)
+  actualRevenue   Float    @default(0)
+  cashOnHand      Float    @default(0)
+  cardRevenue     Float    @default(0)
+  coversServed    Int      @default(0)
+  ordersCount     Int      @default(0)
+  avgSpend        Float    @default(0)
+  voidAmount      Float    @default(0)
+  discountAmount  Float    @default(0)
+  staffMealCost   Float    @default(0)
+  wasteAmount     Float    @default(0)
+  openingFloat    Float    @default(0)
+  closingFloat    Float    @default(0)
+  notes           String   @default("")
+  closedBy        String   @default("")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("night_audits")
+}
+
+// ─────────────────────────────────────
+// PHASE 11: FLOOR PLAN
+// ─────────────────────────────────────
+model FloorPlan {
+  id        Int      @id @default(autoincrement())
+  name      String   @default("Main Floor")
+  layout    String   @default("[]") // JSON: [{id,x,y,w,h,shape,label}]
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("floor_plans")
+}
+
+// ─────────────────────────────────────
+// PHASE 11: MENU 86 (AVAILABILITY)
+// ─────────────────────────────────────
+model MenuItemAvailability {
+  id         Int      @id @default(autoincrement())
+  menuItemId Int      @unique
+  available  Boolean  @default(false) // false = 86'd (unavailable)
+  reason     String   @default("")
+  updatedBy  String   @default("")
+  updatedAt  DateTime @updatedAt
+
+  @@map("menu_item_availability")
+}
+
+// Phase 12
+model StaffUniform {
+  id           Int      @id @default(autoincrement())
+  staffId      Int
+  staffName    String   @default("")
+  uniformType  String   @default("SHIRT") // SHIRT, PANTS, APRON, CAP, SHOES, FULL_SET
+  size         String   @default("")
+  quantity     Int      @default(1)
+  lockerNumber String   @default("")
+  keyIssued    Boolean  @default(false)
+  keyNumber    String   @default("")
+  issuedAt     DateTime @default(now())
+  returnedAt   DateTime?
+  condition    String   @default("GOOD") // GOOD, FAIR, DAMAGED, LOST
+  issuedBy     String   @default("")
+  notes        String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  @@map("staff_uniforms")
+}
+
+model GuestBlacklist {
+  id           Int      @id @default(autoincrement())
+  guestName    String
+  phone        String   @default("")
+  email        String   @default("")
+  reason       String
+  severity     String   @default("MEDIUM") // LOW, MEDIUM, HIGH
+  addedBy      String   @default("")
+  status       String   @default("ACTIVE") // ACTIVE, LIFTED
+  liftedAt     DateTime?
+  liftedBy     String   @default("")
+  liftReason   String   @default("")
+  notes        String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  @@map("guest_blacklist")
+}
+
+model MenuCategory {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  displayOrder Int      @default(0)
+  icon         String   @default("🍽️")
+  color        String   @default("#2653a0")
+  description  String   @default("")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  @@map("menu_categories")
+}
+
+model PrepChecklist {
+  id             Int      @id @default(autoincrement())
+  name           String
+  checklistType  String   @default("OPENING") // OPENING, CLOSING, CUSTOM
+  shift          String   @default("MORNING")
+  date           DateTime @default(now())
+  items          String   @default("[]") // JSON array of {label, done, doneBy, doneAt}
+  status         String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  completedBy    String   @default("")
+  completedAt    DateTime?
+  notes          String   @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  @@map("prep_checklists")
+}
+
+model StaffRecognition {
+  id           Int      @id @default(autoincrement())
+  staffId      Int
+  staffName    String   @default("")
+  month        Int      // 1-12
+  year         Int
+  award        String   @default("EMPLOYEE_OF_MONTH") // EMPLOYEE_OF_MONTH, BEST_SERVICE, MOST_IMPROVED, PUNCTUALITY, TEAM_PLAYER
+  nominatedBy  String   @default("")
+  reason       String   @default("")
+  votes        Int      @default(0)
+  status       String   @default("NOMINATED") // NOMINATED, APPROVED, AWARDED
+  approvedBy   String   @default("")
+  notes        String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  @@unique([staffId, month, year, award])
+  @@map("staff_recognitions")
+}
+
+model IncidentLog {
+  id            Int      @id @default(autoincrement())
+  incidentDate  DateTime @default(now())
+  type          String   @default("ACCIDENT") // ACCIDENT, INJURY, THEFT, COMPLAINT, SAFETY, OTHER
+  title         String
+  description   String   @default("")
+  involvedParty String   @default("")
+  reportedBy    String   @default("")
+  witnesses     String   @default("")
+  severity      String   @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
+  actionTaken   String   @default("")
+  followUpDate  DateTime?
+  status        String   @default("OPEN") // OPEN, INVESTIGATING, RESOLVED, CLOSED
+  resolvedBy    String   @default("")
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@map("incident_logs")
+}

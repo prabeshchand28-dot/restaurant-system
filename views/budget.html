@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Budget Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.kpi-card .num{font-size:20px;font-weight:900}.kpi-card .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.budget-row{display:grid;grid-template-columns:180px 1fr 120px 120px 90px 90px;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid #f0f0f0}
+.budget-row.header{font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted);padding-bottom:8px;border-bottom:2px solid var(--border)}
+.progress-wrap{height:10px;background:#f0f0f0;border-radius:5px;overflow:hidden}
+.progress-fill{height:100%;border-radius:5px;transition:width .4s}
+.budget-input{padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);text-align:right;width:100%}
+.budget-input:focus{border-color:var(--blue);outline:none}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Budget Planner</span></span>
+  <div><a class="nav-btn" href="/finance">📈 Finance</a><a class="nav-btn" href="/expenses">💸 Expenses</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
+    <label style="font-size:13px;font-weight:700;color:var(--navy);margin:0">Month:</label>
+    <input type="month" id="monthPicker" onchange="load()"/>
+    <button class="btn" onclick="saveAll()">💾 Save Budget</button>
+    <span style="font-size:12px;color:var(--muted)">Set targets then click Save. Actuals are auto-calculated from Expenses & Payroll.</span>
+  </div>
+
+  <div class="kpi">
+    <div class="kpi-card"><div class="num" id="k-budgeted" style="color:var(--blue)">—</div><div class="lbl">Total Budgeted (रू)</div></div>
+    <div class="kpi-card"><div class="num" id="k-actual">—</div><div class="lbl">Total Actual (रू)</div></div>
+    <div class="kpi-card"><div class="num" id="k-variance">—</div><div class="lbl">Variance (रू)</div></div>
+    <div class="kpi-card"><div class="num" id="k-health">—</div><div class="lbl">Budget Health</div></div>
+  </div>
+
+  <!-- Budget Table -->
+  <div class="card">
+    <div class="card-header">📊 Budget vs Actual — <span id="monthLabel"></span></div>
+    <div class="card-body" style="padding:0 16px">
+      <div class="budget-row header">
+        <div>Category</div><div>Progress</div><div style="text-align:right">Budget (रू)</div><div style="text-align:right">Actual (रू)</div><div style="text-align:right">Used</div><div style="text-align:right">Variance</div>
+      </div>
+      <div id="budgetTable">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Trend Chart -->
+  <div class="card">
+    <div class="card-header">📈 6-Month Budget vs Actual Trend</div>
+    <div class="card-body"><canvas id="trendChart" height="80"></canvas></div>
+  </div>
+
+</div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+const CATEGORIES=['FOOD_COST','LABOR','UTILITIES','MARKETING','MAINTENANCE','RENT','OTHER'];
+const CAT_EMOJI={FOOD_COST:'🍛',LABOR:'👥',UTILITIES:'⚡',MARKETING:'📢',MAINTENANCE:'🔧',RENT:'🏠',OTHER:'📦'};
+const CAT_COLORS={FOOD_COST:'#2653a0',LABOR:'#1a7a3a',UTILITIES:'#e65100',MARKETING:'#6a1b9a',MAINTENANCE:'#ad1457',RENT:'#00838f',OTHER:'#555'};
+document.getElementById('monthPicker').value=new Date().toISOString().slice(0,7);
+let currentData=null;
+let trendInst=null;
+
+async function load(){
+  const month=document.getElementById('monthPicker').value;
+  document.getElementById('monthLabel').textContent=new Date(month+'-01').toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const r=await fetch(`/api/budget?month=${month}`,{headers:authH(),cache:'no-store'});
+  currentData=await r.json();
+
+  document.getElementById('k-budgeted').textContent='रू '+(currentData.totalBudget||0).toLocaleString();
+  document.getElementById('k-actual').textContent='रू '+(currentData.totalActual||0).toLocaleString();
+  const variance=currentData.totalBudget-currentData.totalActual;
+  document.getElementById('k-variance').textContent=(variance>=0?'+':'')+'रू '+Math.round(variance).toLocaleString();
+  document.getElementById('k-variance').style.color=variance>=0?'var(--green)':'var(--red)';
+  const pct=currentData.totalBudget?Math.round(currentData.totalActual/currentData.totalBudget*100):0;
+  document.getElementById('k-health').textContent=pct+'%';
+  document.getElementById('k-health').style.color=pct<=80?'var(--green)':pct<=100?'var(--orange)':'var(--red)';
+
+  document.getElementById('budgetTable').innerHTML=currentData.categories.map(c=>{
+    const pct=c.pct||0;
+    const overBudget=pct>100;
+    const fillColor=pct<=80?'var(--green)':pct<=100?'var(--orange)':'var(--red)';
+    const variance=c.budgeted-c.actual;
+    return `<div class="budget-row">
+      <div><span style="font-size:14px">${CAT_EMOJI[c.category]||'📦'}</span> <strong>${c.category.replace('_',' ')}</strong></div>
+      <div>
+        <div class="progress-wrap">
+          <div class="progress-fill" style="width:${Math.min(pct,100)}%;background:${fillColor}"></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${pct!==null?pct+'% used':'-'}</div>
+      </div>
+      <div style="text-align:right"><input class="budget-input" type="number" data-cat="${c.category}" value="${c.budgeted||''}" placeholder="0" min="0"/></div>
+      <div style="text-align:right;font-weight:700">${c.actual?'रू '+Math.round(c.actual).toLocaleString():'—'}</div>
+      <div style="text-align:right;font-weight:700;color:${fillColor}">${pct!==null?pct+'%':'—'}</div>
+      <div style="text-align:right;font-weight:700;color:${variance>=0?'var(--green)':'var(--red)'}">${c.budgeted?(variance>=0?'+':'')+Math.round(variance).toLocaleString():'—'}</div>
+    </div>`;
+  }).join('');
+
+  loadTrend();
+}
+
+async function saveAll(){
+  const month=document.getElementById('monthPicker').value;
+  const inputs=document.querySelectorAll('.budget-input');
+  for(const inp of inputs){
+    const cat=inp.dataset.cat;
+    const val=parseFloat(inp.value||0);
+    await fetch('/api/budget',{method:'POST',headers:authH(),body:JSON.stringify({month,category:cat,budgeted:val})});
+  }
+  showToast('Budget saved!','success');load();
+}
+
+async function loadTrend(){
+  const r=await fetch('/api/budget/trend?months=6',{headers:authH(),cache:'no-store'});
+  const data=await r.json();
+  const ctx=document.getElementById('trendChart').getContext('2d');
+  if(trendInst)trendInst.destroy();
+  trendInst=new Chart(ctx,{type:'bar',data:{labels:data.map(d=>d.month),datasets:[
+    {label:'Budgeted',data:data.map(d=>d.budgeted),backgroundColor:'rgba(38,83,160,.4)',borderColor:'var(--blue)',borderWidth:1,borderRadius:3},
+    {label:'Actual',data:data.map(d=>d.actual),backgroundColor:'rgba(192,57,43,.6)',borderColor:'var(--red)',borderWidth:1,borderRadius:3},
+  ]},options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true}}}});
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.createElement('div');t.style.cssText='position:fixed;top:14px;right:16px;background:'+(type==='success'?'var(--green)':'var(--navy)')+';color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000)}
+
+load();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

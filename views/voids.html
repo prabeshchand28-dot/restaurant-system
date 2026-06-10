@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Void & Refund Log</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--purple:#6c3483;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:20px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select,textarea{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}.btn-orange{background:var(--orange)}.btn-purple{background:var(--purple)}
+.void-card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px}
+.void-card.type-VOID{border-left:4px solid var(--red)}
+.void-card.type-REFUND{border-left:4px solid var(--orange)}
+.void-card.type-COMP{border-left:4px solid var(--purple)}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800}
+.t-VOID{background:#fce8e7;color:var(--red)}.t-REFUND{background:#fff3e0;color:var(--orange)}.t-COMP{background:#f3e5f5;color:var(--purple)}
+.s-PENDING{background:#fff3e0;color:var(--orange)}.s-APPROVED{background:#e7f5ed;color:var(--green)}.s-REJECTED{background:#fce8e7;color:var(--red)}
+.filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Void & Refund Log</span></span>
+  <div><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-pending" style="color:var(--orange)">—</div><div class="lbl">⏳ Pending Approval</div></div>
+    <div class="stat"><div class="num" id="s-today" style="color:var(--blue)">—</div><div class="lbl">Approved Today</div></div>
+    <div class="stat"><div class="num" id="s-void" style="color:var(--red)">—</div><div class="lbl">Total Void (रू)</div></div>
+    <div class="stat"><div class="num" id="s-refund" style="color:var(--orange)">—</div><div class="lbl">Total Refund (रू)</div></div>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <div class="card-header">📝 Log Void / Refund / Comp</div>
+        <div class="card-body">
+          <label>Type</label>
+          <select id="vType">
+            <option value="VOID">🚫 Void</option>
+            <option value="REFUND">💸 Refund</option>
+            <option value="COMP">🎁 Complimentary</option>
+          </select>
+          <label>Order Reference</label><input id="vRef" placeholder="Order ID or receipt no."/>
+          <label>Amount (रू)</label><input type="number" id="vAmount" placeholder="0.00" min="0"/>
+          <label>Reason</label>
+          <select id="vReason">
+            <option value="">Select reason...</option>
+            <option value="Customer dissatisfied">Customer dissatisfied</option>
+            <option value="Wrong item served">Wrong item served</option>
+            <option value="Food quality issue">Food quality issue</option>
+            <option value="Duplicate charge">Duplicate charge</option>
+            <option value="Order cancellation">Order cancellation</option>
+            <option value="Manager override">Manager override</option>
+            <option value="Staff meal">Staff meal</option>
+            <option value="Goodwill gesture">Goodwill gesture</option>
+          </select>
+          <label>Items Affected</label><input id="vItems" placeholder="e.g. Dal Makhani x2, Naan x1"/>
+          <label>Requested By</label><input id="vRequestedBy" placeholder="Staff name"/>
+          <label>Notes</label><textarea id="vNotes" rows="2" placeholder="Additional details..." style="resize:vertical"></textarea>
+          <button class="btn btn-red" style="width:100%;margin-top:14px" onclick="logVoid()">📋 Submit for Approval</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="filters">
+        <select id="fStatus" onchange="loadVoids()" style="width:130px">
+          <option value="">All Status</option>
+          <option value="PENDING">Pending</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
+        </select>
+        <select id="fType" onchange="loadVoids()" style="width:120px">
+          <option value="">All Types</option>
+          <option value="VOID">Void</option>
+          <option value="REFUND">Refund</option>
+          <option value="COMP">Comp</option>
+        </select>
+        <input type="date" id="fFrom" onchange="loadVoids()" style="width:140px"/>
+        <input type="date" id="fTo" onchange="loadVoids()" style="width:140px"/>
+      </div>
+      <div id="voidList">Loading...</div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+async function loadStats(){
+  const r=await fetch('/api/voids/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-pending').textContent=d.pending;
+  document.getElementById('s-today').textContent=d.approvedToday;
+  document.getElementById('s-void').textContent='रू '+(d.byType.VOID||0).toLocaleString();
+  document.getElementById('s-refund').textContent='रू '+(d.byType.REFUND||0).toLocaleString();
+}
+
+async function loadVoids(){
+  const status=document.getElementById('fStatus').value;
+  const type=document.getElementById('fType').value;
+  const from=document.getElementById('fFrom').value;
+  const to=document.getElementById('fTo').value;
+  let url='/api/voids?a=1';
+  if(status)url+=`&status=${status}`;if(type)url+=`&type=${type}`;if(from)url+=`&from=${from}`;if(to)url+=`&to=${to}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const logs=await r.json();
+  if(!logs.length){document.getElementById('voidList').innerHTML='<div style="text-align:center;padding:60px;background:var(--white);border-radius:12px;color:var(--muted)">No records found</div>';return;}
+  document.getElementById('voidList').innerHTML=logs.map(v=>`
+    <div class="void-card type-${v.type}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="badge t-${v.type}">${v.type}</span>
+            <span class="badge s-${v.status}">${v.status}</span>
+          </div>
+          <div style="font-weight:800;font-size:14px;margin-top:6px">${v.reason||'No reason given'}</div>
+          ${v.orderRef?`<div style="font-size:12px;color:var(--muted)">Ref: ${v.orderRef}</div>`:''}
+          ${v.items?`<div style="font-size:12px;color:var(--muted)">Items: ${v.items}</div>`:''}
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">By: ${v.requestedBy||'Unknown'} · ${new Date(v.createdAt).toLocaleString()}</div>
+          ${v.approvedBy?`<div style="font-size:12px;color:var(--green);margin-top:2px">✓ ${v.status==='APPROVED'?'Approved':'Reviewed'} by: ${v.approvedBy}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:900;color:var(--red)">रू ${v.amount.toLocaleString()}</div>
+        </div>
+      </div>
+      ${v.status==='PENDING'?`<div style="margin-top:10px;display:flex;gap:6px">
+        <input id="apv-${v.id}" placeholder="Approver name" style="flex:1;padding:6px 10px;font-size:12px"/>
+        <button class="btn btn-green" style="font-size:11px;padding:5px 10px" onclick="approve(${v.id})">✅ Approve</button>
+        <button class="btn btn-red" style="font-size:11px;padding:5px 10px" onclick="reject(${v.id})">❌ Reject</button>
+      </div>`:''}
+      ${v.status!=='PENDING'?`<div style="margin-top:8px"><button class="btn btn-red" style="font-size:11px;padding:5px 10px" onclick="delVoid(${v.id})">Del</button></div>`:''}
+    </div>`).join('');
+}
+
+async function logVoid(){
+  const amount=document.getElementById('vAmount').value;
+  const reason=document.getElementById('vReason').value;
+  if(!amount||!reason){showToast('Amount and reason required','error');return;}
+  const body={type:document.getElementById('vType').value,orderRef:document.getElementById('vRef').value,amount:parseFloat(amount),reason,items:document.getElementById('vItems').value,requestedBy:document.getElementById('vRequestedBy').value,notes:document.getElementById('vNotes').value};
+  const r=await fetch('/api/voids',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Logged — awaiting approval','success');document.getElementById('vRef').value='';document.getElementById('vAmount').value='';document.getElementById('vItems').value='';document.getElementById('vNotes').value='';loadStats();loadVoids();}
+  else showToast(d.message||'Error','error');
+}
+
+async function approve(id){
+  const approvedBy=document.getElementById(`apv-${id}`).value.trim();
+  if(!approvedBy){showToast('Enter approver name','error');return;}
+  const r=await fetch(`/api/voids/${id}/approve`,{method:'PATCH',headers:authH(),body:JSON.stringify({approvedBy})});
+  if((await r.json()).id){showToast('Approved!','success');loadStats();loadVoids();}
+}
+
+async function reject(id){
+  const approvedBy=document.getElementById(`apv-${id}`).value.trim()||'Manager';
+  const r=await fetch(`/api/voids/${id}/reject`,{method:'PATCH',headers:authH(),body:JSON.stringify({approvedBy})});
+  if((await r.json()).id){showToast('Rejected','success');loadStats();loadVoids();}
+}
+
+async function delVoid(id){
+  if(!confirm('Delete?'))return;
+  await fetch(`/api/voids/${id}`,{method:'DELETE',headers:authH()});
+  loadStats();loadVoids();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadStats();loadVoids();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

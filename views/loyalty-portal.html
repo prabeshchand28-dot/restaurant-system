@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Loyalty Points Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--gold:#c79b00;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:linear-gradient(135deg,var(--navy) 0%,#2e5ca6 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px 16px}
+.portal-box{background:var(--white);border-radius:20px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.portal-header{background:linear-gradient(135deg,#1a3a6b,#2653a0);color:#fff;padding:32px 28px;text-align:center}
+.portal-header h1{font-size:22px;font-weight:900;margin-bottom:6px}
+.portal-header p{font-size:13px;opacity:.8}
+.portal-body{padding:28px}
+.search-box{display:flex;gap:8px;margin-bottom:24px}
+.search-box input{flex:1;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:15px;font-family:var(--font);outline:none}
+.search-box input:focus{border-color:var(--blue)}
+.search-box button{padding:12px 18px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font)}
+.tier-card{border-radius:14px;padding:20px;margin-bottom:20px;text-align:center}
+.tier-BRONZE{background:linear-gradient(135deg,#cd7f32,#a0522d);color:#fff}
+.tier-SILVER{background:linear-gradient(135deg,#aaa,#888);color:#fff}
+.tier-GOLD{background:linear-gradient(135deg,#ffd700,#c79b00);color:#1a1a1a}
+.tier-PLATINUM{background:linear-gradient(135deg,#e5e4e2,#b0b0b0);color:#1a1a1a}
+.tier-name{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;opacity:.8}
+.tier-icon{font-size:40px;margin:6px 0}
+.points-num{font-size:42px;font-weight:900;line-height:1}
+.points-lbl{font-size:12px;font-weight:600;opacity:.7;margin-top:2px}
+.customer-info{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f8f9fa;border-radius:8px}
+.info-row .k{font-size:12px;color:var(--muted);font-weight:600}.info-row .v{font-size:13px;font-weight:800}
+.section-title{font-size:12px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.tx-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.tx-pts{font-weight:800}.tx-pts.earn{color:var(--green)}.tx-pts.redeem{color:#c0392b}
+.progress-track{background:#f0f0f0;border-radius:20px;height:10px;margin:8px 0 4px}
+.progress-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--gold),#e6b800);transition:width .6s}
+.tier-next-label{font-size:11px;color:var(--muted);text-align:right}
+.no-result{text-align:center;padding:40px;color:var(--muted)}
+.hidden{display:none}
+.error-msg{background:#fce8e7;color:#c0392b;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:600;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="portal-box">
+  <div class="portal-header">
+    <div style="font-size:32px;margin-bottom:8px">🍽️</div>
+    <h1>Loyalty Rewards Portal</h1>
+    <p>Check your points, tier, and transaction history</p>
+  </div>
+  <div class="portal-body">
+    <div class="search-box">
+      <input type="tel" id="phoneInput" placeholder="Enter phone number" onkeyup="if(event.key==='Enter')lookup()"/>
+      <button onclick="lookup()">Check</button>
+    </div>
+    <div id="errorMsg" class="error-msg hidden"></div>
+    <div id="result" class="hidden">
+      <div id="tierCard" class="tier-card">
+        <div class="tier-name" id="tierName">—</div>
+        <div class="tier-icon" id="tierIcon">⭐</div>
+        <div class="points-num" id="pointsNum">0</div>
+        <div class="points-lbl">Total Points</div>
+      </div>
+      <div id="nextTierBar" class="hidden" style="margin-bottom:20px">
+        <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px" id="nextTierLabel"></div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        <div class="tier-next-label" id="progressLabel"></div>
+      </div>
+      <div class="customer-info" id="customerInfo"></div>
+      <div class="section-title">Recent Transactions</div>
+      <div id="txList"><div class="no-result">No transactions yet</div></div>
+    </div>
+    <div id="placeholder" style="text-align:center;color:var(--muted);padding:20px">
+      <div style="font-size:40px;margin-bottom:10px">🔍</div>
+      <div style="font-size:14px">Enter your phone number to view your loyalty account</div>
+    </div>
+  </div>
+</div>
+<div style="margin-top:20px;color:rgba(255,255,255,.5);font-size:12px">Questions? Ask our staff at the counter</div>
+<script>
+const TIERS=[{name:'BRONZE',min:0,max:500,icon:'🥉',class:'BRONZE'},{name:'SILVER',min:500,max:2000,icon:'🥈',class:'SILVER'},{name:'GOLD',min:2000,max:5000,icon:'🥇',class:'GOLD'},{name:'PLATINUM',min:5000,max:999999,icon:'💎',class:'PLATINUM'}];
+
+function getTier(pts){return TIERS.find(t=>pts>=t.min&&pts<t.max)||TIERS[TIERS.length-1]}
+
+async function lookup(){
+  const phone=document.getElementById('phoneInput').value.trim();
+  if(!phone){showError('Please enter a phone number');return;}
+  hideError();
+  try{
+    const r=await fetch(`/api/loyalty/lookup?phone=${encodeURIComponent(phone)}`,{cache:'no-store'});
+    const d=await r.json();
+    if(!r.ok||d.error){showError(d.error||'No account found for this number');document.getElementById('result').classList.add('hidden');document.getElementById('placeholder').classList.remove('hidden');return;}
+    showResult(d);
+  }catch(e){showError('Connection error. Please try again.');}
+}
+
+function showResult(d){
+  document.getElementById('placeholder').classList.add('hidden');
+  document.getElementById('result').classList.remove('hidden');
+  const pts=d.points||0;
+  const tier=getTier(pts);
+  const card=document.getElementById('tierCard');
+  card.className='tier-card tier-'+tier.class;
+  document.getElementById('tierName').textContent=tier.name+' MEMBER';
+  document.getElementById('tierIcon').textContent=tier.icon;
+  document.getElementById('pointsNum').textContent=pts.toLocaleString();
+
+  // Next tier progress
+  const nextTier=TIERS.find(t=>t.min>pts);
+  const barEl=document.getElementById('nextTierBar');
+  if(nextTier){
+    barEl.classList.remove('hidden');
+    const prev=tier.min;const range=nextTier.min-prev;const pct=Math.min(100,Math.round((pts-prev)/range*100));
+    document.getElementById('nextTierLabel').textContent=`Progress to ${nextTier.name}`;
+    document.getElementById('progressFill').style.width=pct+'%';
+    document.getElementById('progressLabel').textContent=`${(nextTier.min-pts).toLocaleString()} pts to ${nextTier.name}`;
+  }else{barEl.classList.add('hidden');}
+
+  document.getElementById('customerInfo').innerHTML=`
+    <div class="info-row"><span class="k">Name</span><span class="v">${d.name||'Guest'}</span></div>
+    <div class="info-row"><span class="k">Phone</span><span class="v">${d.phone||'—'}</span></div>
+    <div class="info-row"><span class="k">Points Balance</span><span class="v" style="color:var(--green)">${pts.toLocaleString()} pts</span></div>
+    <div class="info-row"><span class="k">Total Visits</span><span class="v">${d.totalVisits||0}</span></div>
+    <div class="info-row"><span class="k">Member Since</span><span class="v">${d.createdAt?new Date(d.createdAt).toLocaleDateString():'-'}</span></div>
+  `;
+
+  const txs=d.transactions||[];
+  if(!txs.length){document.getElementById('txList').innerHTML='<div class="no-result">No transactions yet</div>';return;}
+  document.getElementById('txList').innerHTML=txs.slice(0,10).map(t=>{
+    const earn=t.points>0;
+    return `<div class="tx-row">
+      <div>
+        <div style="font-weight:700">${t.description||t.type}</div>
+        <div style="font-size:11px;color:var(--muted)">${new Date(t.createdAt).toLocaleDateString()}</div>
+      </div>
+      <span class="tx-pts ${earn?'earn':'redeem'}">${earn?'+':''}${t.points} pts</span>
+    </div>`;
+  }).join('');
+}
+
+function showError(msg){const el=document.getElementById('errorMsg');el.textContent=msg;el.classList.remove('hidden');}
+function hideError(){document.getElementById('errorMsg').classList.add('hidden');}
+</script>
+<script src="/js/autoupdate.js"></script>
+</body>
+</html>

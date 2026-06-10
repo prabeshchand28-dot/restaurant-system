@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Cash Denomination Counter</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--gold:#b7860a;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--green);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.85;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:800px;margin:0 auto}
+.main-card{background:var(--white);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.card-header{background:var(--navy);color:#fff;padding:16px 20px;font-size:15px;font-weight:800}
+.card-body{padding:20px}
+.denom-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.denom-item{background:#f8f9fc;border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px}
+.denom-item:hover{border-color:var(--blue);background:#e8efff}
+.denom-note{font-size:22px;font-weight:900;color:var(--navy);min-width:60px}
+.denom-sub{font-size:11px;color:var(--muted);font-weight:600}
+.qty-input{width:70px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:16px;font-weight:800;text-align:center;font-family:var(--font);outline:none}
+.qty-input:focus{border-color:var(--blue)}
+.sub-total{font-size:13px;font-weight:800;color:var(--green);min-width:70px;text-align:right}
+.total-box{background:var(--navy);color:#fff;border-radius:12px;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.total-box .label{font-size:14px;opacity:.8}
+.total-box .amount{font-size:36px;font-weight:900}
+.comparison{background:#f8f9fc;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px}
+.diff-positive{color:var(--green)}.diff-negative{color:var(--red)}
+.btn{padding:9px 18px;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.section-title{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Cash Denomination Counter</span></span>
+  <div><a class="nav-btn" href="/closing">📊 Closing</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="total-box">
+    <div><div class="label">Total Cash Counted</div><div class="amount">रू <span id="grandTotal">0</span></div></div>
+    <div style="text-align:right">
+      <div style="font-size:12px;opacity:.8">Notes</div>
+      <div style="font-size:18px;font-weight:800" id="noteCount">—</div>
+    </div>
+  </div>
+
+  <div class="main-card">
+    <div class="card-header">💵 Count Denominations</div>
+    <div class="card-body">
+      <div class="section-title">📄 Notes (नोट)</div>
+      <div class="denom-grid" id="notesGrid"></div>
+      <div class="section-title">🪙 Coins (सिक्का)</div>
+      <div class="denom-grid" id="coinsGrid"></div>
+    </div>
+  </div>
+
+  <div class="comparison" style="margin-top:16px">
+    <div style="font-size:13px;font-weight:800;color:var(--navy);margin-bottom:10px">🔁 Compare to Expected</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <label style="font-size:12px;font-weight:700;color:var(--muted)">Expected Amount (रू):</label>
+      <input type="number" id="expected" placeholder="e.g. 25000" style="width:150px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:var(--font);outline:none" oninput="calcDiff()"/>
+      <div id="diffDisplay" style="font-size:14px;font-weight:800"></div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button class="btn" onclick="resetAll()">🔄 Reset All</button>
+    <button class="btn" style="background:var(--green)" onclick="window.print()">🖨️ Print Report</button>
+    <button class="btn" style="background:var(--navy);margin-left:auto" onclick="copyReport()">📋 Copy Summary</button>
+  </div>
+</div>
+<script>
+const NOTES=[1000,500,100,50,20,10,5,2,1];
+const COINS=[25,10,5,2,1];
+// Build denomination inputs
+function buildGrid(denoms,containerId,prefix){
+  const grid=document.getElementById(containerId);
+  denoms.forEach(d=>{
+    const div=document.createElement('div');div.className='denom-item';
+    div.innerHTML=`<div><div class="denom-note">रू ${d}</div><div class="denom-sub">${prefix==='note'?'Note':'Coin'}</div></div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <input type="number" class="qty-input" id="d_${d}" value="0" min="0" oninput="calc()"/>
+        <div class="sub-total" id="s_${d}">रू 0</div>
+      </div>`;
+    grid.appendChild(div);
+  });
+}
+buildGrid(NOTES,'notesGrid','note');
+buildGrid(COINS,'coinsGrid','coin');
+
+function calc(){
+  const all=[...NOTES,...COINS];
+  let total=0,noteCount=0;
+  all.forEach(d=>{
+    const qty=parseInt(document.getElementById(`d_${d}`).value)||0;
+    const sub=d*qty;total+=sub;
+    document.getElementById(`s_${d}`).textContent='रू '+(sub>0?sub.toLocaleString():'0');
+    if(NOTES.includes(d))noteCount+=qty;
+  });
+  document.getElementById('grandTotal').textContent=total.toLocaleString();
+  document.getElementById('noteCount').textContent=noteCount+' pcs';
+  calcDiff();
+}
+
+function calcDiff(){
+  const total=parseInt(document.getElementById('grandTotal').textContent.replace(/,/g,''))||0;
+  const exp=parseInt(document.getElementById('expected').value)||0;
+  const dd=document.getElementById('diffDisplay');
+  if(!exp){dd.textContent='';return;}
+  const diff=total-exp;
+  dd.innerHTML=`Variance: <span class="${diff>=0?'diff-positive':'diff-negative'}">${diff>=0?'+':''}रू ${Math.abs(diff).toLocaleString()}</span>`;
+}
+
+function resetAll(){
+  [...NOTES,...COINS].forEach(d=>{document.getElementById(`d_${d}`).value=0;document.getElementById(`s_${d}`).textContent='रू 0';});
+  document.getElementById('grandTotal').textContent='0';
+  document.getElementById('noteCount').textContent='—';
+  document.getElementById('expected').value='';
+  document.getElementById('diffDisplay').textContent='';
+}
+
+function copyReport(){
+  const lines=[`Cash Count Report — ${new Date().toLocaleString()}`,`${'='.repeat(40)}`];
+  [...NOTES,...COINS].forEach(d=>{
+    const qty=parseInt(document.getElementById(`d_${d}`).value)||0;
+    if(qty>0)lines.push(`रू ${String(d).padStart(5)} × ${String(qty).padStart(4)} = रू ${(d*qty).toLocaleString()}`);
+  });
+  lines.push(`${'='.repeat(40)}`);
+  lines.push(`TOTAL: रू ${document.getElementById('grandTotal').textContent}`);
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>alert('Copied to clipboard!'));
+}
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

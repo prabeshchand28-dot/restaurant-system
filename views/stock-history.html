@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Stock History & Alerts</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.tabs{display:flex;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.pane{display:none}.pane.active{display:block}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:26px;font-weight:900;color:var(--blue)}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px;font-weight:700;border:none;border-radius:4px;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8f9fb;text-align:left;padding:10px 12px;font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid #f0f0f0}
+tr:hover td{background:#f9fafb}
+.low-item{padding:12px;border-left:4px solid var(--red);background:#fff8f8;border-radius:0 8px 8px 0;margin-bottom:8px}
+.low-item.critical{border-left-color:var(--red);background:#fff0f0}
+.low-item.warning{border-left-color:var(--orange);background:#fffbf0}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase}
+.badge-add{background:#e7f5ed;color:var(--green)}
+.badge-remove{background:#fce8e7;color:var(--red)}
+.badge-adjust{background:#e8efff;color:var(--blue)}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Stock History & Alerts</span></span>
+  <div><a class="nav-btn" href="/inventory">📦 Inventory</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('alerts',this)">🔔 Low Stock Alerts</div>
+  <div class="tab" onclick="switchTab('history',this)">📋 Stock History</div>
+  <div class="tab" onclick="switchTab('adjust',this)">⚙️ Manual Adjustment</div>
+</div>
+<div class="content">
+
+  <!-- Alerts -->
+  <div class="pane active" id="pane-alerts">
+    <div class="stats">
+      <div class="stat"><div class="num" id="s-total">—</div><div class="lbl">Total Items</div></div>
+      <div class="stat"><div class="num" id="s-low" style="color:var(--orange)">—</div><div class="lbl">Low Stock</div></div>
+      <div class="stat"><div class="num" id="s-out" style="color:var(--red)">—</div><div class="lbl">Out of Stock</div></div>
+      <div class="stat"><div class="num" id="s-val">—</div><div class="lbl">Stock Value</div></div>
+    </div>
+    <div id="alertList">
+      <div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="pane" id="pane-history">
+    <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+      <select id="historyItem" style="width:250px" onchange="loadHistory()"><option value="">All items</option></select>
+      <span style="font-size:13px;color:var(--muted)">Filter by item</span>
+    </div>
+    <div class="card">
+      <div class="card-header">📋 Stock Movement History</div>
+      <div class="card-body" style="padding:0">
+        <table>
+          <thead><tr><th>Item</th><th>Type</th><th>Change</th><th>Before</th><th>After</th><th>Reason</th><th>Staff</th><th>Date</th></tr></thead>
+          <tbody id="historyTable">
+            <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted)">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Adjust -->
+  <div class="pane" id="pane-adjust">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="card-header">⚙️ Manual Stock Adjustment</div>
+          <div class="card-body">
+            <label>Inventory Item</label>
+            <select id="adjItem"></select>
+            <label>Change Type</label>
+            <select id="adjType">
+              <option value="ADD">➕ Add Stock (received)</option>
+              <option value="REMOVE">➖ Remove Stock (used/waste)</option>
+              <option value="ADJUST">📝 Adjust (count correction)</option>
+              <option value="REORDER">🔄 Reorder Received</option>
+            </select>
+            <label>Quantity Change</label>
+            <input type="number" id="adjChange" placeholder="e.g. 10 (positive) or -5 (negative)" step="0.01"/>
+            <label>Staff Name</label>
+            <input id="adjStaff" placeholder="Who is making this change?"/>
+            <label>Reason / Note</label>
+            <input id="adjReason" placeholder="e.g. Morning delivery received"/>
+            <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="doAdjust()">Apply Adjustment</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">🎯 Set Reorder Point</div>
+          <div class="card-body">
+            <label>Item</label>
+            <select id="rpItem"></select>
+            <label>Reorder Point (quantity)</label>
+            <input type="number" id="rpValue" placeholder="Alert when stock falls below this"/>
+            <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="setReorder()">Set Reorder Point</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header">📦 All Inventory Items (current stock)</div>
+          <div class="card-body" style="padding:0">
+            <table>
+              <thead><tr><th>Item</th><th>Current Stock</th><th>Reorder Point</th><th>Status</th></tr></thead>
+              <tbody id="stockTable">
+                <tr><td colspan="4" style="text-align:center;padding:40px;color:var(--muted)">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let allItems=[];
+
+async function init(){
+  const r=await fetch('/api/inventory',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  allItems=d.items||d||[];
+  ['historyItem','adjItem','rpItem'].forEach(id=>{
+    const s=document.getElementById(id);
+    const keep=s.querySelector('option:first-child');
+    s.innerHTML='';
+    if(keep)s.appendChild(keep);
+    allItems.forEach(i=>{const o=document.createElement('option');o.value=i.id;o.textContent=`${i.name} (${i.quantity} ${i.unit||''})`;s.appendChild(o);});
+  });
+  loadAlerts();
+  loadStockTable();
+}
+
+async function loadAlerts(){
+  const [sumR,lowR]=await Promise.all([
+    fetch('/api/stock/summary',{headers:authH(),cache:'no-store'}),
+    fetch('/api/stock/low-stock',{headers:authH(),cache:'no-store'}),
+  ]);
+  const sum=await sumR.json();
+  const low=await lowR.json();
+  document.getElementById('s-total').textContent=sum.totalItems;
+  document.getElementById('s-low').textContent=sum.lowStock;
+  document.getElementById('s-out').textContent=sum.outOfStock;
+  document.getElementById('s-val').textContent='रू '+(sum.totalValue||0).toLocaleString();
+  if(!low.length){
+    document.getElementById('alertList').innerHTML='<div style="background:#f0f9f0;border:1px solid #a8d5b5;border-radius:10px;padding:24px;text-align:center;font-size:14px;font-weight:700;color:var(--green)">✅ All items are sufficiently stocked!</div>';
+    return;
+  }
+  document.getElementById('alertList').innerHTML=`
+    <div style="margin-bottom:10px;font-size:13px;font-weight:700;color:var(--red)">⚠️ ${low.length} item(s) need reordering:</div>
+    ${low.map(i=>{
+      const pct=i.reorderPoint?Math.round(i.quantity/i.reorderPoint*100):0;
+      const cls=i.quantity<=0?'critical':'warning';
+      return `<div class="low-item ${cls}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-weight:800;font-size:14px">${i.name}</div>
+            <div style="font-size:12px;color:var(--muted)">${i.category||'Uncategorized'}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:18px;font-weight:900;color:${i.quantity<=0?'var(--red)':'var(--orange)'}">${i.quantity} ${i.unit||''}</div>
+            <div style="font-size:11px;color:var(--muted)">Reorder at: ${i.reorderPoint}</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden">
+          <div style="width:${Math.min(pct,100)}%;height:100%;background:${i.quantity<=0?'var(--red)':'var(--orange)'};border-radius:3px"></div>
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+async function loadHistory(){
+  const itemId=document.getElementById('historyItem').value;
+  const url='/api/stock/history'+(itemId?'?itemId='+itemId:'');
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const data=await r.json();
+  const typeBadge={ADD:'badge-add',REMOVE:'badge-remove',ADJUST:'badge-adjust',REORDER:'badge-add'};
+  if(!data.length){
+    document.getElementById('historyTable').innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted)">No stock history</td></tr>';
+    return;
+  }
+  document.getElementById('historyTable').innerHTML=data.map(h=>`
+    <tr>
+      <td style="font-weight:700">${h.item?.name||'—'}</td>
+      <td><span class="badge ${typeBadge[h.changeType]||'badge-adjust'}">${h.changeType}</span></td>
+      <td style="font-weight:700;color:${h.change>0?'var(--green)':'var(--red)'}">${h.change>0?'+':''}${h.change}</td>
+      <td>${h.quantityBefore}</td>
+      <td>${h.quantityAfter}</td>
+      <td style="font-size:12px;color:var(--muted)">${h.reason||'—'}</td>
+      <td style="font-size:12px">${h.staffName||'—'}</td>
+      <td style="font-size:11px;color:var(--muted)">${new Date(h.createdAt).toLocaleDateString()}</td>
+    </tr>`).join('');
+}
+
+async function loadStockTable(){
+  document.getElementById('stockTable').innerHTML=allItems.map(i=>{
+    const status=i.quantity<=0?'❌ Out':'warning'&&i.reorderPoint&&i.quantity<=i.reorderPoint?'⚠️ Low':'✅ OK';
+    return `<tr>
+      <td style="font-weight:700">${i.name}</td>
+      <td>${i.quantity} ${i.unit||''}</td>
+      <td>${i.reorderPoint||'—'}</td>
+      <td style="color:${i.quantity<=0?'var(--red)':i.reorderPoint&&i.quantity<=i.reorderPoint?'var(--orange)':'var(--green)'};font-weight:700">${status}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function doAdjust(){
+  const body={inventoryItemId:document.getElementById('adjItem').value,changeType:document.getElementById('adjType').value,change:+document.getElementById('adjChange').value,staffName:document.getElementById('adjStaff').value.trim(),reason:document.getElementById('adjReason').value.trim()};
+  if(!body.inventoryItemId||!body.change){showToast('Select item and enter quantity','error');return;}
+  if(body.changeType==='REMOVE'&&body.change>0) body.change=-body.change;
+  const r=await fetch('/api/stock/adjust',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.newQuantity!==undefined){showToast(`Done! New stock: ${d.newQuantity}`,'success');init();loadHistory();}
+  else showToast(d.message||'Error','error');
+}
+
+async function setReorder(){
+  const id=document.getElementById('rpItem').value;
+  const val=document.getElementById('rpValue').value;
+  if(!id||!val){showToast('Select item and enter value','error');return;}
+  const r=await fetch(`/api/stock/reorder/${id}`,{method:'PATCH',headers:authH(),body:JSON.stringify({reorderPoint:+val})});
+  const d=await r.json();
+  if(d.id){showToast('Reorder point set!','success');init();}
+  else showToast(d.message||'Error','error');
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  if(name==='history') loadHistory();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+init();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Shift Handover</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.grid{display:grid;grid-template-columns:380px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.ch-blue{background:var(--blue);color:#fff}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select,textarea{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+textarea{resize:vertical;min-height:70px}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}
+.ho-card{border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.ho-header{padding:12px 16px;background:#f8f9fa;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start}
+.shift-badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:100px}
+.sh-MORNING{background:#fff8e6;color:#856404}.sh-LUNCH{background:#e8efff;color:var(--blue)}.sh-DINNER{background:#e7f5ed;color:var(--green)}.sh-NIGHT{background:#f0e8ff;color:#6a1b9a}
+.ho-body{padding:14px 16px}
+.ho-section{margin-bottom:12px}
+.ho-section-title{font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px;letter-spacing:.5px}
+.ho-section-text{font-size:13px;line-height:1.5;white-space:pre-wrap}
+.metric-row{display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap}
+.metric{font-size:13px}.metric .k{color:var(--muted);font-size:11px;font-weight:700}.metric .v{font-weight:900;font-size:15px}
+.read-badge{font-size:11px;background:#e7f5ed;color:var(--green);border-radius:100px;padding:2px 8px;font-weight:700}
+.unread-badge{font-size:11px;background:#fff3e0;color:var(--orange);border-radius:100px;padding:2px 8px;font-weight:700}
+.incident-tag{background:#fce8e7;border-left:3px solid var(--red);padding:8px 10px;border-radius:0 6px 6px 0;font-size:13px;margin-bottom:6px;white-space:pre-wrap}
+.task-tag{background:#fff8e6;border-left:3px solid var(--orange);padding:8px 10px;border-radius:0 6px 6px 0;font-size:13px;white-space:pre-wrap}
+.stock-tag{background:#e8efff;border-left:3px solid var(--blue);padding:8px 10px;border-radius:0 6px 6px 0;font-size:13px;white-space:pre-wrap}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Shift Handover</span></span>
+  <div><a class="nav-btn" href="/closing">📋 Day Close</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <!-- Latest unread banner -->
+  <div id="latestBanner" style="display:none;background:#fff8e6;border:1px solid #ffe080;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-size:13px;font-weight:700;color:#856404" id="latestText"></div>
+    <button class="btn" style="font-size:12px;padding:6px 12px" onclick="acknowledgeLatest()">✅ Acknowledge</button>
+  </div>
+
+  <div class="grid">
+    <!-- Write Handover -->
+    <div>
+      <div class="card">
+        <div class="card-header ch-blue">📝 Write Handover Note</div>
+        <div class="card-body">
+          <div class="two-col">
+            <div>
+              <label>Shift</label>
+              <select id="hShift">
+                <option value="MORNING">🌅 Morning</option>
+                <option value="LUNCH">☀️ Lunch</option>
+                <option value="DINNER">🌆 Dinner</option>
+                <option value="NIGHT">🌙 Night</option>
+              </select>
+            </div>
+            <div>
+              <label>Written By</label>
+              <input id="hBy" placeholder="Manager name"/>
+            </div>
+          </div>
+          <div class="two-col" style="margin-top:10px">
+            <div>
+              <label>Cash Float (रू)</label>
+              <input id="hCash" type="number" placeholder="0"/>
+            </div>
+            <div>
+              <label>Covers Served</label>
+              <input id="hCovers" type="number" placeholder="0"/>
+            </div>
+          </div>
+          <label>Total Revenue (रू)</label>
+          <input id="hRevenue" type="number" placeholder="0"/>
+          <label>🚨 Incidents / Issues</label>
+          <textarea id="hIncidents" placeholder="Any incidents, complaints, or issues during the shift..."></textarea>
+          <label>📋 Pending Tasks for Next Shift</label>
+          <textarea id="hTasks" placeholder="Things the next manager needs to handle..."></textarea>
+          <label>⚠️ Stock Alerts</label>
+          <textarea id="hStock" placeholder="Low stock items, pending orders, etc."></textarea>
+          <label>📌 General Notes</label>
+          <textarea id="hNotes" placeholder="Anything else the next shift should know..."></textarea>
+          <button class="btn btn-green" style="width:100%;margin-top:14px" onclick="submitHandover()">📤 Submit Handover</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+        <select id="fShift" onchange="loadHandovers()" style="width:130px">
+          <option value="">All Shifts</option>
+          <option value="MORNING">Morning</option>
+          <option value="LUNCH">Lunch</option>
+          <option value="DINNER">Dinner</option>
+          <option value="NIGHT">Night</option>
+        </select>
+        <input type="date" id="fFrom" onchange="loadHandovers()" style="width:140px"/>
+        <input type="date" id="fTo" onchange="loadHandovers()" style="width:140px"/>
+      </div>
+      <div id="handoverList">Loading...</div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let latestId=null;
+
+async function loadLatest(){
+  const r=await fetch('/api/handover/latest',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  if(!d){document.getElementById('latestBanner').style.display='none';return;}
+  latestId=d.id;
+  const unread=!d.readBy;
+  const banner=document.getElementById('latestBanner');
+  if(unread){
+    banner.style.display='flex';
+    document.getElementById('latestText').textContent=`📋 Latest handover from ${d.writtenBy} (${d.shiftType} shift, ${new Date(d.date).toLocaleDateString()}) — not yet acknowledged`;
+  }else{
+    banner.style.display='none';
+  }
+}
+
+async function acknowledgeLatest(){
+  const name=prompt('Your name (to acknowledge reading):');
+  if(!name)return;
+  const r=await fetch(`/api/handover/${latestId}/ack`,{method:'PATCH',headers:authH(),body:JSON.stringify({name})});
+  const d=await r.json();
+  if(d.id){showToast('Acknowledged!','success');loadLatest();loadHandovers();}
+}
+
+async function loadHandovers(){
+  const shift=document.getElementById('fShift').value;
+  const from=document.getElementById('fFrom').value;
+  const to=document.getElementById('fTo').value;
+  let url='/api/handover?limit=30';
+  if(shift)url+=`&shiftType=${shift}`;if(from)url+=`&from=${from}`;if(to)url+=`&to=${to}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const records=await r.json();
+  if(!records.length){document.getElementById('handoverList').innerHTML='<div style="text-align:center;padding:60px;background:var(--white);border-radius:12px;color:var(--muted)">No handover notes yet</div>';return;}
+  document.getElementById('handoverList').innerHTML=records.map(h=>`
+    <div class="ho-card">
+      <div class="ho-header">
+        <div>
+          <span class="shift-badge sh-${h.shiftType}">${h.shiftType}</span>
+          <span style="font-size:13px;font-weight:800;margin-left:8px">${new Date(h.date).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</span>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">By: ${h.writtenBy}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          ${h.readBy?`<span class="read-badge">✅ Read by ${h.readBy}</span>`:'<span class="unread-badge">⚪ Unread</span>'}
+          <button class="btn btn-red" style="font-size:10px;padding:3px 8px" onclick="deleteHandover(${h.id})">Del</button>
+        </div>
+      </div>
+      <div class="ho-body">
+        <div class="metric-row">
+          <div class="metric"><div class="k">Cash Float</div><div class="v">रू ${h.cashFloat.toLocaleString()}</div></div>
+          <div class="metric"><div class="k">Covers</div><div class="v">${h.coversServed}</div></div>
+          <div class="metric"><div class="k">Revenue</div><div class="v">रू ${h.totalRevenue.toLocaleString()}</div></div>
+        </div>
+        ${h.incidents?`<div class="ho-section"><div class="ho-section-title">🚨 Incidents</div><div class="incident-tag">${h.incidents}</div></div>`:''}
+        ${h.pendingTasks?`<div class="ho-section"><div class="ho-section-title">📋 Pending Tasks</div><div class="task-tag">${h.pendingTasks}</div></div>`:''}
+        ${h.stockAlerts?`<div class="ho-section"><div class="ho-section-title">⚠️ Stock Alerts</div><div class="stock-tag">${h.stockAlerts}</div></div>`:''}
+        ${h.generalNotes?`<div class="ho-section"><div class="ho-section-title">📌 Notes</div><div class="ho-section-text">${h.generalNotes}</div></div>`:''}
+        ${!h.readBy?`<button class="btn btn-green" style="width:100%;margin-top:8px;font-size:12px" onclick="ackNote(${h.id})">✅ Mark as Read</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+async function submitHandover(){
+  const writtenBy=document.getElementById('hBy').value.trim();
+  if(!writtenBy){showToast('Written by is required','error');return;}
+  const body={shiftType:document.getElementById('hShift').value,writtenBy,cashFloat:parseFloat(document.getElementById('hCash').value)||0,coversServed:parseInt(document.getElementById('hCovers').value)||0,totalRevenue:parseFloat(document.getElementById('hRevenue').value)||0,incidents:document.getElementById('hIncidents').value,pendingTasks:document.getElementById('hTasks').value,stockAlerts:document.getElementById('hStock').value,generalNotes:document.getElementById('hNotes').value};
+  const r=await fetch('/api/handover',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Handover submitted!','success');['hBy','hCash','hCovers','hRevenue','hIncidents','hTasks','hStock','hNotes'].forEach(id=>document.getElementById(id).value='');loadHandovers();loadLatest();}
+  else showToast(d.message||'Error','error');
+}
+
+async function ackNote(id){
+  const name=prompt('Your name:');if(!name)return;
+  await fetch(`/api/handover/${id}/ack`,{method:'PATCH',headers:authH(),body:JSON.stringify({name})});
+  loadHandovers();loadLatest();
+}
+
+async function deleteHandover(id){
+  if(!confirm('Delete this handover note?'))return;
+  await fetch(`/api/handover/${id}`,{method:'DELETE',headers:authH()});
+  loadHandovers();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadLatest();loadHandovers();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

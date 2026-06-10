@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Daily Closing Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1000px;margin:0 auto}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.kpi{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center}
+.kpi .val{font-size:30px;font-weight:900}
+.kpi .lbl{font-size:12px;color:var(--muted);margin-top:4px}
+.kpi.revenue .val{color:var(--green)}
+.kpi.expense .val{color:var(--red)}
+.kpi.profit .val{color:var(--blue)}
+input,select,textarea{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.detail-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:14px}
+.detail-row:last-child{border-bottom:none}
+.detail-row.total{font-size:18px;font-weight:900;border-top:2px solid var(--navy);padding-top:10px;margin-top:4px}
+.hist-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:background .15s}
+.hist-item:hover{background:#f8f9fb}
+@media print{.topbar,#controlBar,#historySection,#saveBtn{display:none!important}.content{padding:0}.kpis{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Daily Closing Report</span></span>
+  <div>
+    <button class="nav-btn" onclick="window.print()">🖨️ Print</button>
+    <a class="nav-btn" href="/finance">📈 Finance</a>
+    <a class="nav-btn" href="/dashboard">📊 Dashboard</a>
+  </div>
+</div>
+<div class="content">
+  <!-- Control bar -->
+  <div id="controlBar" style="display:flex;gap:10px;align-items:center;background:var(--white);padding:12px 16px;border-radius:10px;border:1px solid var(--border);margin-bottom:20px">
+    <label style="margin:0;font-size:13px;font-weight:700;color:var(--navy)">Date:</label>
+    <input type="date" id="repDate" style="width:180px" onchange="loadReport()"/>
+    <button class="btn btn-primary" onclick="loadReport()">Generate Report</button>
+    <span style="font-size:12px;color:var(--muted);margin-left:8px">Pulls live data for the selected day</span>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi revenue"><div class="val" id="kRevenue">—</div><div class="lbl">Total Revenue</div></div>
+    <div class="kpi expense"><div class="val" id="kExpense">—</div><div class="lbl">Expenses</div></div>
+    <div class="kpi profit"><div class="val" id="kProfit">—</div><div class="lbl">Net Profit</div></div>
+  </div>
+
+  <!-- Report body -->
+  <div id="reportBody" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="card">
+        <div class="card-header">💳 Payment Breakdown</div>
+        <div class="card-body" id="payBreakdown"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">🏆 Top Selling Items</div>
+        <div class="card-body" id="topItems"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">📊 Full P&L Summary</div>
+      <div class="card-body" style="max-width:500px" id="plSummary"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">📋 Expense Categories</div>
+      <div class="card-body" id="expSummary"></div>
+    </div>
+
+    <!-- Save / Notes -->
+    <div class="card" id="saveBtn">
+      <div class="card-header">💾 Save & Close Day</div>
+      <div class="card-body">
+        <label>Closing Notes</label>
+        <textarea id="closingNotes" rows="2" placeholder="Any remarks, incidents, or notes for this day..."></textarea>
+        <label>Closed By</label>
+        <input id="closedBy" placeholder="Your name"/>
+        <button class="btn btn-green" style="width:100%;margin-top:14px;padding:12px" onclick="saveReport()">💾 Save Closing Report</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="noData" style="text-align:center;padding:60px;color:var(--muted);display:none">
+    <div style="font-size:36px;margin-bottom:12px">📭</div>
+    <div style="font-size:16px;font-weight:700">No data for this date</div>
+    <div style="font-size:13px;margin-top:8px">No orders or payments found</div>
+  </div>
+
+  <!-- History -->
+  <div id="historySection" class="card">
+    <div class="card-header">📅 Saved Closing Reports</div>
+    <div class="card-body" id="historyList">
+      <div style="text-align:center;padding:20px;color:var(--muted)">Loading...</div>
+    </div>
+  </div>
+</div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+const fmt=n=>'रू '+(n||0).toLocaleString();
+let currentData=null;
+document.getElementById('repDate').value=new Date().toISOString().slice(0,10);
+
+async function loadReport(){
+  const date=document.getElementById('repDate').value;
+  const r=await fetch(`/api/closing/generate?date=${date}`,{headers:authH(),cache:'no-store'});
+  currentData=await r.json();
+  if(!currentData.totalOrders&&!currentData.totalRevenue){
+    document.getElementById('reportBody').style.display='none';
+    document.getElementById('noData').style.display='block';
+    document.getElementById('kRevenue').textContent='—';
+    document.getElementById('kExpense').textContent='—';
+    document.getElementById('kProfit').textContent='—';
+    return;
+  }
+  document.getElementById('noData').style.display='none';
+  document.getElementById('reportBody').style.display='block';
+  document.getElementById('kRevenue').textContent=fmt(currentData.totalRevenue);
+  document.getElementById('kExpense').textContent=fmt(currentData.totalExpenses);
+  document.getElementById('kProfit').textContent=fmt(currentData.netProfit);
+  document.getElementById('kProfit').style.color=currentData.netProfit>=0?'var(--green)':'var(--red)';
+
+  // Payment breakdown
+  const byM=currentData.byPaymentMethod||{};
+  document.getElementById('payBreakdown').innerHTML=`
+    <div class="detail-row"><span>💵 Cash</span><strong>${fmt(currentData.cashSales)}</strong></div>
+    <div class="detail-row"><span>💳 Card/Digital</span><strong>${fmt(currentData.cardSales)}</strong></div>
+    ${Object.entries(byM).filter(([m])=>m!=='CASH').map(([m,a])=>`<div class="detail-row" style="padding-left:16px;color:var(--muted);font-size:12px"><span>${m}</span><span>${fmt(a)}</span></div>`).join('')}
+    <div class="detail-row total"><span>Total</span><span style="color:var(--green)">${fmt(currentData.totalRevenue)}</span></div>
+    <div style="margin-top:12px;font-size:12px;color:var(--muted)">${currentData.transactionCount} transactions · avg ${fmt(currentData.avgOrderValue)}/order</div>`;
+
+  // Top items
+  const items=currentData.topItems||[];
+  document.getElementById('topItems').innerHTML=items.length
+    ?items.map((i,idx)=>`<div class="detail-row"><span>${['🥇','🥈','🥉','4️⃣','5️⃣'][idx]||''} ${i.name}</span><strong>${i.qty} sold</strong></div>`).join('')
+    :'<div style="color:var(--muted);font-size:13px">No items data</div>';
+
+  // P&L
+  document.getElementById('plSummary').innerHTML=`
+    <div class="detail-row" style="color:var(--green)"><span>Revenue</span><strong>${fmt(currentData.totalRevenue)}</strong></div>
+    <div class="detail-row" style="color:var(--red)"><span>Expenses</span><strong>${fmt(currentData.totalExpenses)}</strong></div>
+    <div class="detail-row total ${currentData.netProfit>=0?'':'style="color:var(--red)"'}"><span>Net Profit</span><span style="color:${currentData.netProfit>=0?'var(--green)':'var(--red)'}">${fmt(currentData.netProfit)}</span></div>
+    <div style="margin-top:10px;font-size:12px;color:var(--muted)">Margin: ${currentData.totalRevenue?Math.round(currentData.netProfit/currentData.totalRevenue*100):0}%</div>`;
+
+  // Expense by category
+  const exp=currentData.expByCategory||{};
+  document.getElementById('expSummary').innerHTML=Object.keys(exp).length
+    ?Object.entries(exp).map(([c,a])=>`<div class="detail-row"><span>${c}</span><strong style="color:var(--red)">${fmt(a)}</strong></div>`).join('')
+    :'<div style="color:var(--muted);font-size:13px">No expenses recorded</div>';
+}
+
+async function saveReport(){
+  if(!currentData){alert('Generate a report first');return;}
+  const body={...currentData,notes:document.getElementById('closingNotes').value,closedBy:document.getElementById('closedBy').value};
+  const r=await fetch('/api/closing',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){alert('Closing report saved!');loadHistory();}
+  else alert(d.message||'Error saving');
+}
+
+async function loadHistory(){
+  const r=await fetch('/api/closing/history',{headers:authH(),cache:'no-store'});
+  const reports=await r.json();
+  if(!reports.length){document.getElementById('historyList').innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">No saved reports yet</div>';return;}
+  document.getElementById('historyList').innerHTML=reports.map(rep=>`
+    <div class="hist-item" onclick="document.getElementById('repDate').value='${rep.date}';loadReport()">
+      <div>
+        <div style="font-weight:800">${rep.date}</div>
+        ${rep.closedBy?`<div style="font-size:12px;color:var(--muted)">Closed by ${rep.closedBy}</div>`:''}
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:700;color:var(--green)">${fmt(rep.totalRevenue)}</div>
+        <div style="font-size:12px;color:${rep.netProfit>=0?'var(--green)':'var(--red)'}">${rep.netProfit>=0?'+':''}${fmt(rep.netProfit)} net</div>
+      </div>
+    </div>`).join('');
+}
+
+loadReport();
+loadHistory();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

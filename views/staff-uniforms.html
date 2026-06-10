@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Uniform & Locker Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:20px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}.btn-orange{background:var(--orange)}
+.row{border-bottom:1px solid var(--border);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.row:last-child{border-bottom:none}
+.badge{display:inline-block;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:800}
+.b-issued{background:#e8efff;color:var(--blue)}.b-returned{background:#e7f5ed;color:var(--green)}
+.b-GOOD{background:#e7f5ed;color:var(--green)}.b-FAIR{background:#fff3e0;color:var(--orange)}.b-DAMAGED{background:#fdecea;color:var(--red)}.b-LOST{background:#f3e5f5;color:#6c3483}
+.checkbox-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.checkbox-row input{width:auto}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Uniform & Locker Tracker</span></span>
+  <div><a class="nav-btn" href="/staff">👤 Staff</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-total" style="color:var(--navy)">—</div><div class="lbl">Total Records</div></div>
+    <div class="stat"><div class="num" id="s-issued" style="color:var(--blue)">—</div><div class="lbl">Currently Issued</div></div>
+    <div class="stat"><div class="num" id="s-returned" style="color:var(--green)">—</div><div class="lbl">Returned</div></div>
+    <div class="stat"><div class="num" id="s-locker" style="color:var(--orange)">—</div><div class="lbl">Lockers Assigned</div></div>
+    <div class="stat"><div class="num" id="s-key" style="color:var(--red)">—</div><div class="lbl">Keys Issued</div></div>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <div class="card-header">👔 Issue Uniform / Locker</div>
+        <div class="card-body">
+          <label>Staff Member</label>
+          <select id="fStaff"><option value="">Select staff...</option></select>
+          <label>Uniform Type</label>
+          <select id="fType">
+            <option value="SHIRT">👕 Shirt</option>
+            <option value="PANTS">👖 Pants</option>
+            <option value="APRON">👘 Apron</option>
+            <option value="CAP">🧢 Cap</option>
+            <option value="SHOES">👟 Shoes</option>
+            <option value="FULL_SET">🎽 Full Set</option>
+          </select>
+          <label>Size</label><input id="fSize" placeholder="e.g. M, L, XL, 42"/>
+          <label>Quantity</label><input type="number" id="fQty" value="1" min="1"/>
+          <label>Locker Number</label><input id="fLocker" placeholder="e.g. L-12 (optional)"/>
+          <div class="checkbox-row">
+            <input type="checkbox" id="fKey"/>
+            <label style="margin:0;font-size:13px;color:#333">Key issued</label>
+            <input id="fKeyNum" placeholder="Key #" style="width:80px;font-size:12px;padding:4px 8px"/>
+          </div>
+          <label style="margin-top:10px">Issued By</label><input id="fIssuedBy" placeholder="Manager name"/>
+          <label>Notes</label><input id="fNotes" placeholder="Optional..."/>
+          <button class="btn btn-green" style="width:100%;margin-top:14px" onclick="issueUniform()">👔 Issue</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <select id="filterStaff" onchange="loadUniforms()" style="width:160px"><option value="">All Staff</option></select>
+        <select id="filterStatus" onchange="loadUniforms()" style="width:130px">
+          <option value="">All</option>
+          <option value="issued">Issued</option>
+          <option value="returned">Returned</option>
+        </select>
+      </div>
+      <div class="card">
+        <div id="uniformList"><div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let staffList=[];
+
+async function init(){
+  const r=await fetch('/api/staff',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  staffList=d.data||d;
+  [document.getElementById('fStaff'),document.getElementById('filterStaff')].forEach((sel,i)=>{
+    sel.innerHTML=i===0?'<option value="">Select staff...</option>':'<option value="">All Staff</option>';
+    staffList.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.dataset.name=s.name;o.textContent=s.name;sel.appendChild(o);});
+  });
+  loadStats();loadUniforms();
+}
+
+async function loadStats(){
+  const r=await fetch('/api/staff-uniforms/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-total').textContent=d.total;
+  document.getElementById('s-issued').textContent=d.issued;
+  document.getElementById('s-returned').textContent=d.returned;
+  document.getElementById('s-locker').textContent=d.withLocker;
+  document.getElementById('s-key').textContent=d.keyCount;
+}
+
+async function loadUniforms(){
+  const staffId=document.getElementById('filterStaff').value;
+  const status=document.getElementById('filterStatus').value;
+  let url='/api/staff-uniforms?a=1';
+  if(staffId)url+=`&staffId=${staffId}`;
+  if(status)url+=`&status=${status}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const items=await r.json();
+  if(!items.length){document.getElementById('uniformList').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No records found</div>';return;}
+  document.getElementById('uniformList').innerHTML=items.map(u=>`<div class="row">
+    <div>
+      <div style="font-weight:800;font-size:13px">👤 ${u.staffName} <span style="font-weight:400;color:var(--muted)">× ${u.quantity}</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">${u.uniformType.replace(/_/g,' ')} · Size: ${u.size||'—'}</div>
+      <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">
+        <span class="badge ${u.returnedAt?'b-returned':'b-issued'}">${u.returnedAt?'RETURNED':'ISSUED'}</span>
+        ${u.lockerNumber?`<span class="badge" style="background:#f3e5f5;color:#6c3483">🔒 ${u.lockerNumber}</span>`:''}
+        ${u.keyIssued?`<span class="badge" style="background:#fff3e0;color:var(--orange)">🔑 ${u.keyNumber||'Key'}</span>`:''}
+        ${u.returnedAt?`<span class="badge b-${u.condition}">${u.condition}</span>`:''}
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">Issued: ${new Date(u.issuedAt).toLocaleDateString()} ${u.issuedBy?'by '+u.issuedBy:''}</div>
+    </div>
+    <div style="display:flex;gap:6px;flex-direction:column;align-items:flex-end">
+      ${!u.returnedAt?`<button class="btn btn-orange" style="font-size:11px;padding:5px 10px" onclick="returnUniform(${u.id})">↩️ Return</button>`:''}
+      <button class="btn btn-red" style="font-size:11px;padding:5px 10px" onclick="delUniform(${u.id})">Del</button>
+    </div>
+  </div>`).join('');
+}
+
+async function issueUniform(){
+  const staffSel=document.getElementById('fStaff');
+  if(!staffSel.value){showToast('Select staff','error');return;}
+  const body={staffId:staffSel.value,staffName:staffSel.options[staffSel.selectedIndex].dataset.name||'',uniformType:document.getElementById('fType').value,size:document.getElementById('fSize').value,quantity:document.getElementById('fQty').value,lockerNumber:document.getElementById('fLocker').value,keyIssued:document.getElementById('fKey').checked,keyNumber:document.getElementById('fKeyNum').value,issuedBy:document.getElementById('fIssuedBy').value,notes:document.getElementById('fNotes').value};
+  const r=await fetch('/api/staff-uniforms',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Issued!','success');document.getElementById('fSize').value='';document.getElementById('fLocker').value='';document.getElementById('fKey').checked=false;document.getElementById('fKeyNum').value='';document.getElementById('fNotes').value='';loadStats();loadUniforms();}
+  else showToast(d.message||'Error','error');
+}
+
+async function returnUniform(id){
+  const condition=prompt('Condition on return (GOOD/FAIR/DAMAGED/LOST):','GOOD');
+  if(!condition)return;
+  const r=await fetch(`/api/staff-uniforms/${id}/return`,{method:'PATCH',headers:authH(),body:JSON.stringify({condition:condition.toUpperCase()})});
+  if((await r.json()).id){showToast('Marked as returned','success');loadStats();loadUniforms();}
+}
+
+async function delUniform(id){
+  if(!confirm('Delete?'))return;
+  await fetch(`/api/staff-uniforms/${id}`,{method:'DELETE',headers:authH()});
+  loadStats();loadUniforms();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+init();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

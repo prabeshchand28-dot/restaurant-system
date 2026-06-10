@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Waitlist Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--purple:#6c3483;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:24px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}.btn-orange{background:var(--orange)}
+.wait-card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;transition:box-shadow .2s}
+.wait-card:hover{box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.wait-card.status-WAITING{border-left:4px solid var(--orange)}
+.wait-card.status-NOTIFIED{border-left:4px solid var(--blue)}
+.wait-card.status-SEATED{border-left:4px solid var(--green);opacity:.7}
+.wait-card.status-CANCELLED,.wait-card.status-NO_SHOW{border-left:4px solid var(--red);opacity:.6}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800}
+.s-WAITING{background:#fff3e0;color:var(--orange)}.s-NOTIFIED{background:#e8efff;color:var(--blue)}.s-SEATED{background:#e7f5ed;color:var(--green)}.s-CANCELLED,.s-NO_SHOW{background:#fce8e7;color:var(--red)}
+.wait-timer{font-size:20px;font-weight:900;color:var(--orange)}
+.history-toggle{text-align:center;margin:8px 0}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Waitlist Manager</span></span>
+  <div><a class="nav-btn" href="/tables">🪑 Tables</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-waiting" style="color:var(--orange)">—</div><div class="lbl">⏳ Waiting</div></div>
+    <div class="stat"><div class="num" id="s-avgwait" style="color:var(--blue)">—</div><div class="lbl">Avg Wait (min)</div></div>
+    <div class="stat"><div class="num" id="s-seated" style="color:var(--green)">—</div><div class="lbl">✅ Seated Today</div></div>
+    <div class="stat"><div class="num" id="s-noshow" style="color:var(--red)">—</div><div class="lbl">🚫 No-Show</div></div>
+    <div class="stat"><div class="num" id="s-cancelled" style="color:var(--muted)">—</div><div class="lbl">❌ Cancelled</div></div>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <div class="card-header">➕ Add to Waitlist</div>
+        <div class="card-body">
+          <label>Customer Name</label><input id="wName" placeholder="Full name"/>
+          <label>Phone</label><input id="wPhone" placeholder="98XXXXXXXX" type="tel"/>
+          <label>Party Size</label><input id="wSize" type="number" value="2" min="1" max="20"/>
+          <label>Preference</label>
+          <select id="wPref">
+            <option value="">No preference</option>
+            <option value="window">🪟 Window seat</option>
+            <option value="quiet">🔇 Quiet area</option>
+            <option value="bar">🍺 Bar seating</option>
+            <option value="outdoor">🌿 Outdoor</option>
+            <option value="booth">🛋️ Booth</option>
+          </select>
+          <label>Estimated Wait (minutes)</label>
+          <input id="wWait" type="number" value="15" min="5" max="120"/>
+          <label>Notes</label><input id="wNotes" placeholder="Any special needs..."/>
+          <button class="btn btn-green" style="width:100%;margin-top:14px" onclick="addToWaitlist()">📋 Add to Queue</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:13px;font-weight:700;color:var(--navy)">Active Queue</span>
+        <button class="btn" style="font-size:11px;padding:5px 10px;background:#f0f0f0;color:#555;margin-left:auto" onclick="loadHistory()">📜 Show History</button>
+        <button class="btn btn-green" style="font-size:11px;padding:5px 10px" onclick="loadQueue()">🔄 Refresh</button>
+      </div>
+      <div id="waitList">Loading...</div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+async function loadStats(){
+  const r=await fetch('/api/waitlist/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-waiting').textContent=d.waiting;
+  document.getElementById('s-avgwait').textContent=d.avgWait;
+  document.getElementById('s-seated').textContent=d.seated;
+  document.getElementById('s-noshow').textContent=d.noShow;
+  document.getElementById('s-cancelled').textContent=d.cancelled;
+}
+
+async function loadQueue(){
+  const r=await fetch('/api/waitlist',{headers:authH(),cache:'no-store'});
+  const entries=await r.json();
+  renderEntries(entries,false);
+}
+
+async function loadHistory(){
+  const r=await fetch('/api/waitlist/all',{headers:authH(),cache:'no-store'});
+  const entries=await r.json();
+  renderEntries(entries,true);
+}
+
+function waitTime(addedAt,est){
+  const mins=Math.round((Date.now()-new Date(addedAt))/60000);
+  return {actual:mins,over:mins>est};
+}
+
+function renderEntries(entries,isHistory){
+  if(!entries.length){document.getElementById('waitList').innerHTML=`<div style="text-align:center;padding:60px;background:var(--white);border-radius:12px;color:var(--muted)">${isHistory?'No history found':'Queue is empty — no one waiting 🎉'}</div>`;return;}
+  document.getElementById('waitList').innerHTML=entries.map(e=>{
+    const {actual,over}=waitTime(e.addedAt,e.estimatedWait);
+    const isActive=e.status==='WAITING'||e.status==='NOTIFIED';
+    return `<div class="wait-card status-${e.status}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:900;font-size:15px">👥 ${e.customerName}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Party of ${e.partySize}${e.phone?' · 📞 '+e.phone:''}${e.preference?' · '+e.preference:''}</div>
+          <div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap">
+            <span class="badge s-${e.status}">${e.status}</span>
+            ${e.notes?`<span style="font-size:11px;color:var(--muted)">${e.notes}</span>`:''}
+          </div>
+        </div>
+        <div style="text-align:right">
+          ${isActive?`<div class="wait-timer" style="color:${over?'var(--red)':'var(--orange)'}">${actual}m</div><div style="font-size:10px;color:var(--muted)">Est: ${e.estimatedWait}m</div>`:''}
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">${new Date(e.addedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>
+      ${isActive?`<div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+        ${e.status==='WAITING'?`<button class="btn" style="font-size:11px;padding:5px 10px;background:#e8efff;color:var(--blue)" onclick="setStatus(${e.id},'NOTIFIED')">📲 Notify</button>`:''}
+        <button class="btn btn-green" style="font-size:11px;padding:5px 10px" onclick="setStatus(${e.id},'SEATED')">✅ Seat</button>
+        <button class="btn" style="font-size:11px;padding:5px 10px;background:#fff3e0;color:var(--orange)" onclick="setStatus(${e.id},'NO_SHOW')">🚫 No-Show</button>
+        <button class="btn btn-red" style="font-size:11px;padding:5px 10px" onclick="setStatus(${e.id},'CANCELLED')">❌ Cancel</button>
+        <button class="btn" style="font-size:11px;padding:5px 10px;background:#f0f0f0;color:#555" onclick="updateWait(${e.id})">⏱️ Adjust Wait</button>
+      </div>`:`<div style="margin-top:8px"><button class="btn btn-red" style="font-size:11px;padding:5px 10px" onclick="delEntry(${e.id})">Del</button></div>`}
+    </div>`;
+  }).join('');
+}
+
+async function addToWaitlist(){
+  const name=document.getElementById('wName').value.trim();
+  if(!name){showToast('Name required','error');return;}
+  const body={customerName:name,phone:document.getElementById('wPhone').value,partySize:parseInt(document.getElementById('wSize').value)||2,preference:document.getElementById('wPref').value,estimatedWait:parseInt(document.getElementById('wWait').value)||15,notes:document.getElementById('wNotes').value};
+  const r=await fetch('/api/waitlist',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Added to queue!','success');document.getElementById('wName').value='';document.getElementById('wPhone').value='';document.getElementById('wNotes').value='';loadStats();loadQueue();}
+  else showToast(d.message||'Error','error');
+}
+
+async function setStatus(id,status){
+  const r=await fetch(`/api/waitlist/${id}/status`,{method:'PATCH',headers:authH(),body:JSON.stringify({status})});
+  if((await r.json()).id){showToast('Updated!','success');loadStats();loadQueue();}
+}
+
+async function updateWait(id){
+  const w=prompt('New estimated wait (minutes):');
+  if(!w||isNaN(w))return;
+  await fetch(`/api/waitlist/${id}/wait`,{method:'PATCH',headers:authH(),body:JSON.stringify({estimatedWait:parseInt(w)})});
+  loadQueue();
+}
+
+async function delEntry(id){
+  if(!confirm('Delete?'))return;
+  await fetch(`/api/waitlist/${id}`,{method:'DELETE',headers:authH()});
+  loadStats();loadQueue();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadStats();loadQueue();
+setInterval(loadQueue,30000); // auto-refresh every 30s
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

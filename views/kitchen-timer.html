@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Kitchen Prep Timer</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:#1a1a2e;color:#fff;min-height:100vh}
+.topbar{background:rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.1);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800;color:#fff}.brand span{font-size:12px;font-weight:400;opacity:.6;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.add-timer{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;margin-bottom:24px;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.add-timer input,.add-timer select{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;padding:10px 12px;border-radius:8px;font-size:13px;font-family:var(--font);outline:none}
+.add-timer input::placeholder{color:rgba(255,255,255,.4)}
+.add-timer input[type=number]{width:80px;text-align:center}
+.add-timer label{display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.btn{padding:10px 18px;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--font)}
+.btn-start{background:var(--green);color:#fff}.btn-add{background:var(--blue);color:#fff}
+.timers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.timer-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;transition:all .3s}
+.timer-card.warning{background:rgba(230,81,0,.15);border-color:var(--orange);animation:pulse-warn 1s ease-in-out infinite alternate}
+.timer-card.expired{background:rgba(192,57,43,.2);border-color:var(--red);animation:pulse-alert .5s ease-in-out infinite alternate}
+@keyframes pulse-warn{from{box-shadow:0 0 0 rgba(230,81,0,.4)}to{box-shadow:0 0 20px rgba(230,81,0,.4)}}
+@keyframes pulse-alert{from{box-shadow:0 0 0 rgba(192,57,43,.5)}to{box-shadow:0 0 30px rgba(192,57,43,.5)}}
+.timer-name{font-size:16px;font-weight:900;text-align:center}
+.timer-item{font-size:12px;color:rgba(255,255,255,.5);margin-top:-4px}
+.timer-display{font-size:52px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-2px;line-height:1.1;font-family:monospace}
+.timer-display.warning{color:var(--orange)}.timer-display.expired{color:var(--red)}
+.timer-display.running{color:#4caf50}
+.timer-preset{font-size:11px;color:rgba(255,255,255,.4);margin-top:-2px}
+.progress-ring{position:relative;margin:4px 0}
+.ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:6}
+.ring-prog{fill:none;stroke:#4caf50;stroke-width:6;stroke-linecap:round;transform-origin:center;transform:rotate(-90deg);transition:stroke-dashoffset .5s,stroke .3s}
+.timer-controls{display:flex;gap:8px;margin-top:4px}
+.tc-btn{padding:6px 14px;border:none;border-radius:6px;font-size:12px;font-weight:800;cursor:pointer;font-family:var(--font)}
+.tc-start{background:var(--green);color:#fff}.tc-pause{background:var(--orange);color:#fff}.tc-reset{background:rgba(255,255,255,.12);color:#fff}.tc-del{background:var(--red);color:#fff}
+.quick-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.qb{padding:8px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer}
+.qb:hover{background:rgba(255,255,255,.12)}
+.clock-display{text-align:right;font-size:13px;color:rgba(255,255,255,.5);margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Kitchen Prep Timer</span></span>
+  <div><a class="nav-btn" href="/kitchen">🍳 Kitchen</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div id="liveClock" class="clock-display"></div>
+
+  <div class="add-timer">
+    <div><label>Item Name</label><input id="tName" placeholder="e.g. Chicken curry" style="width:180px"/></div>
+    <div><label>Minutes</label><input type="number" id="tMin" value="15" min="1" max="999"/></div>
+    <div><label>Seconds</label><input type="number" id="tSec" value="0" min="0" max="59"/></div>
+    <div><label>Station</label>
+      <select id="tStation">
+        <option value="🔥 Grill">🔥 Grill</option>
+        <option value="🍳 Sauté">🍳 Sauté</option>
+        <option value="🍲 Soup">🍲 Soup</option>
+        <option value="🥗 Cold">🥗 Cold Station</option>
+        <option value="🥘 Braise">🥘 Braise</option>
+        <option value="🫕 Oven">🫕 Oven</option>
+        <option value="🫚 Fryer">🫚 Fryer</option>
+      </select>
+    </div>
+    <button class="btn btn-add" onclick="addTimer()">➕ Add Timer</button>
+  </div>
+
+  <div class="quick-btns">
+    <span style="font-size:11px;color:rgba(255,255,255,.4);align-self:center;font-weight:700">Quick:</span>
+    <button class="qb" onclick="quickAdd('Pasta',8,0,'🍳 Sauté')">🍝 Pasta 8m</button>
+    <button class="qb" onclick="quickAdd('Chicken',20,0,'🔥 Grill')">🍗 Chicken 20m</button>
+    <button class="qb" onclick="quickAdd('Fries',4,0,'🫚 Fryer')">🍟 Fries 4m</button>
+    <button class="qb" onclick="quickAdd('Soup',15,0,'🍲 Soup')">🥣 Soup 15m</button>
+    <button class="qb" onclick="quickAdd('Steak',12,0,'🔥 Grill')">🥩 Steak 12m</button>
+    <button class="qb" onclick="quickAdd('Fish',6,0,'🔥 Grill')">🐟 Fish 6m</button>
+    <button class="qb" onclick="quickAdd('Bread',25,0,'🫕 Oven')">🍞 Bread 25m</button>
+  </div>
+
+  <div class="timers-grid" id="timersGrid">
+    <div style="grid-column:1/-1;text-align:center;padding:60px;color:rgba(255,255,255,.3);font-size:16px">
+      Add timers above to start tracking prep times
+    </div>
+  </div>
+</div>
+<script>
+let timers=[];
+let timerIdSeq=0;
+const RING_R=50,RING_C=60;
+const CIRCUMFERENCE=2*Math.PI*RING_R;
+
+function quickAdd(name,min,sec,station){document.getElementById('tName').value=name;document.getElementById('tMin').value=min;document.getElementById('tSec').value=sec;document.getElementById('tStation').value=station;addTimer();}
+
+function addTimer(){
+  const name=document.getElementById('tName').value.trim()||'Item';
+  const min=parseInt(document.getElementById('tMin').value)||0;
+  const sec=parseInt(document.getElementById('tSec').value)||0;
+  const totalSec=min*60+sec;
+  if(totalSec<=0){alert('Set a time!');return;}
+  const station=document.getElementById('tStation').value;
+  const id=++timerIdSeq;
+  timers.push({id,name,station,totalSec,remaining:totalSec,running:false,interval:null,startedAt:null});
+  document.getElementById('tName').value='';
+  renderTimers();
+}
+
+function renderTimers(){
+  if(!timers.length){document.getElementById('timersGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:60px;color:rgba(255,255,255,.3);font-size:16px">Add timers above to start tracking prep times</div>';return;}
+  document.getElementById('timersGrid').innerHTML=timers.map(t=>{
+    const pct=t.totalSec>0?t.remaining/t.totalSec:0;
+    const offset=CIRCUMFERENCE*(1-pct);
+    const m=Math.floor(Math.abs(t.remaining)/60);
+    const s=Math.abs(t.remaining)%60;
+    const expired=t.remaining<0;
+    const warning=t.remaining>=0&&t.remaining<=60&&t.remaining>0;
+    const cls=expired?'expired':warning?'warning':'';
+    const strokeColor=expired?'#c0392b':warning?'#e65100':'#4caf50';
+    const dispCls=expired?'expired':warning?'warning':t.running?'running':'';
+    return `<div class="timer-card ${cls}" id="tc_${t.id}">
+      <svg width="${RING_C*2}" height="${RING_C*2}" style="overflow:visible">
+        <circle class="ring-bg" cx="${RING_C}" cy="${RING_C}" r="${RING_R}"/>
+        <circle class="ring-prog" cx="${RING_C}" cy="${RING_C}" r="${RING_R}" stroke="${strokeColor}" stroke-dasharray="${CIRCUMFERENCE}" stroke-dashoffset="${offset}"/>
+        <text x="${RING_C}" y="${RING_C-6}" text-anchor="middle" fill="rgba(255,255,255,.9)" font-size="9" font-family="Plus Jakarta Sans" font-weight="800">${t.station}</text>
+        <text x="${RING_C}" y="${RING_C+10}" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="9" font-family="Plus Jakarta Sans">${Math.floor(t.totalSec/60)}m preset</text>
+      </svg>
+      <div class="timer-name">${expired?'⏰ ':t.running?'▶ ':''}<span>${t.name}</span></div>
+      <div class="timer-display ${dispCls}">${expired?'-':''}${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</div>
+      <div class="timer-controls">
+        ${!t.running&&t.remaining>0?`<button class="tc-btn tc-start" onclick="startTimer(${t.id})">▶ Start</button>`:''}
+        ${t.running?`<button class="tc-btn tc-pause" onclick="pauseTimer(${t.id})">⏸ Pause</button>`:''}
+        <button class="tc-btn tc-reset" onclick="resetTimer(${t.id})">↺</button>
+        <button class="tc-btn tc-del" onclick="delTimer(${t.id})">×</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function startTimer(id){
+  const t=timers.find(t=>t.id===id);if(!t||t.running)return;
+  t.running=true;t.startedAt=Date.now();
+  t.interval=setInterval(()=>{
+    t.remaining--;
+    if(t.remaining<=-300){clearInterval(t.interval);t.running=false;}
+    renderTimers();
+    if(t.remaining===0){try{new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAA').play();}catch{}}
+  },1000);
+  renderTimers();
+}
+
+function pauseTimer(id){
+  const t=timers.find(t=>t.id===id);if(!t)return;
+  clearInterval(t.interval);t.running=false;
+  renderTimers();
+}
+
+function resetTimer(id){
+  const t=timers.find(t=>t.id===id);if(!t)return;
+  clearInterval(t.interval);t.running=false;t.remaining=t.totalSec;
+  renderTimers();
+}
+
+function delTimer(id){
+  const t=timers.find(t=>t.id===id);if(t&&t.interval)clearInterval(t.interval);
+  timers=timers.filter(t=>t.id!==id);renderTimers();
+}
+
+// Live clock
+setInterval(()=>{document.getElementById('liveClock').textContent='🕐 '+new Date().toLocaleTimeString();},1000);
+document.getElementById('liveClock').textContent='🕐 '+new Date().toLocaleTimeString();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

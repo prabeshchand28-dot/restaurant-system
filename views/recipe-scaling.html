@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Recipe Scaling Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1000px;margin:0 auto}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}
+.ing-row{display:grid;grid-template-columns:1fr 80px 70px 32px;gap:6px;margin-bottom:6px;align-items:center}
+.ing-row input{font-size:12px}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--red);font-size:18px;line-height:1}
+.scaled-table{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.scaled-table thead{background:#f8f9fc}
+.scaled-table th,.scaled-table td{padding:8px 12px;font-size:13px;text-align:left;border-bottom:1px solid var(--border)}
+.scaled-table tr:last-child td{border-bottom:none}
+.scaled-table th{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase}
+.factor-bar{display:flex;gap:6px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.factor-btn{padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:var(--white)}
+.factor-btn:hover,.factor-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.recipe-item{padding:10px 12px;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.recipe-item:hover{background:#f0f2f5}
+.recipe-item.active{background:#e8efff}
+.print-btn{margin-left:auto;background:#555;color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Recipe Scaling Calculator</span></span>
+  <div><a class="nav-btn" href="/recipes">📖 Recipes</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="grid">
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">📖 Saved Recipes</div>
+        <div class="card-body" style="padding:10px">
+          <input id="recSearch" placeholder="Search..." oninput="filterRecipes()" style="margin-bottom:8px"/>
+          <div id="recipeList" style="max-height:200px;overflow-y:auto">Loading...</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">🧮 Custom Recipe Builder</div>
+        <div class="card-body">
+          <label>Recipe Name</label><input id="rName" placeholder="e.g. Dal Makhani"/>
+          <label>Base Serves (portions)</label><input type="number" id="rBase" value="4" min="1" oninput="scale()"/>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0 6px">
+            <span style="font-size:12px;font-weight:700;color:var(--navy)">Ingredients</span>
+            <button class="btn" style="font-size:11px;padding:4px 9px" onclick="addRow()">+ Add</button>
+          </div>
+          <div id="ingRows"></div>
+          <button class="btn btn-green" style="width:100%;margin-top:10px" onclick="scale()">📐 Calculate Scale</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+        <span>📐 Scaled Results</span>
+        <button class="print-btn" onclick="window.print()">🖨️ Print</button>
+      </div>
+      <div class="card-body">
+        <div id="scaleName" style="font-size:18px;font-weight:900;color:var(--navy);margin-bottom:4px">—</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Base: <span id="scaleBase">—</span> servings</div>
+        <div class="factor-bar" id="factorBar">
+          <span style="font-size:12px;font-weight:700;color:var(--muted)">Scale to:</span>
+          <button class="factor-btn active" onclick="setFactor(0.5,this)">½x</button>
+          <button class="factor-btn" onclick="setFactor(1,this)">1x</button>
+          <button class="factor-btn" onclick="setFactor(2,this)">2x</button>
+          <button class="factor-btn" onclick="setFactor(3,this)">3x</button>
+          <button class="factor-btn" onclick="setFactor(5,this)">5x</button>
+          <button class="factor-btn" onclick="setFactor(10,this)">10x</button>
+          <span style="font-size:12px;color:var(--muted)">Custom:</span>
+          <input type="number" id="customFactor" value="1" min="0.1" step="0.5" style="width:70px;font-size:12px;padding:5px" oninput="setFactor(parseFloat(this.value)||1)"/>
+          <span style="font-size:13px;font-weight:800;color:var(--navy)">→ <span id="targetServings">—</span> servings</span>
+        </div>
+        <div id="resultTable"><div style="text-align:center;padding:60px;color:var(--muted)">Enter a recipe and click Calculate</div></div>
+        <div id="costSummary" style="display:none;margin-top:12px;padding:12px;background:#f8f9fc;border-radius:8px">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+            <span>Total Ingredient Cost:</span><strong id="totalCost" style="color:var(--green)">—</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px">
+            <span>Cost Per Serving:</span><strong id="costPerServing" style="color:var(--blue)">—</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let ingredients=[],factor=1,basePortions=4,allRecipes=[];
+
+// Ingredient row management
+function addRow(name='',qty='',unit='',cost=''){
+  const id='r_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+  const div=document.createElement('div');
+  div.className='ing-row';div.id=id;
+  div.innerHTML=`<input placeholder="Ingredient" value="${name}" oninput="updateIng('${id}','name',this.value)"/>
+    <input type="number" placeholder="Qty" value="${qty}" style="text-align:right" oninput="updateIng('${id}','qty',this.value)"/>
+    <input placeholder="Unit" value="${unit}" oninput="updateIng('${id}','unit',this.value)"/>
+    <button class="del-btn" onclick="removeRow('${id}')">×</button>`;
+  document.getElementById('ingRows').appendChild(div);
+  ingredients.push({id,name,qty:parseFloat(qty)||0,unit,cost:parseFloat(cost)||0});
+}
+
+function updateIng(id,field,val){
+  const ing=ingredients.find(i=>i.id===id);
+  if(ing)ing[field]=field==='qty'||field==='cost'?parseFloat(val)||0:val;
+  renderResult();
+}
+
+function removeRow(id){
+  ingredients=ingredients.filter(i=>i.id!==id);
+  document.getElementById(id)?.remove();
+  renderResult();
+}
+
+function setFactor(f,btn){
+  factor=f;
+  document.querySelectorAll('.factor-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.getElementById('customFactor').value=f;
+  renderResult();
+}
+
+function scale(){
+  basePortions=parseInt(document.getElementById('rBase').value)||1;
+  renderResult();
+}
+
+function renderResult(){
+  const name=document.getElementById('rName').value||'Recipe';
+  document.getElementById('scaleName').textContent=name;
+  document.getElementById('scaleBase').textContent=basePortions;
+  const target=Math.round(basePortions*factor*10)/10;
+  document.getElementById('targetServings').textContent=target;
+  if(!ingredients.length){document.getElementById('resultTable').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">Add ingredients above</div>';return;}
+  const rows=ingredients.filter(i=>i.name).map(i=>{
+    const scaled=Math.round(i.qty*factor*1000)/1000;
+    return `<tr><td style="font-weight:700">${i.name}</td><td style="text-align:right">${i.qty} ${i.unit}</td><td style="text-align:right;font-weight:900;color:var(--blue)">${scaled} ${i.unit}</td></tr>`;
+  });
+  document.getElementById('resultTable').innerHTML=`<div class="scaled-table"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Ingredient</th><th style="text-align:right">Base (×1)</th><th style="text-align:right">Scaled (×${factor})</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+  document.getElementById('costSummary').style.display='block';
+  const totalCost=ingredients.reduce((s,i)=>s+i.cost*i.qty*factor,0);
+  document.getElementById('totalCost').textContent='रू '+totalCost.toFixed(2);
+  document.getElementById('costPerServing').textContent='रू '+(totalCost/(basePortions*factor)||0).toFixed(2);
+}
+
+async function loadRecipes(){
+  const r=await fetch('/api/recipes',{headers:authH(),cache:'no-store'});
+  allRecipes=await r.json();
+  if(allRecipes.data)allRecipes=allRecipes.data;
+  renderRecipeList(allRecipes);
+}
+
+function renderRecipeList(recipes){
+  if(!recipes.length){document.getElementById('recipeList').innerHTML='<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">No recipes found</div>';return;}
+  document.getElementById('recipeList').innerHTML=recipes.map(r=>`<div class="recipe-item" onclick="loadRecipe(${JSON.stringify(r).replace(/"/g,'&quot;')})"><span style="font-size:13px;font-weight:700">${r.name}</span><span style="font-size:11px;color:var(--muted)">${r.servings||1} srv</span></div>`).join('');
+}
+
+function filterRecipes(){
+  const q=document.getElementById('recSearch').value.toLowerCase();
+  renderRecipeList(allRecipes.filter(r=>r.name.toLowerCase().includes(q)));
+}
+
+function loadRecipe(r){
+  document.getElementById('rName').value=r.name;
+  document.getElementById('rBase').value=r.servings||1;
+  basePortions=r.servings||1;
+  document.getElementById('ingRows').innerHTML='';
+  ingredients=[];
+  // Try to parse ingredients from recipe data
+  const ings=r.ingredients||(r.rawIngredients?JSON.parse(r.rawIngredients):[]);
+  if(Array.isArray(ings)&&ings.length){
+    ings.forEach(i=>addRow(i.name||i.ingredient||i,i.quantity||i.qty||'',i.unit||'',i.cost||''));
+  } else {
+    // Fallback: add blank row
+    addRow();
+  }
+  scale();
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  addRow('',4,'',''); // starter row
+  loadRecipes().catch(()=>{document.getElementById('recipeList').innerHTML='<div style="color:var(--muted);font-size:12px;padding:10px">No recipe API available</div>';});
+});
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

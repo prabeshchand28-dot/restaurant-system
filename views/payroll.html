@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Payroll</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.tabs{display:flex;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.pane{display:none}.pane.active{display:block}
+.grid{display:grid;grid-template-columns:360px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.sum-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.sum-card .amount{font-size:24px;font-weight:900;color:var(--blue)}
+.sum-card .label{font-size:11px;color:var(--muted);margin-top:2px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px;font-weight:700;border:none;border-radius:4px;cursor:pointer;font-family:var(--font)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8f9fb;text-align:left;padding:10px 12px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:2px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid #f0f0f0}
+tr:hover td{background:#f9fafb}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase}
+.badge-green{background:#e7f5ed;color:var(--green)}
+.badge-orange{background:#fff3e0;color:#e65100}
+.badge-blue{background:#e8efff;color:var(--blue)}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Payroll</span></span>
+  <div><a class="nav-btn" href="/shifts">⏱️ Shifts</a><a class="nav-btn" href="/staff">👥 Staff</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('payroll',this)">💵 Payroll Records</div>
+  <div class="tab" onclick="switchTab('rates',this)">📋 Pay Rates</div>
+  <div class="tab" onclick="switchTab('run',this)">▶️ Run Payroll</div>
+</div>
+<div class="content">
+
+  <!-- Payroll Records -->
+  <div class="pane active" id="pane-payroll">
+    <div class="summary-grid" id="payrollSummary">
+      <div class="sum-card"><div class="amount">—</div><div class="label">Total Paid (Month)</div></div>
+      <div class="sum-card"><div class="amount">—</div><div class="label">Payroll Records</div></div>
+      <div class="sum-card"><div class="amount">—</div><div class="label">Avg Per Staff</div></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+      <input type="month" id="payrollMonth" style="width:180px" onchange="loadPayroll()"/>
+      <span style="font-size:13px;color:var(--muted)">Filter by month</span>
+    </div>
+    <div class="card">
+      <div class="card-header">💵 Payroll Records</div>
+      <div class="card-body" style="padding:0">
+        <table>
+          <thead><tr>
+            <th>Staff</th><th>Period</th><th>Hours</th><th>Rate</th>
+            <th>Gross</th><th>Tax</th><th>Net</th><th>Status</th>
+          </tr></thead>
+          <tbody id="payrollTable">
+            <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted)">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pay Rates -->
+  <div class="pane" id="pane-rates">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="card-header">➕ Set Pay Rate</div>
+          <div class="card-body">
+            <label>Staff Member</label>
+            <select id="rStaff"><option value="">Select staff...</option></select>
+            <label>Pay Type</label>
+            <select id="rType">
+              <option value="HOURLY">Hourly</option>
+              <option value="MONTHLY">Monthly</option>
+              <option value="DAILY">Daily</option>
+            </select>
+            <label>Rate (रू)</label>
+            <input type="number" id="rRate" placeholder="e.g. 500 per hour"/>
+            <label>Overtime Rate (रू, optional)</label>
+            <input type="number" id="rOvertime" placeholder="e.g. 750"/>
+            <label>Effective From</label>
+            <input type="date" id="rFrom"/>
+            <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="saveRate()">Save Pay Rate</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header">📋 Current Pay Rates</div>
+          <div class="card-body" style="padding:0">
+            <table>
+              <thead><tr><th>Staff</th><th>Type</th><th>Rate</th><th>OT Rate</th><th>Since</th></tr></thead>
+              <tbody id="ratesTable">
+                <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted)">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Run Payroll -->
+  <div class="pane" id="pane-run">
+    <div style="max-width:500px">
+      <div class="card">
+        <div class="card-header">▶️ Run Payroll for Period</div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px">This will calculate gross/net pay based on shifts worked and current pay rates.</p>
+          <label>Staff Member</label>
+          <select id="runStaff"><option value="">All staff</option></select>
+          <label>Period Start</label>
+          <input type="date" id="runStart"/>
+          <label>Period End</label>
+          <input type="date" id="runEnd"/>
+          <label>Tax Rate (%)</label>
+          <input type="number" id="runTax" value="13" min="0" max="100"/>
+          <div style="background:#fff8e1;border:1px solid #ffe0a0;border-radius:8px;padding:12px;margin-top:14px;font-size:12px;color:#5c4200">
+            ⚠️ Running payroll creates records for the period. Make sure all shifts are clocked out before running.
+          </div>
+          <button class="btn btn-green" style="width:100%;margin-top:14px;padding:12px" onclick="runPayroll()">▶️ Run Payroll</button>
+          <div id="runResult" style="margin-top:14px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+const now=new Date();
+document.getElementById('payrollMonth').value=now.toISOString().slice(0,7);
+const firstDay=new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
+const lastDay=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().slice(0,10);
+document.getElementById('runStart').value=firstDay;
+document.getElementById('runEnd').value=lastDay;
+document.getElementById('rFrom').value=now.toISOString().slice(0,10);
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  if(name==='rates') loadRates();
+  if(name==='run') loadStaffSelect('runStaff');
+}
+
+async function loadStaff(selId){
+  const r=await fetch('/api/staff',{headers:authH(),cache:'no-store'});
+  const staff=await r.json();
+  const s=staff.data||staff;
+  const sel=document.getElementById(selId);
+  const keepFirst=sel.querySelector('option:first-child');
+  sel.innerHTML='';
+  if(keepFirst) sel.appendChild(keepFirst);
+  s.forEach(st=>{
+    const o=document.createElement('option');
+    o.value=st.id;o.textContent=st.name;
+    sel.appendChild(o);
+  });
+}
+
+async function loadPayroll(){
+  const month=document.getElementById('payrollMonth').value;
+  const r=await fetch(`/api/payroll?month=${month}`,{headers:authH(),cache:'no-store'});
+  const data=await r.json();
+  const records=data.records||data;
+  const total=records.reduce((s,r)=>s+(r.netPay||0),0);
+  const sums=document.getElementById('payrollSummary').children;
+  sums[0].querySelector('.amount').textContent='रू '+total.toLocaleString();
+  sums[1].querySelector('.amount').textContent=records.length;
+  sums[2].querySelector('.amount').textContent=records.length?'रू '+Math.round(total/records.length).toLocaleString():'—';
+  if(!records.length){
+    document.getElementById('payrollTable').innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted)">No payroll records for this month</td></tr>';
+    return;
+  }
+  document.getElementById('payrollTable').innerHTML=records.map(r=>`
+    <tr>
+      <td style="font-weight:700">${r.staffName||r.staff?.name||'—'}</td>
+      <td style="font-size:11px">${r.periodStart?.slice(0,10)} → ${r.periodEnd?.slice(0,10)}</td>
+      <td>${r.hoursWorked||0}h</td>
+      <td>रू ${(r.hourlyRate||0).toLocaleString()}</td>
+      <td style="color:var(--blue);font-weight:700">रू ${(r.grossPay||0).toLocaleString()}</td>
+      <td style="color:var(--red)">रू ${(r.taxAmount||0).toLocaleString()}</td>
+      <td style="color:var(--green);font-weight:800">रू ${(r.netPay||0).toLocaleString()}</td>
+      <td><span class="badge ${r.status==='PAID'?'badge-green':'badge-orange'}">${r.status||'PENDING'}</span></td>
+    </tr>`).join('');
+}
+
+async function loadRates(){
+  await loadStaff('rStaff');
+  const r=await fetch('/api/payroll/rates',{headers:authH(),cache:'no-store'});
+  const data=await r.json();
+  if(!data.length){
+    document.getElementById('ratesTable').innerHTML='<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted)">No pay rates set</td></tr>';
+    return;
+  }
+  document.getElementById('ratesTable').innerHTML=data.map(r=>`
+    <tr>
+      <td style="font-weight:700">${r.staff?.name||'—'}</td>
+      <td><span class="badge badge-blue">${r.payType}</span></td>
+      <td>रू ${(r.rate||0).toLocaleString()}</td>
+      <td>${r.overtimeRate?'रू '+r.overtimeRate.toLocaleString():'—'}</td>
+      <td style="font-size:11px;color:var(--muted)">${r.effectiveFrom?.slice(0,10)||'—'}</td>
+    </tr>`).join('');
+}
+
+async function saveRate(){
+  const body={
+    staffId:Number(document.getElementById('rStaff').value),
+    payType:document.getElementById('rType').value,
+    rate:Number(document.getElementById('rRate').value),
+    overtimeRate:Number(document.getElementById('rOvertime').value)||null,
+    effectiveFrom:document.getElementById('rFrom').value,
+  };
+  if(!body.staffId||!body.rate){showToast('Select staff and enter rate','error');return;}
+  const r=await fetch('/api/payroll/rates',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Pay rate saved!','success');loadRates();}
+  else showToast(d.message||'Error','error');
+}
+
+async function loadStaffSelect(id){
+  const r=await fetch('/api/staff',{headers:authH(),cache:'no-store'});
+  const data=await r.json();
+  const staff=data.data||data;
+  const s=document.getElementById(id);
+  const keep=s.querySelector('option:first-child');
+  s.innerHTML='';if(keep)s.appendChild(keep);
+  staff.forEach(st=>{const o=document.createElement('option');o.value=st.id;o.textContent=st.name;s.appendChild(o);});
+}
+
+async function runPayroll(){
+  const body={
+    staffId:document.getElementById('runStaff').value?Number(document.getElementById('runStaff').value):null,
+    periodStart:document.getElementById('runStart').value,
+    periodEnd:document.getElementById('runEnd').value,
+    taxPercent:Number(document.getElementById('runTax').value)||13,
+  };
+  const r=await fetch('/api/payroll/run',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.created){
+    document.getElementById('runResult').innerHTML=`
+      <div style="background:#f0f9f0;border:1px solid #a8d5b5;border-radius:8px;padding:12px;font-size:13px">
+        ✅ Created <strong>${d.created}</strong> payroll record(s)<br/>
+        Total gross: <strong>रू ${(d.totalGross||0).toLocaleString()}</strong><br/>
+        Total net: <strong>रू ${(d.totalNet||0).toLocaleString()}</strong>
+      </div>`;
+    showToast('Payroll run complete!','success');
+    loadPayroll();
+  }else showToast(d.message||'Error running payroll','error');
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadPayroll();
+loadStaff('rStaff');
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

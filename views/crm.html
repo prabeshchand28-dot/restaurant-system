@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Customer CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:8px}
+.content{padding:24px;max-width:1400px;margin:0 auto}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px}
+.sv{font-size:28px;font-weight:900;color:var(--navy)}.sl{font-size:12px;color:var(--muted);margin-top:2px}
+.grid2{display:grid;grid-template-columns:1fr 360px;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f0f2f5;padding:8px 12px;text-align:left;font-weight:700;color:var(--navy);border-bottom:2px solid var(--border)}
+td{padding:9px 12px;border-bottom:1px solid #f0f0f0}
+tr:hover td{background:#fafbfc}
+.seg{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.seg.VIP{background:#fef9c3;color:#a16207}.seg.Regular{background:#e0f2fe;color:#0369a1}.seg.New{background:#dcfce7;color:#15803d}.seg.Inactive{background:#fee2e2;color:#dc2626}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;margin-bottom:10px}
+input:focus,select:focus{border-color:var(--blue)}
+label{font-size:12px;font-weight:600;color:var(--navy);display:block;margin-bottom:3px}
+.btn{padding:9px 18px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-primary{background:var(--blue);color:#fff}.btn-danger{background:var(--red);color:#fff}.btn-sm{padding:4px 10px;font-size:11px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+.birthday-alert{background:#fef9c3;border:1px solid #fbbf24;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;display:none}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Customer CRM</span></span>
+  <div><a class="nav-btn" href="/loyalty">🏅 Loyalty</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+
+<div class="content">
+  <div class="birthday-alert" id="birthdayAlert"></div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="sv" id="st-total">—</div><div class="sl">Total Customers</div></div>
+    <div class="stat-card"><div class="sv" id="st-vip">—</div><div class="sl">VIP Customers</div></div>
+    <div class="stat-card"><div class="sv" id="st-new">—</div><div class="sl">New Customers</div></div>
+    <div class="stat-card"><div class="sv" id="st-rev">—</div><div class="sl">Total Revenue (रू)</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-header">
+        👥 Customers
+        <input id="searchInput" placeholder="Search…" style="width:180px;margin:0;padding:5px 10px;font-size:12px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:5px;color:#fff" oninput="filterCustomers()"/>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Name</th><th>Phone</th><th>Visits</th><th>Spent</th><th>Segment</th><th>Allergy</th><th>Actions</th></tr></thead>
+          <tbody id="crmTable"><tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">➕ Add / Update Customer</div>
+      <div class="card-body">
+        <label>Name *</label><input id="f-name" placeholder="Full name"/>
+        <label>Phone *</label><input id="f-phone" placeholder="98XXXXXXXX"/>
+        <label>Email</label><input id="f-email" placeholder="optional"/>
+        <label>Birthday (MM-DD)</label><input id="f-bday" placeholder="06-15"/>
+        <label>Allergy Notes</label><input id="f-allergy" placeholder="Nuts, Dairy, Gluten…"/>
+        <label>Preferences</label><input id="f-pref" placeholder="Spicy, Vegan, Window seat…"/>
+        <label>Notes</label><input id="f-notes" placeholder="Internal notes"/>
+        <button class="btn btn-primary" style="width:100%" onclick="saveCustomer()">💾 Save Customer</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let allCustomers=[];
+
+async function load() {
+  const [statsR,listR]=await Promise.all([
+    fetch('/api/crm/stats',{headers:authH(),cache:'no-store'}),
+    fetch('/api/crm',{headers:authH(),cache:'no-store'}),
+  ]);
+  const stats=await statsR.json();
+  allCustomers=await listR.json();
+  document.getElementById('st-total').textContent=stats.total;
+  document.getElementById('st-vip').textContent=stats.vip;
+  document.getElementById('st-new').textContent=stats.new;
+  document.getElementById('st-rev').textContent=(stats.totalRevenue||0).toLocaleString();
+  if (stats.birthdaysToday>0) {
+    const el=document.getElementById('birthdayAlert');
+    el.style.display='block';
+    el.innerHTML=`🎂 <strong>${stats.birthdaysToday} birthday${stats.birthdaysToday>1?'s':''} today!</strong> ${stats.birthdayCustomers.map(c=>c.name).join(', ')}`;
+  }
+  renderTable(allCustomers);
+}
+
+function renderTable(list) {
+  const tbody=document.getElementById('crmTable');
+  if (!list.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">No customers yet</td></tr>';return;}
+  tbody.innerHTML=list.map(c=>`
+    <tr>
+      <td><strong>${c.name}</strong>${c.birthday?'<br><span style="font-size:11px;color:var(--muted)">🎂 '+c.birthday+'</span>':''}</td>
+      <td>${c.phone}</td>
+      <td>${c.visitCount}</td>
+      <td>रू ${c.totalSpent.toLocaleString()}</td>
+      <td><span class="seg ${c.segment}">${c.segment}</span></td>
+      <td style="font-size:11px;color:var(--red)">${c.allergyNotes||'—'}</td>
+      <td><button class="btn btn-sm btn-primary" onclick='editCustomer(${JSON.stringify(c)})'>Edit</button></td>
+    </tr>`).join('');
+}
+
+function filterCustomers(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  renderTable(allCustomers.filter(c=>c.name.toLowerCase().includes(q)||c.phone.includes(q)));
+}
+
+function editCustomer(c){
+  document.getElementById('f-name').value=c.name;
+  document.getElementById('f-phone').value=c.phone;
+  document.getElementById('f-email').value=c.email||'';
+  document.getElementById('f-bday').value=c.birthday||'';
+  document.getElementById('f-allergy').value=c.allergyNotes||'';
+  document.getElementById('f-pref').value=c.preferences||'';
+  document.getElementById('f-notes').value=c.notes||'';
+}
+
+async function saveCustomer(){
+  const name=document.getElementById('f-name').value.trim();
+  const phone=document.getElementById('f-phone').value.trim();
+  if(!name||!phone){showToast('Name and phone required','error');return;}
+  const body={name,phone,email:document.getElementById('f-email').value,birthday:document.getElementById('f-bday').value,allergyNotes:document.getElementById('f-allergy').value,preferences:document.getElementById('f-pref').value,notes:document.getElementById('f-notes').value};
+  const r=await fetch('/api/crm',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.success){showToast('Customer saved!','success');load();['f-name','f-phone','f-email','f-bday','f-allergy','f-pref','f-notes'].forEach(id=>document.getElementById(id).value='');}
+  else showToast(d.message,'error');
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+load();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

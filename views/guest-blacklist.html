@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Guest Blacklist</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--red);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:20px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--red);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select,textarea{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+textarea{resize:vertical;min-height:60px}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--red);color:#fff}
+.btn-green{background:var(--green)}.btn-blue{background:var(--blue)}
+.guest-card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;background:var(--white)}
+.guest-card.ACTIVE{border-left:4px solid var(--red)}.guest-card.LIFTED{border-left:4px solid var(--green);opacity:.8}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800}
+.b-ACTIVE{background:#fdecea;color:var(--red)}.b-LIFTED{background:#e7f5ed;color:var(--green)}
+.sev-HIGH{background:#fdecea;color:var(--red);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:800;display:inline-block}
+.sev-MEDIUM{background:#fff3e0;color:var(--orange);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:800;display:inline-block}
+.sev-LOW{background:#f0f0f0;color:var(--muted);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:800;display:inline-block}
+.search-box{background:var(--white);border:2px solid var(--red);border-radius:10px;padding:14px;margin-bottom:16px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Guest Blacklist</span></span>
+  <div><a class="nav-btn" href="/crm">👥 CRM</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-active" style="color:var(--red)">—</div><div class="lbl">Active Bans</div></div>
+    <div class="stat"><div class="num" id="s-high" style="color:var(--red)">—</div><div class="lbl">High Severity</div></div>
+    <div class="stat"><div class="num" id="s-med" style="color:var(--orange)">—</div><div class="lbl">Medium</div></div>
+    <div class="stat"><div class="num" id="s-low" style="color:var(--muted)">—</div><div class="lbl">Low</div></div>
+    <div class="stat"><div class="num" id="s-lifted" style="color:var(--green)">—</div><div class="lbl">Lifted Bans</div></div>
+  </div>
+
+  <div class="search-box">
+    <div style="font-size:12px;font-weight:800;color:var(--red);margin-bottom:8px">🔍 Quick Check — Is this guest banned?</div>
+    <div style="display:flex;gap:8px">
+      <input id="checkName" placeholder="Guest name..." style="border-color:var(--border)"/>
+      <input id="checkPhone" placeholder="Phone number..." style="border-color:var(--border);width:160px"/>
+      <button class="btn btn-blue" onclick="checkGuest()">Check</button>
+    </div>
+    <div id="checkResult" style="margin-top:10px"></div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <div class="card-header">🚫 Add to Blacklist</div>
+        <div class="card-body">
+          <label>Guest Name *</label><input id="gName" placeholder="Full name"/>
+          <label>Phone</label><input id="gPhone" placeholder="98XXXXXXXX"/>
+          <label>Email</label><input id="gEmail" placeholder="Optional"/>
+          <label>Severity</label>
+          <select id="gSeverity">
+            <option value="HIGH">🔴 High — Immediate threat</option>
+            <option value="MEDIUM" selected>🟠 Medium — Trouble maker</option>
+            <option value="LOW">🟡 Low — Watch list</option>
+          </select>
+          <label>Reason *</label><textarea id="gReason" placeholder="Describe the incident..."></textarea>
+          <label>Added By</label><input id="gBy" placeholder="Your name"/>
+          <label>Notes</label><input id="gNotes" placeholder="Additional notes..."/>
+          <button class="btn" style="width:100%;margin-top:14px" onclick="addGuest()">🚫 Add to Blacklist</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <input id="srch" placeholder="🔍 Search..." oninput="loadList()" style="width:180px"/>
+        <select id="fStatus" onchange="loadList()" style="width:130px">
+          <option value="ACTIVE">Active Bans</option>
+          <option value="">All</option>
+          <option value="LIFTED">Lifted</option>
+        </select>
+        <select id="fSev" onchange="loadList()" style="width:130px">
+          <option value="">All Severity</option>
+          <option value="HIGH">High</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="LOW">Low</option>
+        </select>
+      </div>
+      <div id="guestList">Loading...</div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+async function init(){loadStats();loadList();}
+
+async function loadStats(){
+  const r=await fetch('/api/guest-blacklist/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-active').textContent=d.active;
+  document.getElementById('s-high').textContent=d.high;
+  document.getElementById('s-med').textContent=d.medium;
+  document.getElementById('s-low').textContent=d.low;
+  document.getElementById('s-lifted').textContent=d.lifted;
+}
+
+async function checkGuest(){
+  const name=document.getElementById('checkName').value;
+  const phone=document.getElementById('checkPhone').value;
+  if(!name&&!phone){showToast('Enter name or phone','error');return;}
+  let url='/api/guest-blacklist/check?';
+  if(name)url+=`name=${encodeURIComponent(name)}&`;
+  if(phone)url+=`phone=${encodeURIComponent(phone)}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  const box=document.getElementById('checkResult');
+  if(d.flagged){
+    box.innerHTML=`<div style="background:#fdecea;border:2px solid var(--red);border-radius:8px;padding:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:24px">🚫</span><div><div style="font-weight:900;color:var(--red);font-size:14px">BANNED GUEST</div><div style="font-size:12px;margin-top:2px"><strong>${d.record.guestName}</strong> · ${d.record.phone||'No phone'}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">${d.record.reason}</div><div style="margin-top:4px"><span class="sev-${d.record.severity}">${d.record.severity}</span></div></div></div>`;
+  } else {
+    box.innerHTML=`<div style="background:#e7f5ed;border:2px solid var(--green);border-radius:8px;padding:12px;color:var(--green);font-weight:800;font-size:13px">✅ Not on blacklist — Guest may be seated</div>`;
+  }
+}
+
+async function loadList(){
+  const search=document.getElementById('srch').value;
+  const status=document.getElementById('fStatus').value;
+  const severity=document.getElementById('fSev').value;
+  let url='/api/guest-blacklist?a=1';
+  if(status)url+=`&status=${status}`;
+  if(severity)url+=`&severity=${severity}`;
+  if(search)url+=`&search=${encodeURIComponent(search)}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const items=await r.json();
+  if(!items.length){document.getElementById('guestList').innerHTML='<div style="text-align:center;padding:60px;background:var(--white);border-radius:12px;color:var(--muted)">No records found</div>';return;}
+  document.getElementById('guestList').innerHTML=items.map(g=>`<div class="guest-card ${g.status}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span class="badge b-${g.status}">${g.status}</span>
+          <span class="sev-${g.severity}">${g.severity}</span>
+        </div>
+        <div style="font-size:16px;font-weight:900;margin-top:4px">🚫 ${g.guestName}</div>
+        <div style="font-size:12px;color:var(--muted)">${g.phone||'No phone'} ${g.email?'· '+g.email:''}</div>
+        <div style="font-size:12px;margin-top:6px;color:#333;border-left:3px solid var(--red);padding-left:8px">${g.reason}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Added: ${new Date(g.createdAt).toLocaleDateString()} ${g.addedBy?'by '+g.addedBy:''}</div>
+        ${g.status==='LIFTED'?`<div style="font-size:11px;color:var(--green);margin-top:2px">Lifted: ${new Date(g.liftedAt).toLocaleDateString()} by ${g.liftedBy} — ${g.liftReason}</div>`:''}
+        ${g.notes?`<div style="font-size:11px;color:var(--muted);margin-top:3px">${g.notes}</div>`:''}
+      </div>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:6px">
+      ${g.status==='ACTIVE'?`<button class="btn btn-green" style="font-size:11px;padding:5px 10px" onclick="liftBan(${g.id})">✅ Lift Ban</button>`:''}
+      <button class="btn" style="font-size:11px;padding:5px 10px;background:#888" onclick="delGuest(${g.id})">Delete</button>
+    </div>
+  </div>`).join('');
+}
+
+async function addGuest(){
+  const name=document.getElementById('gName').value.trim();
+  const reason=document.getElementById('gReason').value.trim();
+  if(!name||!reason){showToast('Name and reason required','error');return;}
+  const body={guestName:name,phone:document.getElementById('gPhone').value,email:document.getElementById('gEmail').value,severity:document.getElementById('gSeverity').value,reason,addedBy:document.getElementById('gBy').value,notes:document.getElementById('gNotes').value};
+  const r=await fetch('/api/guest-blacklist',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Added to blacklist','success');['gName','gPhone','gEmail','gReason','gBy','gNotes'].forEach(id=>document.getElementById(id).value='');loadStats();loadList();}
+  else showToast(d.message||'Error','error');
+}
+
+async function liftBan(id){
+  const liftedBy=prompt('Your name (lifting the ban):');
+  if(liftedBy===null)return;
+  const liftReason=prompt('Reason for lifting ban:','Behaviour resolved');
+  const r=await fetch(`/api/guest-blacklist/${id}/lift`,{method:'PATCH',headers:authH(),body:JSON.stringify({liftedBy,liftReason:liftReason||''})});
+  if((await r.json()).id){showToast('Ban lifted','success');loadStats();loadList();}
+}
+
+async function delGuest(id){
+  if(!confirm('Delete record?'))return;
+  await fetch(`/api/guest-blacklist/${id}`,{method:'DELETE',headers:authH()});
+  loadStats();loadList();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+init();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

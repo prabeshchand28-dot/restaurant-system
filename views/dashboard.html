@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Dashboard — Restaurant System</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 <script src="/js/offline.js" defer></script>
 <style>
 /* ══ RESET & BASE ══ */
@@ -58,18 +58,50 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .nav-parent .label{white-space:nowrap;overflow:hidden}
 .nav-parent svg{flex-shrink:0}
 .nav-arrow{transition:transform .2s;flex-shrink:0}
-.nav-children{padding-left:40px;overflow:hidden;max-height:0;transition:max-height .25s ease}
-.nav-children.open{max-height:300px}
+.nav-children{padding-left:36px;overflow:hidden;max-height:0;transition:max-height .25s ease}
+.nav-children.open{max-height:600px}
 .nav-child{
-  display:block;padding:6px 10px;font-size:12px;color:var(--muted);
-  cursor:pointer;border-radius:4px;transition:color .15s;white-space:nowrap;
+  display:flex;align-items:center;gap:7px;
+  padding:5px 10px;font-size:12px;color:var(--muted);
+  cursor:pointer;border-radius:4px;transition:all .15s;white-space:nowrap;
 }
-.nav-child:hover,.nav-child.active{color:var(--accent)}
-.sidebar-footer{padding:14px;border-top:1px solid var(--border);font-size:11px;color:var(--dimmed)}
-.sidebar-footer .footer-title{font-weight:600;color:var(--muted);margin-bottom:2px;white-space:nowrap;overflow:hidden}
+.nav-child::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--dimmed);flex-shrink:0;transition:background .15s}
+.nav-child:hover{color:var(--accent)}
+.nav-child:hover::before{background:var(--accent)}
+.nav-child.active{color:var(--accent)}
+.nav-child.active::before{background:var(--accent)}
+/* emoji icon */
+.nav-emoji{font-size:15px;width:20px;text-align:center;flex-shrink:0;line-height:1}
+/* section divider */
+.nav-divider{height:1px;background:var(--border);margin:6px 12px}
+/* bottom pinned items */
+.nav-bottom{border-top:1px solid var(--border);padding:4px 0;flex-shrink:0}
+.nav-bottom .nav-parent{color:var(--muted)}
+.sidebar-footer{padding:10px 14px 12px;font-size:10px;color:var(--dimmed);border-top:1px solid var(--border)}
+.sidebar-footer .footer-title{font-weight:600;color:var(--dimmed);white-space:nowrap;overflow:hidden}
 
 /* ══ MAIN ══ */
 .main-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ══ DEMO BANNER ══ */
+.demo-banner{
+  display:none;align-items:center;justify-content:space-between;
+  background:linear-gradient(90deg,#7c3aed,#6d28d9);
+  padding:7px 20px;font-size:12px;font-weight:600;color:#fff;flex-shrink:0;
+  gap:12px;
+}
+.demo-banner.show{display:flex}
+.demo-banner .db-left{display:flex;align-items:center;gap:8px}
+.demo-banner .db-badge{
+  background:rgba(255,255,255,.2);border-radius:4px;
+  padding:2px 8px;font-size:10px;font-weight:800;letter-spacing:.05em;
+}
+.demo-banner .db-cta{
+  background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);
+  border-radius:5px;padding:4px 12px;font-size:11px;cursor:pointer;
+  color:#fff;transition:background .15s;font-family:var(--font);font-weight:600;
+}
+.demo-banner .db-cta:hover{background:rgba(255,255,255,.3)}
 
 /* ══ TOPBAR ══ */
 .topbar{
@@ -84,12 +116,53 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .topbar-title{font-size:18px;font-weight:700;color:#fff;flex:1}
 .search-box{
   display:flex;align-items:center;gap:8px;background:var(--bg);
-  border:1px solid var(--border);border-radius:8px;padding:7px 12px;width:200px;
-  transition:border-color .2s;
+  border:1px solid var(--border);border-radius:8px;padding:7px 12px;
+  width:260px;transition:border-color .2s,width .2s;position:relative;
 }
-.search-box:focus-within{border-color:var(--accent)}
+.search-box:focus-within{border-color:var(--accent);width:340px}
 .search-box input{background:none;border:none;outline:none;color:var(--text);font-size:13px;width:100%;font-family:var(--font)}
 .search-box svg{color:var(--dimmed);flex-shrink:0}
+.search-box .search-clear{display:none;background:none;border:none;color:var(--dimmed);cursor:pointer;font-size:14px;padding:0 2px;line-height:1}
+.search-box .search-clear:hover{color:var(--text)}
+/* Global Search Dropdown */
+#searchDropdown{
+  position:absolute;top:calc(100% + 6px);left:0;right:0;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:9000;max-height:480px;overflow-y:auto;
+  display:none;
+}
+#searchDropdown.open{display:block}
+.sd-empty{padding:24px;text-align:center;color:var(--dimmed);font-size:13px}
+.sd-spinner{padding:20px;text-align:center;color:var(--dimmed);font-size:12px}
+.sd-group-label{
+  padding:8px 14px 4px;font-size:10px;font-weight:700;color:var(--dimmed);
+  text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;gap:6px;
+  border-top:1px solid var(--border);
+}
+.sd-group-label:first-child{border-top:none}
+.sd-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 14px;cursor:pointer;transition:background .12s;border-radius:0;
+}
+.sd-item:hover,.sd-item.focused{background:#222}
+.sd-item-icon{font-size:16px;width:24px;text-align:center;flex-shrink:0}
+.sd-item-body{flex:1;overflow:hidden}
+.sd-item-title{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.sd-item-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.sd-item-badge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0;white-space:nowrap}
+.sd-footer{
+  padding:10px 14px;border-top:1px solid var(--border);font-size:11px;
+  color:var(--dimmed);display:flex;justify-content:space-between;align-items:center;
+}
+.sd-footer span{color:var(--accent);cursor:pointer}
+.sd-footer span:hover{text-decoration:underline}
+.sd-kbd{
+  display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--dimmed);
+}
+.sd-kbd kbd{
+  background:#222;border:1px solid var(--border);border-radius:3px;
+  padding:1px 4px;font-size:9px;font-family:monospace;
+}
 .topbar-icons{display:flex;align-items:center;gap:6px}
 .icon-btn{
   width:36px;height:36px;border-radius:50%;background:#222;border:none;
@@ -118,9 +191,32 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 /* ══ CONTENT ══ */
 .content{flex:1;overflow-y:auto;padding:18px}
 
+/* ══ WELCOME BANNER ══ */
+.welcome-banner{
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(135deg,#1a1a1a 0%,#1e1a14 100%);
+  border:1px solid var(--border);border-left:4px solid var(--accent);
+  border-radius:10px;padding:14px 20px;margin-bottom:14px;
+}
+.wb-left{display:flex;flex-direction:column;gap:2px}
+.wb-greeting{font-size:18px;font-weight:800;color:#fff}
+.wb-greeting span{color:var(--accent)}
+.wb-date{font-size:12px;color:var(--muted)}
+.wb-right{display:flex;gap:8px;flex-wrap:wrap}
+.qa-btn{
+  display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+  background:#222;border:1px solid var(--border);color:var(--muted);
+  font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);
+  white-space:nowrap;
+}
+.qa-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.qa-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.qa-btn.primary:hover{background:#ea6c0a}
+
 /* ══ STATS ROW ══ */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .15s}
+.stat-card:hover{border-color:#3a3a3a}
 .stat-top{padding:14px 16px 6px}
 .stat-icon-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .stat-icon{color:var(--accent)}
@@ -130,6 +226,34 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .stat-change.down{color:var(--red)}
 .stat-label{font-size:12px;color:var(--muted);margin-top:2px}
 .sparkline{width:100%;height:44px;display:block}
+
+/* ══ LIVE STATUS ROW ══ */
+.live-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.live-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.live-card-title{font-size:12px;font-weight:700;color:var(--dimmed);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.live-card-title span{font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0}
+.tables-mini{display:flex;flex-wrap:wrap;gap:6px}
+.tm-chip{
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  width:44px;height:40px;border-radius:7px;border:1.5px solid var(--border);
+  cursor:pointer;transition:all .15s;background:var(--bg);
+}
+.tm-chip:hover{border-color:var(--accent)}
+.tm-chip.occupied{border-color:var(--accent);background:var(--accent-soft)}
+.tm-chip.occupied .tm-no{color:var(--accent)}
+.tm-no{font-size:13px;font-weight:800;color:var(--dimmed);line-height:1}
+.tm-status{font-size:9px;color:var(--dimmed);margin-top:2px}
+.tm-chip.occupied .tm-status{color:var(--accent)}
+.active-orders-list{display:flex;flex-direction:column;gap:6px}
+.ao-item{display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--bg);border-radius:7px;cursor:pointer;transition:background .15s}
+.ao-item:hover{background:#1e1e1e}
+.ao-table{font-size:13px;font-weight:800;color:#fff;width:28px;flex-shrink:0}
+.ao-info{flex:1;min-width:0}
+.ao-name{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ao-time{font-size:11px;color:var(--muted)}
+.ao-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;flex-shrink:0}
+.ao-badge.Preparing{background:rgba(245,158,11,.15);color:#f59e0b}
+.ao-badge.Pending{background:var(--accent-soft);color:var(--accent)}
 
 /* ══ MAIN GRID ══ */
 .main-grid{display:grid;grid-template-columns:280px 1fr;gap:14px}
@@ -459,116 +583,174 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   </div>
 
   <nav class="nav" id="mainNav">
-    <!-- Overview -->
+
+    <!-- Dashboard -->
     <div class="nav-group">
       <div class="nav-parent active" onclick="showSection('dashboard',this)">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span class="label">Overview</span></span>
+        <span class="left"><span class="nav-emoji">🏠</span><span class="label">Dashboard</span></span>
       </div>
     </div>
-    <!-- Orders -->
+
+    <div class="nav-divider"></div>
+
+    <!-- Operations -->
     <div class="nav-group">
-      <div class="nav-parent" onclick="showSection('orders',this)">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span class="label">Orders</span></span>
+      <div class="nav-parent" onclick="toggleGroup('nc-ops',this)">
+        <span class="left"><span class="nav-emoji">🍽️</span><span class="label">Operations</span></span>
         <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
-      <div class="nav-children" id="nc-orders">
-        <div class="nav-child" onclick="showSection('orders',null,'all')">All Orders</div>
-        <div class="nav-child" onclick="showSection('orders',null,'Pending')">Pending</div>
-        <div class="nav-child" onclick="showSection('orders',null,'Preparing')">Preparing</div>
-        <div class="nav-child" onclick="showSection('orders',null,'Completed')">Completed</div>
+      <div class="nav-children" id="nc-ops">
+        <div class="nav-child" onclick="location.href='/order-manage'">Orders</div>
+        <div class="nav-child" onclick="showSection('tables',null)">Tables</div>
+        <div class="nav-child" onclick="location.href='/kitchen'">Kitchen</div>
+        <div class="nav-child" onclick="showSection('reservations',null)">Reservations</div>
+        <div class="nav-child" onclick="location.href='/delivery'">Delivery</div>
+        <div class="nav-child" onclick="location.href='/waitlist'">Waitlist</div>
+        <div class="nav-child" onclick="location.href='/qr-ordering'">QR Ordering</div>
       </div>
     </div>
-    <!-- Menu -->
-    <div class="nav-group">
-      <div class="nav-parent" onclick="showSection('menu',this)">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h18v4H3z"/><path d="M3 9h18v4H3z"/><path d="M3 15h18v4H3z"/></svg><span class="label">Menu</span></span>
-      </div>
-    </div>
-    <!-- Tables -->
-    <div class="nav-group">
-      <div class="nav-parent" onclick="showSection('tables',this)">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg><span class="label">Tables</span></span>
-      </div>
-    </div>
-    <!-- Reservations -->
-    <div class="nav-group">
-      <div class="nav-parent" onclick="showSection('reservations',this)">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="label">Reservations</span></span>
-      </div>
-    </div>
-    <!-- Guests -->
-    <div class="nav-group">
-      <div class="nav-parent" onclick="showSection('guests',this)">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span class="label">Guests</span></span>
-      </div>
-    </div>
+
     <!-- Inventory -->
     <div class="nav-group">
-      <div class="nav-parent" onclick="showSection('inventory',this)">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg><span class="label">Inventory</span></span>
+      <div class="nav-parent" onclick="toggleGroup('nc-inv',this)">
+        <span class="left"><span class="nav-emoji">📦</span><span class="label">Inventory</span></span>
+        <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="nav-children" id="nc-inv">
+        <div class="nav-child" onclick="showSection('inventory',null)">Inventory</div>
+        <div class="nav-child" onclick="location.href='/stock-history'">Stock History</div>
+        <div class="nav-child" onclick="location.href='/suppliers'">Suppliers</div>
+        <div class="nav-child" onclick="location.href='/purchase-orders'">Purchase Orders</div>
+        <div class="nav-child" onclick="location.href='/recipes'">Recipes</div>
+        <div class="nav-child" onclick="location.href='/inventory-batches'">Inventory Batches</div>
+        <div class="nav-child" onclick="location.href='/waste'">Waste</div>
       </div>
     </div>
+
     <!-- Staff -->
     <div class="nav-group">
-      <div class="nav-parent" onclick="showSection('staff',this)">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="label">Staff</span></span>
+      <div class="nav-parent" onclick="toggleGroup('nc-staff',this)">
+        <span class="left"><span class="nav-emoji">👥</span><span class="label">Staff</span></span>
+        <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="nav-children" id="nc-staff">
+        <div class="nav-child" onclick="showSection('staff',null)">Staff</div>
+        <div class="nav-child" onclick="showSection('attendance',null)">Attendance</div>
+        <div class="nav-child" onclick="location.href='/clock'">Clock In/Out</div>
+        <div class="nav-child" onclick="location.href='/shifts'">Shifts</div>
+        <div class="nav-child" onclick="location.href='/roster'">Roster</div>
+        <div class="nav-child" onclick="location.href='/payroll'">Payroll</div>
+        <div class="nav-child" onclick="location.href='/training'">Training</div>
+        <div class="nav-child" onclick="location.href='/staff-performance'">Performance</div>
+        <div class="nav-child" onclick="location.href='/recognition'">Recognition</div>
       </div>
     </div>
+
+    <!-- Finance -->
+    <div class="nav-group">
+      <div class="nav-parent" onclick="toggleGroup('nc-fin',this)">
+        <span class="left"><span class="nav-emoji">💰</span><span class="label">Finance</span></span>
+        <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="nav-children" id="nc-fin">
+        <div class="nav-child" onclick="showSection('payments',null)">Payments</div>
+        <div class="nav-child" onclick="location.href='/wallet'">Wallet</div>
+        <div class="nav-child" onclick="location.href='/gift-cards'">Gift Cards</div>
+        <div class="nav-child" onclick="location.href='/expenses'">Expenses</div>
+        <div class="nav-child" onclick="location.href='/tax'">Tax</div>
+        <div class="nav-child" onclick="location.href='/tips'">Tips</div>
+        <div class="nav-child" onclick="location.href='/tip-pool'">Tip Pool</div>
+        <div class="nav-child" onclick="location.href='/invoices'">Invoices</div>
+        <div class="nav-child" onclick="location.href='/finance'">Finance Dashboard</div>
+      </div>
+    </div>
+
+    <!-- Marketing -->
+    <div class="nav-group">
+      <div class="nav-parent" onclick="toggleGroup('nc-mkt',this)">
+        <span class="left"><span class="nav-emoji">🎯</span><span class="label">Marketing</span></span>
+        <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="nav-children" id="nc-mkt">
+        <div class="nav-child" onclick="location.href='/crm'">CRM</div>
+        <div class="nav-child" onclick="location.href='/loyalty'">Loyalty</div>
+        <div class="nav-child" onclick="location.href='/coupons'">Coupons</div>
+        <div class="nav-child" onclick="location.href='/campaigns'">Campaigns</div>
+        <div class="nav-child" onclick="location.href='/promotions'">Promotions</div>
+        <div class="nav-child" onclick="location.href='/birthdays'">Birthdays</div>
+        <div class="nav-child" onclick="location.href='/feedback'">Feedback</div>
+      </div>
+    </div>
+
     <!-- Analytics -->
     <div class="nav-group">
-      <div class="nav-parent" onclick="showSection('analytics',this)">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="label">Analytics</span></span>
+      <div class="nav-parent" onclick="toggleGroup('nc-anal',this)">
+        <span class="left"><span class="nav-emoji">📊</span><span class="label">Analytics</span></span>
+        <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="nav-children" id="nc-anal">
+        <div class="nav-child" onclick="showSection('analytics',null)">Sales Analytics</div>
+        <div class="nav-child" onclick="location.href='/advanced-analytics'">Advanced Analytics</div>
+        <div class="nav-child" onclick="location.href='/menu-engineering'">Menu Engineering</div>
+        <div class="nav-child" onclick="location.href='/customer-analytics'">Customer Analytics</div>
+        <div class="nav-child" onclick="location.href='/performance'">Performance Analytics</div>
+        <div class="nav-child" onclick="showSection('reports',null)">Reports</div>
       </div>
     </div>
-    <!-- Attendance -->
+
+    <!-- Administration -->
     <div class="nav-group">
-      <div class="nav-parent" onclick="showSection('attendance',this)">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="label">Attendance</span></span>
+      <div class="nav-parent" onclick="toggleGroup('nc-admin',this)">
+        <span class="left"><span class="nav-emoji">⚙️</span><span class="label">Administration</span></span>
+        <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="nav-children" id="nc-admin">
+        <div class="nav-child" onclick="location.href='/branches'">Branches</div>
+        <div class="nav-child" onclick="showSection('settings',null)">Settings</div>
+        <div class="nav-child" onclick="showSection('notifications',null)">Notifications</div>
+        <div class="nav-child" onclick="location.href='/subscriptions'">Subscriptions</div>
+        <div class="nav-child" onclick="location.href='/audit'">Audit Logs</div>
+        <div class="nav-child" onclick="location.href='/roles'">Roles & Permissions</div>
       </div>
     </div>
-    <!-- Floor Map -->
+
+    <div class="nav-divider"></div>
+
+    <!-- Favorites -->
     <div class="nav-group">
-      <div class="nav-parent" onclick="showSection('floormap',this)">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg><span class="label">Floor Map</span></span>
+      <div class="nav-parent" onclick="toggleGroup('nc-favs',this)">
+        <span class="left"><span class="nav-emoji">⭐</span><span class="label">Favorites</span></span>
+        <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="nav-children" id="nc-favs">
+        <div id="favsList"></div>
+        <div class="nav-child" onclick="openFavPicker()" style="color:var(--dimmed);font-style:italic">+ Add favorite</div>
       </div>
     </div>
-    <!-- Notifications -->
-    <div class="nav-group">
-      <div class="nav-parent" onclick="showSection('notifications',this)">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><span class="label">Notifications</span></span>
-        <span id="sidebarNotifCount" style="background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 5px;display:none">0</span>
-      </div>
-    </div>
-    <!-- Reports -->
-    <div class="nav-group">
-      <div class="nav-parent" onclick="showSection('reports',this)">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span class="label">Reports</span></span>
-      </div>
-    </div>
-    <!-- Settings -->
-    <div class="nav-group">
-      <div class="nav-parent" onclick="showSection('settings',this)">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span class="label">Settings</span></span>
-      </div>
-    </div>
-    <div style="border-top:1px solid var(--border);margin:6px 12px 4px"></div>
-    <!-- Kitchen (external) -->
-    <div class="nav-group">
-      <div class="nav-parent" onclick="window.open('/kitchen','_blank')">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg><span class="label">Kitchen View</span></span>
-        <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      </div>
-    </div>
-    <!-- Payments (internal section) -->
-    <div class="nav-group">
-      <div class="nav-parent" onclick="showSection('payments',this)">
-        <span class="left"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><span class="label">Payments / भुक्तानी</span></span>
-      </div>
-    </div>
+
   </nav>
 
+  <!-- Bottom pinned items -->
+  <div class="nav-bottom">
+    <div class="nav-group">
+      <div class="nav-parent" onclick="showSection('notifications',null)">
+        <span class="left"><span class="nav-emoji">🔔</span><span class="label">Notifications</span></span>
+        <span id="sidebarNotifCount" style="background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 6px;display:none">0</span>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-parent" onclick="openModal('profileModal')">
+        <span class="left">
+          <span class="nav-emoji">👤</span>
+          <span class="label" id="sidebarProfileName">Profile</span>
+        </span>
+        <span id="sidebarRoleBadge" style="font-size:9px;color:var(--accent);font-weight:700;background:rgba(249,115,22,.12);padding:2px 6px;border-radius:4px;white-space:nowrap"></span>
+      </div>
+    </div>
+  </div>
+
   <div class="sidebar-footer">
-    <div class="footer-title">Restaurant System</div>
+    <div class="footer-title">Uena Restaurant</div>
     <div>© 2026 All Rights Reserved</div>
   </div>
 </div>
@@ -578,15 +760,31 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 ══════════════════════════════ -->
 <div class="main-wrap">
 
+  <!-- DEMO MODE BANNER -->
+  <div class="demo-banner" id="demoBanner">
+    <div class="db-left">
+      <span class="db-badge">DEMO</span>
+      <span>This is a live demo of Uena Restaurant System. All data shown is sample data.</span>
+    </div>
+    <button class="db-cta" onclick="window.open('mailto:prabeshchand143@gmail.com?subject=Restaurant System Inquiry','_blank')">
+      📧 Get This System
+    </button>
+  </div>
+
   <!-- TOPBAR -->
   <div class="topbar">
     <button class="burger-btn" onclick="toggleSidebar()">
       <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
     <span class="topbar-title" id="pageTitle">Dashboard</span>
-    <div class="search-box">
+    <div class="search-box" id="searchBox">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input placeholder="Search here..." id="searchInput" oninput="handleSearch()" />
+      <input placeholder="Global search... (Ctrl+K)" id="searchInput" autocomplete="off"
+        oninput="handleSearch()"
+        onfocus="if(this.value.trim().length>1)openSearchDropdown()"
+        onkeydown="handleSearchKey(event)" />
+      <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Clear">✕</button>
+      <div id="searchDropdown"></div>
     </div>
     <div class="topbar-icons">
       <div style="position:relative">
@@ -630,6 +828,31 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 
     <!-- ══════════ SECTION: DASHBOARD ══════════ -->
     <div class="section active" id="sec-dashboard">
+
+        <!-- Welcome Banner -->
+      <div class="welcome-banner" id="welcomeBanner">
+        <div class="wb-left">
+          <div class="wb-greeting" id="wbGreeting">Good morning, <span id="wbName">Admin</span> 👋</div>
+          <div class="wb-date" id="wbDate">Loading...</div>
+        </div>
+        <div class="wb-right">
+          <button class="qa-btn primary" onclick="showSection('orders',null)">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Order
+          </button>
+          <button class="qa-btn" onclick="showSection('reservations',null)">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Reservation
+          </button>
+          <button class="qa-btn" onclick="showSection('tables',null)">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><line x1="8" y1="7" x2="8" y2="21"/><line x1="16" y1="7" x2="16" y2="21"/><path d="M6 3h2m4 0h2m4 0h2"/></svg>Table Map
+          </button>
+          <button class="qa-btn" onclick="location.href='/kitchen'">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8M12 8v8"/></svg>Kitchen
+          </button>
+          <button class="qa-btn" onclick="showSection('inventory',null)">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>Inventory
+          </button>
+        </div>
+      </div>
 
       <!-- Low stock alert -->
       <div class="alert-chip" id="lowStockAlert" style="display:none" onclick="showSection('inventory',null)">
@@ -695,6 +918,30 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
             <path d="M0,20 L20,16 L40,18 L60,10 L80,14 L100,6 L120,10" fill="none" stroke="#3b82f6" stroke-width="2"/>
             <path d="M0,20 L20,16 L40,18 L60,10 L80,14 L100,6 L120,10 L120,44 L0,44Z" fill="url(#sg4)"/>
           </svg>
+        </div>
+      </div>
+
+      <!-- Live Status Row -->
+      <div class="live-row">
+        <!-- Live Table Status -->
+        <div class="live-card">
+          <div class="live-card-title">
+            🪑 Live Table Status
+            <span id="liveTableSummary">Loading...</span>
+          </div>
+          <div class="tables-mini" id="liveTablesMini">
+            <!-- populated by JS -->
+          </div>
+        </div>
+        <!-- Active Orders -->
+        <div class="live-card">
+          <div class="live-card-title">
+            🔥 Active Orders
+            <span onclick="showSection('orders',null)" style="color:var(--accent);cursor:pointer;font-size:11px">View all →</span>
+          </div>
+          <div class="active-orders-list" id="activeOrdersList">
+            <div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Loading...</div>
+          </div>
         </div>
       </div>
 
@@ -1549,6 +1796,16 @@ document.getElementById('userName').textContent   = user.name || user.username |
 document.getElementById('userRole').textContent   = (user.role || 'admin').toUpperCase();
 document.getElementById('userAvatar').textContent = (user.name || user.username || 'AD').slice(0,2).toUpperCase();
 document.getElementById('pw-user').value          = user.username || '';
+// Sidebar bottom profile
+document.getElementById('sidebarProfileName').textContent = user.name || user.username || 'Profile';
+const roleBadge = document.getElementById('sidebarRoleBadge');
+if (roleBadge) roleBadge.textContent = (user.role || '').toUpperCase();
+
+// Demo mode banner — show for non-admin users (manager/demo accounts)
+if (user.role !== 'admin') {
+  const banner = document.getElementById('demoBanner');
+  if (banner) banner.classList.add('show');
+}
 
 function authHeaders() {
   return { 'Content-Type':'application/json', 'Authorization':'Bearer '+token };
@@ -1624,6 +1881,14 @@ function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('collapsed');
 }
 
+function toggleGroup(id, el) {
+  const children = document.getElementById(id);
+  if (!children) return;
+  children.classList.toggle('open');
+  const arrow = el.querySelector('.nav-arrow');
+  if (arrow) arrow.style.transform = children.classList.contains('open') ? 'rotate(180deg)' : '';
+}
+
 let currentSection = 'dashboard';
 function showSection(name, navEl, filter) {
   // hide all sections
@@ -1668,10 +1933,30 @@ let dashStats  = {};
 const DAILY_GOAL = 5000;
 
 async function loadDashboard() {
+  // Welcome banner
+  (function() {
+    const now = new Date();
+    const hour = now.getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    const el = document.getElementById('wbGreeting');
+    if (el) {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const name = user.name || user.username || 'Admin';
+      el.innerHTML = `${greeting}, <span style="color:var(--accent)">${name.split(' ')[0]}</span> 👋`;
+    }
+    const dateEl = document.getElementById('wbDate');
+    if (dateEl) {
+      const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      dateEl.textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+    }
+  })();
+
   try {
-    const [summary, menuData] = await Promise.all([
+    const [summary, menuData, ordersData] = await Promise.all([
       api('GET','/api/dashboard/summary'),
-      api('GET','/api/menu')
+      api('GET','/api/menu'),
+      api('GET','/api/orders?limit=20'),
     ]);
     const s = summary.stats;
     dashStats = s;
@@ -1711,7 +1996,67 @@ async function loadDashboard() {
     // Pending orders notification
     if (s.pendingOrders > 0) addNotif(`🟠 ${s.pendingOrders} pending order(s) need attention`, 'order');
 
+    // Live tables widget
+    buildLiveTables();
+
+    // Active orders widget
+    buildActiveOrdersWidget(ordersData || summary.orders || []);
+
   } catch(e) { console.error(e); showToast('Failed to load dashboard data','error'); }
+}
+
+async function buildLiveTables() {
+  try {
+    const [tablesData, ordersData] = await Promise.all([
+      api('GET', '/api/tables'),
+      api('GET', '/api/orders?status=Pending,Preparing&limit=50'),
+    ]);
+    const tables = Array.isArray(tablesData) ? tablesData : (tablesData.tables || []);
+    const orders = Array.isArray(ordersData) ? ordersData : (ordersData.orders || []);
+    const occupiedTables = new Set(orders.filter(o => o.status==='Pending'||o.status==='Preparing').map(o=>o.table||o.tableNumber));
+    const cont = document.getElementById('liveTablesMini');
+    const sumEl = document.getElementById('liveTableSummary');
+    if (!cont) return;
+    cont.innerHTML = '';
+    tables.slice(0,16).forEach(t => {
+      const num = typeof t === 'number' ? t : (t.number || t.tableNumber || t.id);
+      const occupied = occupiedTables.has(num) || t.status === 'Occupied';
+      const chip = document.createElement('div');
+      chip.className = 'tm-chip' + (occupied ? ' occupied' : '');
+      chip.title = `Table ${num} — ${occupied ? 'Occupied' : 'Available'}`;
+      chip.onclick = () => showSection('tables', null);
+      chip.innerHTML = `<div class="tm-no">${num}</div><div class="tm-status">${occupied?'●':'○'}</div>`;
+      cont.appendChild(chip);
+    });
+    const occ = occupiedTables.size;
+    const total = tables.length;
+    if (sumEl) sumEl.textContent = `${occ} occupied · ${total-occ} free`;
+  } catch(e) {
+    const cont = document.getElementById('liveTablesMini');
+    if (cont) cont.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px">Could not load tables</div>';
+  }
+}
+
+function buildActiveOrdersWidget(orders) {
+  const cont = document.getElementById('activeOrdersList');
+  if (!cont) return;
+  const active = (Array.isArray(orders) ? orders : []).filter(o => o.status==='Pending'||o.status==='Preparing').slice(0,6);
+  if (!active.length) {
+    cont.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">✓ No active orders right now</div>';
+    return;
+  }
+  cont.innerHTML = active.map(o => {
+    const mins = o.createdAt ? Math.floor((Date.now()-new Date(o.createdAt))/60000) : '—';
+    const label = Array.isArray(o.items) && o.items.length ? o.items[0].name+(o.items.length>1?` +${o.items.length-1}`:'') : 'Order';
+    return `<div class="ao-item" onclick="showSection('orders',null)">
+      <div class="ao-table">#${o.tableNumber||o.id}</div>
+      <div class="ao-info">
+        <div class="ao-name">${label}</div>
+        <div class="ao-time">${typeof mins==='number'?mins+' min ago':'—'}</div>
+      </div>
+      <span class="ao-badge ${o.status}">${o.status}</span>
+    </div>`;
+  }).join('');
 }
 
 function buildSparkline(s) {
@@ -2270,23 +2615,185 @@ async function deleteReservation(id, name) {
 /* ══════════════════════════════════════════════
    SEARCH
 ══════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   GLOBAL SEARCH
+══════════════════════════════════════════════ */
+let _searchTimer = null;
+let _searchFocusIdx = -1;
+let _searchResults = [];
+
 function handleSearch() {
-  const q = document.getElementById('searchInput').value.toLowerCase().trim();
-  if (!q) return;
-  // Search within current section
+  const q = document.getElementById('searchInput').value.trim();
+  const clearBtn = document.getElementById('searchClear');
+  if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+  // Also filter local table rows in current section (legacy behavior)
+  const ql = q.toLowerCase();
   if (currentSection === 'menu') {
-    const rows = document.querySelectorAll('#menuTbody tr');
-    rows.forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+    document.querySelectorAll('#menuTbody tr').forEach(r => {
+      r.style.display = r.textContent.toLowerCase().includes(ql) ? '' : 'none';
+    });
   }
   if (currentSection === 'orders') {
-    const rows = document.querySelectorAll('#allOrdersTbody tr');
-    rows.forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+    document.querySelectorAll('#allOrdersTbody tr').forEach(r => {
+      r.style.display = r.textContent.toLowerCase().includes(ql) ? '' : 'none';
+    });
   }
   if (currentSection === 'inventory') {
-    const rows = document.querySelectorAll('#invTbody tr');
-    rows.forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+    document.querySelectorAll('#invTbody tr').forEach(r => {
+      r.style.display = r.textContent.toLowerCase().includes(ql) ? '' : 'none';
+    });
+  }
+
+  // Global search with debounce
+  clearTimeout(_searchTimer);
+  if (q.length < 1) { closeSearchDropdown(); return; }
+  if (q.length < 2) return;
+  showSearchSpinner();
+  _searchTimer = setTimeout(() => globalSearch(q), 320);
+}
+
+async function globalSearch(q) {
+  try {
+    const r = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=5`, { headers: authHeaders() });
+    const data = await r.json();
+    _searchResults = data.results || [];
+    _searchFocusIdx = -1;
+    renderSearchDropdown(data, q);
+  } catch (e) {
+    renderSearchError();
   }
 }
+
+function showSearchSpinner() {
+  const dd = document.getElementById('searchDropdown');
+  dd.innerHTML = '<div class="sd-spinner">🔍 Searching...</div>';
+  dd.classList.add('open');
+}
+
+function renderSearchError() {
+  const dd = document.getElementById('searchDropdown');
+  dd.innerHTML = '<div class="sd-empty">⚠️ Search error — check server</div>';
+  dd.classList.add('open');
+}
+
+function renderSearchDropdown(data, q) {
+  const dd = document.getElementById('searchDropdown');
+  if (!data.total) {
+    dd.innerHTML = `<div class="sd-empty">No results for <strong>"${escHtml(q)}"</strong></div>`;
+    dd.classList.add('open');
+    return;
+  }
+
+  let html = '';
+  data.results.forEach(group => {
+    html += `<div class="sd-group-label">${group.emoji} ${escHtml(group.label)}</div>`;
+    group.items.forEach(item => {
+      const badge = item.badge
+        ? `<span class="sd-item-badge" style="background:${item.badge.color}22;color:${item.badge.color}">${escHtml(item.badge.text)}</span>`
+        : '';
+      html += `<div class="sd-item" onclick="runSearchAction(${JSON.stringify(item.action)})" data-action="${escHtml(item.action)}">
+        <span class="sd-item-icon">${group.emoji}</span>
+        <span class="sd-item-body">
+          <div class="sd-item-title">${highlight(escHtml(item.title), q)}</div>
+          <div class="sd-item-sub">${escHtml(item.subtitle || '')}</div>
+        </span>
+        ${badge}
+      </div>`;
+    });
+  });
+
+  html += `<div class="sd-footer">
+    <span class="sd-kbd"><kbd>↑</kbd><kbd>↓</kbd> navigate &nbsp;<kbd>↵</kbd> open &nbsp;<kbd>Esc</kbd> close</span>
+    <span onclick="closeSearchDropdown()">${data.total} result${data.total !== 1 ? 's' : ''} — close</span>
+  </div>`;
+
+  dd.innerHTML = html;
+  dd.classList.add('open');
+}
+
+function runSearchAction(action) {
+  closeSearchDropdown();
+  try { eval(action); } catch(e) { console.warn('search action failed', e); }
+}
+
+function openSearchDropdown() {
+  const dd = document.getElementById('searchDropdown');
+  if (dd.innerHTML) dd.classList.add('open');
+}
+
+function closeSearchDropdown() {
+  const dd = document.getElementById('searchDropdown');
+  dd.classList.remove('open');
+  _searchFocusIdx = -1;
+}
+
+function clearSearch() {
+  const inp = document.getElementById('searchInput');
+  inp.value = '';
+  inp.focus();
+  const clearBtn = document.getElementById('searchClear');
+  if (clearBtn) clearBtn.style.display = 'none';
+  closeSearchDropdown();
+  // restore all table rows
+  document.querySelectorAll('#menuTbody tr,#allOrdersTbody tr,#invTbody tr').forEach(r => r.style.display = '');
+}
+
+function handleSearchKey(e) {
+  const dd = document.getElementById('searchDropdown');
+  const items = dd.querySelectorAll('.sd-item');
+  if (!items.length) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _searchFocusIdx = Math.min(_searchFocusIdx + 1, items.length - 1);
+    updateSearchFocus(items);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _searchFocusIdx = Math.max(_searchFocusIdx - 1, 0);
+    updateSearchFocus(items);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (_searchFocusIdx >= 0 && items[_searchFocusIdx]) {
+      items[_searchFocusIdx].click();
+    }
+  } else if (e.key === 'Escape') {
+    closeSearchDropdown();
+    document.getElementById('searchInput').blur();
+  }
+}
+
+function updateSearchFocus(items) {
+  items.forEach((el, i) => el.classList.toggle('focused', i === _searchFocusIdx));
+  if (items[_searchFocusIdx]) items[_searchFocusIdx].scrollIntoView({ block: 'nearest' });
+}
+
+function highlight(text, q) {
+  if (!q) return text;
+  const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return text.replace(re, '<mark style="background:rgba(249,115,22,.25);color:var(--accent);border-radius:2px">$1</mark>');
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Ctrl+K shortcut to focus search
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    document.getElementById('searchInput').focus();
+    document.getElementById('searchInput').select();
+  }
+});
+
+// Click outside to close
+document.addEventListener('click', e => {
+  if (!document.getElementById('searchBox')?.contains(e.target)) {
+    closeSearchDropdown();
+  }
+});
 
 /* ══════════════════════════════════════════════
    NOTIFICATIONS (SSE + manual)
@@ -2372,6 +2879,73 @@ function connectSSE() {
 ══════════════════════════════════════════════ */
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ── Favorites ─────────────────────────────────────────────
+const FAV_PAGES = [
+  {label:'Dashboard',        fn:"showSection('dashboard',null)"},
+  {label:'Orders',           fn:"showSection('orders',null)"},
+  {label:'Tables',           fn:"showSection('tables',null)"},
+  {label:'Reservations',     fn:"showSection('reservations',null)"},
+  {label:'Kitchen',          fn:"location.href='/kitchen'"},
+  {label:'Delivery',         fn:"location.href='/delivery'"},
+  {label:'Waitlist',         fn:"location.href='/waitlist'"},
+  {label:'QR Ordering',      fn:"location.href='/qr-ordering'"},
+  {label:'Inventory',        fn:"showSection('inventory',null)"},
+  {label:'Suppliers',        fn:"location.href='/suppliers'"},
+  {label:'Purchase Orders',  fn:"location.href='/purchase-orders'"},
+  {label:'Recipes',          fn:"location.href='/recipes'"},
+  {label:'Staff',            fn:"showSection('staff',null)"},
+  {label:'Attendance',       fn:"showSection('attendance',null)"},
+  {label:'Clock In/Out',     fn:"location.href='/clock'"},
+  {label:'Payroll',          fn:"location.href='/payroll'"},
+  {label:'Payments',         fn:"showSection('payments',null)"},
+  {label:'Expenses',         fn:"location.href='/expenses'"},
+  {label:'Gift Cards',       fn:"location.href='/gift-cards'"},
+  {label:'Invoices',         fn:"location.href='/invoices'"},
+  {label:'Finance Dashboard',fn:"location.href='/finance'"},
+  {label:'CRM',              fn:"location.href='/crm'"},
+  {label:'Loyalty',          fn:"location.href='/loyalty'"},
+  {label:'Campaigns',        fn:"location.href='/campaigns'"},
+  {label:'Sales Analytics',  fn:"showSection('analytics',null)"},
+  {label:'Reports',          fn:"showSection('reports',null)"},
+  {label:'Settings',         fn:"showSection('settings',null)"},
+];
+function renderFavs() {
+  const saved = JSON.parse(localStorage.getItem('navFavs') || '[]');
+  const el = document.getElementById('favsList');
+  if (!el) return;
+  el.innerHTML = saved.map(label => {
+    const page = FAV_PAGES.find(p => p.label === label);
+    if (!page) return '';
+    return `<div class="nav-child" onclick="${page.fn}" style="display:flex;justify-content:space-between;align-items:center">
+      <span>${label}</span>
+      <span onclick="event.stopPropagation();removeFav('${label}')" style="color:var(--dimmed);font-size:11px;padding:0 4px;cursor:pointer" title="Remove">✕</span>
+    </div>`;
+  }).join('');
+}
+function removeFav(label) {
+  let saved = JSON.parse(localStorage.getItem('navFavs') || '[]');
+  saved = saved.filter(l => l !== label);
+  localStorage.setItem('navFavs', JSON.stringify(saved));
+  renderFavs();
+}
+function openFavPicker() {
+  const saved = JSON.parse(localStorage.getItem('navFavs') || '[]');
+  const available = FAV_PAGES.filter(p => !saved.includes(p.label));
+  if (!available.length) { showToast('All pages already in favorites','info'); return; }
+  const label = available[0].label;
+  // Simple picker: add next available
+  const choice = prompt('Add to favorites:\n' + available.map((p,i)=>`${i+1}. ${p.label}`).join('\n') + '\n\nEnter number:');
+  const idx = parseInt(choice) - 1;
+  if (isNaN(idx) || idx < 0 || idx >= available.length) return;
+  saved.push(available[idx].label);
+  localStorage.setItem('navFavs', JSON.stringify(saved));
+  renderFavs();
+  // Auto-open favorites group
+  const nc = document.getElementById('nc-favs');
+  if (nc && !nc.classList.contains('open')) nc.classList.add('open');
+}
+renderFavs();
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
 });
@@ -3083,7 +3657,7 @@ function testPrint() {
     <p style="text-align:center">${new Date().toLocaleString()}</p>
     <hr><p>Item 1 × 2 .............. रू 400</p><p>Item 2 × 1 .............. रू 200</p>
     <hr><p><b>Total: रू 600</b></p><p style="text-align:center">Thank you! 🙏</p>
-  </body></html>`);
+</body></html>`);
   printWin.print();
 }
 
@@ -3348,7 +3922,7 @@ function printPaymentReceipt(payId) {
   <div class="row"><span>${t.change}</span><span>Rs ${change.toLocaleString()}</span></div>
   <div class="footer">${payLang==='ne'?'धन्यवाद! फेरि आउनुहोस् 🙏':'Thank you! Come again! 🙏'}</div>
   <br><button onclick="window.print()" style="width:100%;padding:10px;background:#000;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px">${t.print}</button>
-  </body></html>`);
+</body></html>`);
   w.document.close();
   w.focus();
   setTimeout(()=>w.print(), 500);
@@ -3434,5 +4008,6 @@ function styleSheet(ws, rows) {
   });
 }
 </script>
+<script src="/js/autoupdate.js"></script>
 </body>
 </html>

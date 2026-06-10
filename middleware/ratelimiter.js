@@ -1,22 +1,30 @@
 // middleware/rateLimiter.js
 const rateLimit = require('express-rate-limit');
 
-function make({ windowMs, max, message }) {
+const isDev = process.env.NODE_ENV !== 'production';
+
+function make({ windowMs, max, devMax, message }) {
   return rateLimit({
     windowMs,
-    max,
+    max: isDev ? (devMax ?? max * 10) : max,   // 10x limit in development
     standardHeaders: true,
     legacyHeaders: false,
     skip: req => req.path === '/events',
     handler: (_req, res) => {
-      res.status(429).json({ success: false, message, retryAfter: Math.ceil(windowMs / 1000) });
+      res.status(429).json({
+        success: false,
+        message: isDev
+          ? `[Dev] Rate limit hit. Restart server to reset. (${message})`
+          : message,
+        retryAfter: Math.ceil(windowMs / 1000),
+      });
     },
   });
 }
 
-// Auth: 10 attempts / 15 min (brute-force protection)
+// Auth: 10 attempts / 15 min in production, 100 in dev
 const authLimiter = make({
-  windowMs: 15 * 60 * 1000, max: 10,
+  windowMs: 15 * 60 * 1000, max: 10, devMax: 100,
   message: 'Too many login attempts. Please wait 15 minutes.',
 });
 

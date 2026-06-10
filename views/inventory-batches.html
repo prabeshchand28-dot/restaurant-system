@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Inventory Batch Tracking</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:20px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.alert-banner{background:#fff3e0;border:1px solid var(--orange);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:none}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}.btn-orange{background:var(--orange)}
+.batch-card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;transition:box-shadow .2s}
+.batch-card:hover{box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.batch-card.ACTIVE{border-left:4px solid var(--green)}
+.batch-card.expiring-soon{border-left:4px solid var(--orange)}
+.batch-card.EXPIRED{border-left:4px solid var(--red);opacity:.7}
+.batch-card.CONSUMED{border-left:4px solid var(--muted);opacity:.6}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800}
+.s-ACTIVE{background:#e7f5ed;color:var(--green)}.s-CONSUMED{background:#f0f0f0;color:#888}.s-EXPIRED{background:#fce8e7;color:var(--red)}.s-DISCARDED{background:#f0f0f0;color:#888}
+.progress-bar{height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:3px;transition:width .4s}
+.expiry-warning{font-size:11px;font-weight:800;padding:2px 6px;border-radius:4px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Inventory Batches</span></span>
+  <div><a class="nav-btn" href="/stock-history">📦 Stock</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-active" style="color:var(--green)">—</div><div class="lbl">✅ Active</div></div>
+    <div class="stat"><div class="num" id="s-expiring" style="color:var(--orange)">—</div><div class="lbl">⚠️ Expiring 7 Days</div></div>
+    <div class="stat"><div class="num" id="s-month" style="color:var(--blue)">—</div><div class="lbl">📅 Expiring 30 Days</div></div>
+    <div class="stat"><div class="num" id="s-expired" style="color:var(--red)">—</div><div class="lbl">❌ Expired</div></div>
+    <div class="stat"><div class="num" id="s-consumed" style="color:var(--muted)">—</div><div class="lbl">📭 Consumed</div></div>
+  </div>
+  <div id="alertBanner" class="alert-banner"></div>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <div class="card-header">📦 Receive New Batch</div>
+        <div class="card-body">
+          <label>Item Name</label><input id="bItem" placeholder="e.g. Chicken breast, Tomatoes"/>
+          <label>Batch / Lot Number</label><input id="bBatch" placeholder="e.g. LOT-2024-001"/>
+          <label>Supplier</label><input id="bSupplier" placeholder="Supplier name"/>
+          <label>Quantity</label>
+          <div style="display:flex;gap:6px">
+            <input type="number" id="bQty" placeholder="Amount" min="0" style="flex:1"/>
+            <select id="bUnit" style="width:90px">
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="L">L</option>
+              <option value="ml">ml</option>
+              <option value="pcs">pcs</option>
+              <option value="box">box</option>
+              <option value="dozen">dozen</option>
+            </select>
+          </div>
+          <label>Cost per Unit (रू)</label><input type="number" id="bCost" placeholder="0.00" min="0"/>
+          <label>Expiry Date</label><input type="date" id="bExpiry"/>
+          <label>Notes</label><input id="bNotes" placeholder="Storage location, special notes..."/>
+          <button class="btn btn-green" style="width:100%;margin-top:14px" onclick="receiveBatch()">📦 Receive Batch</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+        <input id="fSearch" placeholder="Search item..." oninput="loadBatches()" style="width:180px"/>
+        <select id="fStatus" onchange="loadBatches()" style="width:130px">
+          <option value="">Active & Expiring</option>
+          <option value="ACTIVE">Active</option>
+          <option value="EXPIRED">Expired</option>
+          <option value="CONSUMED">Consumed</option>
+          <option value="DISCARDED">Discarded</option>
+        </select>
+        <button class="btn btn-orange" style="font-size:11px;padding:5px 12px" onclick="showExpiring()">⚠️ Expiring Soon</button>
+      </div>
+      <div id="batchList">Loading...</div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+async function loadStats(){
+  const r=await fetch('/api/inventory-batches/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-active').textContent=d.active;
+  document.getElementById('s-expiring').textContent=d.expiringSoon;
+  document.getElementById('s-month').textContent=d.expiringMonth;
+  document.getElementById('s-expired').textContent=d.expired;
+  document.getElementById('s-consumed').textContent=d.consumed;
+  if(d.expiringSoon>0){
+    const b=document.getElementById('alertBanner');
+    b.style.display='block';
+    b.innerHTML=`⚠️ <strong>${d.expiringSoon} batch(es)</strong> expiring within 7 days — check and use FIFO order.`;
+  }
+}
+
+async function loadBatches(){
+  const search=document.getElementById('fSearch').value;
+  const status=document.getElementById('fStatus').value;
+  let url='/api/inventory-batches?a=1';
+  if(search)url+=`&search=${encodeURIComponent(search)}`;if(status)url+=`&status=${status}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  renderBatches(await r.json());
+}
+
+async function showExpiring(){
+  const r=await fetch('/api/inventory-batches?expiring=7',{headers:authH(),cache:'no-store'});
+  renderBatches(await r.json());
+}
+
+function daysUntilExpiry(expiryDate){
+  if(!expiryDate)return null;
+  return Math.round((new Date(expiryDate)-new Date())/86400000);
+}
+
+function renderBatches(batches){
+  if(!batches.length){document.getElementById('batchList').innerHTML='<div style="text-align:center;padding:60px;background:var(--white);border-radius:12px;color:var(--muted)">No batches found</div>';return;}
+  document.getElementById('batchList').innerHTML=batches.map(b=>{
+    const days=daysUntilExpiry(b.expiryDate);
+    const pct=b.quantity>0?Math.round(b.remaining/b.quantity*100):0;
+    const expiringSoon=days!==null&&days<=7&&days>=0&&b.status==='ACTIVE';
+    const cls=expiringSoon?'expiring-soon':b.status;
+    const fillColor=pct>50?'var(--green)':pct>20?'var(--orange)':'var(--red)';
+    return `<div class="batch-card ${cls}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="flex:1">
+          <div style="font-weight:900;font-size:14px">📦 ${b.itemName}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">
+            ${b.batchNumber?'Batch: '+b.batchNumber+' · ':''}${b.supplier||'No supplier'} · Received: ${new Date(b.receivedAt).toLocaleDateString()}
+          </div>
+          <div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+            <span class="badge s-${b.status}">${b.status}</span>
+            ${b.expiryDate?`<span class="expiry-warning" style="background:${days<0?'#fce8e7':days<=7?'#fff3e0':'#f0f0f0'};color:${days<0?'var(--red)':days<=7?'var(--orange)':'#555'}">${days<0?'EXPIRED':days===0?'Expires today':days<=7?'Expires in '+days+'d':'Exp: '+new Date(b.expiryDate).toLocaleDateString()}</span>`:'<span style="font-size:11px;color:var(--muted)">No expiry</span>'}
+            ${b.costPerUnit>0?`<span style="font-size:11px;color:var(--muted)">रू ${b.costPerUnit}/${b.unit}</span>`:''}
+          </div>
+          <div style="margin-top:8px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:3px">
+              <span>Remaining: <strong>${b.remaining} ${b.unit}</strong> of ${b.quantity} ${b.unit}</span>
+              <span>${pct}%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${fillColor}"></div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-left:12px">
+          ${b.status==='ACTIVE'?`<button class="btn btn-orange" style="font-size:11px;padding:5px 10px;white-space:nowrap" onclick="consumeQty(${b.id})">➖ Use</button>`:''}
+          ${b.status==='ACTIVE'?`<button class="btn btn-red" style="font-size:11px;padding:5px 10px" onclick="setStatus(${b.id},'DISCARDED')">🗑️ Discard</button>`:''}
+          <button class="btn" style="font-size:11px;padding:5px 10px;background:#f0f0f0;color:#555" onclick="delBatch(${b.id})">Del</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function receiveBatch(){
+  const item=document.getElementById('bItem').value.trim();
+  const qty=document.getElementById('bQty').value;
+  if(!item||!qty){showToast('Item name and quantity required','error');return;}
+  const body={itemName:item,batchNumber:document.getElementById('bBatch').value,supplier:document.getElementById('bSupplier').value,quantity:parseFloat(qty),unit:document.getElementById('bUnit').value,costPerUnit:document.getElementById('bCost').value||0,expiryDate:document.getElementById('bExpiry').value||null,notes:document.getElementById('bNotes').value};
+  const r=await fetch('/api/inventory-batches',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Batch received!','success');document.getElementById('bItem').value='';document.getElementById('bBatch').value='';document.getElementById('bQty').value='';document.getElementById('bCost').value='';document.getElementById('bExpiry').value='';document.getElementById('bNotes').value='';loadStats();loadBatches();}
+  else showToast(d.message||'Error','error');
+}
+
+async function consumeQty(id){
+  const amt=prompt('Amount consumed:');
+  if(!amt||isNaN(amt))return;
+  const r=await fetch(`/api/inventory-batches/${id}/consume`,{method:'PATCH',headers:authH(),body:JSON.stringify({amount:parseFloat(amt)})});
+  if((await r.json()).id){showToast('Consumption recorded!','success');loadStats();loadBatches();}
+}
+
+async function setStatus(id,status){
+  await fetch(`/api/inventory-batches/${id}`,{method:'PATCH',headers:authH(),body:JSON.stringify({status})});
+  loadStats();loadBatches();
+}
+
+async function delBatch(id){
+  if(!confirm('Delete batch?'))return;
+  await fetch(`/api/inventory-batches/${id}`,{method:'DELETE',headers:authH()});
+  loadStats();loadBatches();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadStats();loadBatches();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

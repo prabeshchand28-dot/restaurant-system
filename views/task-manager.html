@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Task Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--purple:#6a1b9a;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:22px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.task-card{border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;background:var(--white);border-left:4px solid transparent}
+.task-card.p-URGENT{border-left-color:var(--red)}
+.task-card.p-HIGH{border-left-color:var(--orange)}
+.task-card.p-NORMAL{border-left-color:var(--blue)}
+.task-card.p-LOW{border-left-color:var(--muted)}
+.task-card.done{opacity:.6}
+.badge{display:inline-block;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase}
+.s-OPEN{background:#e8efff;color:var(--blue)}.s-IN_PROGRESS{background:#fff3e0;color:var(--orange)}.s-DONE{background:#e7f5ed;color:var(--green)}.s-CANCELLED{background:#f0f0f0;color:#888}
+.p-URGENT-badge{background:#fce8e7;color:var(--red)}.p-HIGH-badge{background:#fff3e0;color:var(--orange)}.p-NORMAL-badge{background:#e8efff;color:var(--blue)}.p-LOW-badge{background:#f0f0f0;color:#888}
+.cat-chip{font-size:10px;background:#f0f0f0;border-radius:20px;padding:2px 7px;font-weight:700}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Task Manager</span></span>
+  <div><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-open" style="color:var(--blue)">—</div><div class="lbl">Open</div></div>
+    <div class="stat"><div class="num" id="s-inprogress" style="color:var(--orange)">—</div><div class="lbl">In Progress</div></div>
+    <div class="stat"><div class="num" id="s-done" style="color:var(--green)">—</div><div class="lbl">Done Today</div></div>
+    <div class="stat"><div class="num" id="s-overdue" style="color:var(--red)">—</div><div class="lbl">⚠️ Overdue</div></div>
+  </div>
+
+  <div class="grid">
+    <!-- Create Task -->
+    <div>
+      <div class="card">
+        <div class="card-header">➕ New Task</div>
+        <div class="card-body">
+          <label>Task Title</label>
+          <input id="tTitle" placeholder="e.g. Clean walk-in fridge"/>
+          <label>Category</label>
+          <select id="tCat">
+            <option value="GENERAL">📌 General</option>
+            <option value="CLEANING">🧹 Cleaning</option>
+            <option value="MAINTENANCE">🔧 Maintenance</option>
+            <option value="ORDERING">📦 Ordering</option>
+            <option value="TRAINING">🎓 Training</option>
+            <option value="EVENT">🎉 Event</option>
+          </select>
+          <label>Priority</label>
+          <select id="tPriority">
+            <option value="LOW">🟢 Low</option>
+            <option value="NORMAL" selected>🔵 Normal</option>
+            <option value="HIGH">🟠 High</option>
+            <option value="URGENT">🔴 Urgent</option>
+          </select>
+          <label>Assign To</label>
+          <select id="tStaff"><option value="">Unassigned</option></select>
+          <label>Due Date</label>
+          <input type="datetime-local" id="tDue"/>
+          <label>Assigned By</label>
+          <input id="tBy" placeholder="Manager name"/>
+          <label>Description</label>
+          <input id="tDesc" placeholder="Details..."/>
+          <button class="btn btn-green" style="width:100%;margin-top:14px" onclick="createTask()">Create Task</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task List -->
+    <div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <select id="fStatus" onchange="loadTasks()" style="width:140px">
+          <option value="">All Statuses</option>
+          <option value="OPEN" selected>Open</option>
+          <option value="IN_PROGRESS">In Progress</option>
+          <option value="DONE">Done</option>
+          <option value="CANCELLED">Cancelled</option>
+        </select>
+        <select id="fPriority" onchange="loadTasks()" style="width:130px">
+          <option value="">All Priorities</option>
+          <option value="URGENT">🔴 Urgent</option>
+          <option value="HIGH">🟠 High</option>
+          <option value="NORMAL">🔵 Normal</option>
+          <option value="LOW">🟢 Low</option>
+        </select>
+        <select id="fCat" onchange="loadTasks()" style="width:140px">
+          <option value="">All Categories</option>
+          <option value="GENERAL">General</option>
+          <option value="CLEANING">Cleaning</option>
+          <option value="MAINTENANCE">Maintenance</option>
+          <option value="ORDERING">Ordering</option>
+          <option value="TRAINING">Training</option>
+          <option value="EVENT">Event</option>
+        </select>
+      </div>
+      <div id="taskList">Loading...</div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+const catEmoji={GENERAL:'📌',CLEANING:'🧹',MAINTENANCE:'🔧',ORDERING:'📦',TRAINING:'🎓',EVENT:'🎉'};
+const priEmoji={URGENT:'🔴',HIGH:'🟠',NORMAL:'🔵',LOW:'🟢'};
+
+async function loadStats(){
+  const r=await fetch('/api/tasks/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-open').textContent=d.open;
+  document.getElementById('s-inprogress').textContent=d.inProgress;
+  document.getElementById('s-done').textContent=d.done;
+  document.getElementById('s-overdue').textContent=d.overdue;
+}
+
+async function loadStaff(){
+  const r=await fetch('/api/staff',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  const staff=d.data||d;
+  const sel=document.getElementById('tStaff');
+  sel.innerHTML='<option value="">Unassigned</option>';
+  staff.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.name;sel.appendChild(o);});
+}
+
+async function loadTasks(){
+  const status=document.getElementById('fStatus').value;
+  const priority=document.getElementById('fPriority').value;
+  const category=document.getElementById('fCat').value;
+  let url='/api/tasks?a=1';
+  if(status)url+=`&status=${status}`;if(priority)url+=`&priority=${priority}`;if(category)url+=`&category=${category}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const tasks=await r.json();
+  if(!tasks.length){document.getElementById('taskList').innerHTML='<div style="text-align:center;padding:60px;background:var(--white);border-radius:12px;color:var(--muted)">No tasks found</div>';return;}
+  const now=new Date();
+  document.getElementById('taskList').innerHTML=tasks.map(t=>{
+    const overdue=t.dueDate&&new Date(t.dueDate)<now&&t.status!=='DONE';
+    return `<div class="task-card p-${t.priority} ${t.status==='DONE'?'done':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap">
+        <div>
+          <div style="font-weight:800;font-size:14px">${t.title}</div>
+          ${t.description?`<div style="font-size:12px;color:var(--muted);margin-top:2px">${t.description}</div>`:''}
+          <div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap">
+            <span class="cat-chip">${catEmoji[t.category]||''} ${t.category}</span>
+            <span class="badge p-${t.priority}-badge">${priEmoji[t.priority]||''} ${t.priority}</span>
+            ${t.assignedToName?`<span class="cat-chip">👤 ${t.assignedToName}</span>`:''}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <span class="badge s-${t.status}">${t.status.replace('_',' ')}</span>
+          ${t.dueDate?`<div style="font-size:11px;${overdue?'color:var(--red);font-weight:700':'color:var(--muted)'};margin-top:4px">${overdue?'⚠️ OVERDUE · ':''}Due: ${new Date(t.dueDate).toLocaleDateString()}</div>`:''}
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+        ${t.status!=='DONE'&&t.status!=='CANCELLED'?`
+          ${t.status==='OPEN'?`<button class="btn" style="font-size:11px;padding:4px 10px;background:var(--orange)" onclick="changeStatus(${t.id},'IN_PROGRESS')">▶ Start</button>`:''}
+          <button class="btn btn-green" style="font-size:11px;padding:4px 10px" onclick="markDone(${t.id})">✅ Done</button>
+          <button class="btn" style="font-size:11px;padding:4px 10px;background:#e8efff;color:var(--blue)" onclick="changeStatus(${t.id},'CANCELLED')">Cancel</button>
+        `:''}
+        <button class="btn btn-red" style="font-size:11px;padding:4px 10px" onclick="deleteTask(${t.id})">Del</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function createTask(){
+  const body={title:document.getElementById('tTitle').value,category:document.getElementById('tCat').value,priority:document.getElementById('tPriority').value,assignedToId:document.getElementById('tStaff').value||null,dueDate:document.getElementById('tDue').value||null,assignedBy:document.getElementById('tBy').value,description:document.getElementById('tDesc').value};
+  if(!body.title){showToast('Title required','error');return;}
+  const r=await fetch('/api/tasks',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Task created!','success');document.getElementById('tTitle').value='';document.getElementById('tDesc').value='';loadTasks();loadStats();}
+  else showToast(d.message||'Error','error');
+}
+
+async function changeStatus(id,status){
+  const r=await fetch(`/api/tasks/${id}`,{method:'PATCH',headers:authH(),body:JSON.stringify({status})});
+  const d=await r.json();
+  if(d.id){loadTasks();loadStats();}
+  else showToast(d.message||'Error','error');
+}
+
+async function markDone(id){
+  const completedBy=prompt('Your name (optional):');
+  const r=await fetch(`/api/tasks/${id}`,{method:'PATCH',headers:authH(),body:JSON.stringify({status:'DONE',completedBy:completedBy||''})});
+  const d=await r.json();
+  if(d.id){showToast('Task completed!','success');loadTasks();loadStats();}
+}
+
+async function deleteTask(id){
+  if(!confirm('Delete this task?'))return;
+  await fetch(`/api/tasks/${id}`,{method:'DELETE',headers:authH()});
+  loadTasks();loadStats();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadStats();loadStaff();loadTasks();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

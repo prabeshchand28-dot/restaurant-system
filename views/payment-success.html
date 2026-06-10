@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Payment Successful</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--bg:#f0f2f5;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.box{background:#fff;border-radius:20px;padding:48px 40px;text-align:center;max-width:480px;width:100%;margin:20px;box-shadow:0 8px 40px rgba(26,58,107,.12)}
+.circle{width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#e7f5ed,#c8ecd5);margin:0 auto 24px;display:flex;align-items:center;justify-content:center;font-size:48px;animation:popIn .5s ease-out}
+@keyframes popIn{0%{transform:scale(0);opacity:0}80%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+h1{font-size:26px;font-weight:900;color:var(--navy);margin-bottom:8px}
+.sub{font-size:14px;color:#666;line-height:1.6;margin-bottom:24px}
+.order-info{background:#f8f9fb;border-radius:12px;padding:16px;margin-bottom:24px;text-align:left}
+.oi-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}
+.oi-row .k{color:#666}.oi-row .v{font-weight:700;color:var(--navy)}
+.btn{display:inline-block;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;border:none;font-family:var(--font)}
+.btn-primary{background:var(--green);color:#fff;margin-right:8px}
+.btn-secondary{background:#e8efff;color:var(--blue)}
+.confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1}
+</style>
+</head>
+<body>
+<canvas class="confetti" id="confetti"></canvas>
+<div class="box">
+  <div class="circle">✅</div>
+  <h1>Payment Successful!</h1>
+  <p class="sub">Your order has been confirmed and is being prepared. You'll receive a notification when it's ready.</p>
+  <div class="order-info" id="orderInfo" style="display:none">
+    <div class="oi-row"><span class="k">Order #</span><span class="v" id="orderId">—</span></div>
+    <div class="oi-row"><span class="k">Amount Paid</span><span class="v" id="ordAmt">—</span></div>
+    <div class="oi-row"><span class="k">Payment Method</span><span class="v" id="ordMethod">—</span></div>
+    <div class="oi-row"><span class="k">Status</span><span class="v" style="color:var(--green)">✅ Paid</span></div>
+  </div>
+  <div>
+    <a href="/menu" class="btn btn-primary">🍽️ Order Again</a>
+    <a href="/" class="btn btn-secondary">🏠 Home</a>
+  </div>
+</div>
+<script>
+// Parse URL params (Stripe redirects with ?session_id= or eSewa with various params)
+const params=new URLSearchParams(window.location.search);
+const sessionId=params.get('session_id');
+const orderId=params.get('oid')||params.get('order_id');
+const amt=params.get('amt')||params.get('amount');
+const method=params.get('method')||( sessionId?'Stripe':'eSewa');
+
+if(orderId||sessionId||amt){
+  document.getElementById('orderInfo').style.display='block';
+  document.getElementById('orderId').textContent=orderId||sessionId?.slice(-8)||'—';
+  document.getElementById('ordAmt').textContent=amt?'रू '+parseFloat(amt).toLocaleString():'—';
+  document.getElementById('ordMethod').textContent=method;
+}
+
+// Simple confetti
+const canvas=document.getElementById('confetti');
+const ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+const pieces=Array.from({length:80},()=>({x:Math.random()*canvas.width,y:Math.random()*-canvas.height,w:6+Math.random()*6,h:8+Math.random()*6,r:Math.random()*Math.PI*2,dr:(.05+Math.random()*.05)*(Math.random()<.5?-1:1),vy:2+Math.random()*3,vx:(Math.random()-.5)*2,c:['#2653a0','#1a7a3a','#c0392b','#e65100','#d4af37'][Math.floor(Math.random()*5)]}));
+let frame=0;
+function animate(){
+  if(frame>300){canvas.style.opacity=Math.max(0,(1-(frame-300)/100);if(frame>400)return;}
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  pieces.forEach(p=>{p.y+=p.vy;p.x+=p.vx;p.r+=p.dr;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();if(p.y>canvas.height){p.y=-20;p.x=Math.random()*canvas.width;}});
+  frame++;requestAnimationFrame(animate);
+}
+animate();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

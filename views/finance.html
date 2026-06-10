@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Finance & P&L</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.tabs{display:flex;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.pane{display:none}.pane.active{display:block}
+.pl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.pl-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+.pl-card .amount{font-size:32px;font-weight:900}
+.pl-card .label{font-size:12px;color:var(--muted);margin-top:4px}
+.pl-card.revenue .amount{color:var(--green)}
+.pl-card.expense .amount{color:var(--red)}
+.pl-card.profit .amount{color:var(--blue)}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.pl-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:14px}
+.pl-row.total{font-size:18px;font-weight:900;border-top:3px solid var(--navy);padding-top:12px;margin-top:4px;border-bottom:none}
+.pl-row.revenue{color:var(--green)}.pl-row.expense{color:var(--red)}.pl-row.profit{color:var(--blue)}
+.bar-chart{display:flex;gap:8px;align-items:flex-end;height:140px;padding:0 8px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar-wrap{width:100%;display:flex;gap:3px;align-items:flex-end;height:120px}
+.bar{width:45%;border-radius:4px 4px 0 0;transition:height .5s}
+.bar.revenue{background:var(--green)}.bar.expense{background:var(--red)}
+.bar-label{font-size:9px;color:var(--muted);white-space:nowrap}
+.export-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.export-card{background:#f8f9fb;border:1px solid var(--border);border-radius:8px;padding:16px;display:flex;align-items:center;justify-content:space-between}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Finance & Reports</span></span>
+  <div><a class="nav-btn" href="/expenses">💰 Expenses</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('pl',this)">📈 P&L Report</div>
+  <div class="tab" onclick="switchTab('cashflow',this)">💸 Cash Flow</div>
+  <div class="tab" onclick="switchTab('export',this)">📥 Data Export</div>
+</div>
+<div class="content">
+
+  <!-- P&L -->
+  <div class="pane active" id="pane-pl">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;background:var(--white);padding:12px 16px;border-radius:10px;border:1px solid var(--border)">
+      <label style="font-size:13px;font-weight:600;color:var(--navy)">Month:</label>
+      <input type="month" id="plMonth" value="" onchange="loadPL()"/>
+      <button class="btn" onclick="loadPL()">Load Report</button>
+      <span id="marginBadge" style="margin-left:auto;font-size:13px;font-weight:700"></span>
+    </div>
+
+    <div class="pl-grid">
+      <div class="pl-card revenue"><div class="amount" id="pl-revenue">—</div><div class="label">Total Revenue</div></div>
+      <div class="pl-card expense"><div class="amount" id="pl-expense">—</div><div class="label">Total Costs</div></div>
+      <div class="pl-card profit"><div class="amount" id="pl-profit">—</div><div class="label">Net Profit</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">📊 Profit & Loss Statement</div>
+      <div class="card-body" style="max-width:600px">
+        <div class="pl-row revenue"><span>💚 Revenue (Payments)</span><span id="pls-revenue">—</span></div>
+        <div class="pl-row expense" id="pls-exp-row" style="display:none"><span>🔴 Operating Expenses</span><span id="pls-expense">—</span></div>
+        <div class="pl-row expense" id="pls-pay-row" style="display:none"><span>🔴 Payroll Costs</span><span id="pls-payroll">—</span></div>
+        <div class="pl-row total profit"><span>NET PROFIT</span><span id="pls-net">—</span></div>
+        <div style="margin-top:16px;font-size:13px;color:var(--muted)" id="pls-transactions"></div>
+
+        <div style="margin-top:20px">
+          <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">Revenue by Payment Method</div>
+          <div id="revenueByMethod"></div>
+        </div>
+        <div style="margin-top:16px">
+          <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px">Expenses by Category</div>
+          <div id="expByCategory"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cash Flow -->
+  <div class="pane" id="pane-cashflow">
+    <div class="card">
+      <div class="card-header">💸 6-Month Cash Flow</div>
+      <div class="card-body">
+        <div style="display:flex;justify-content:center;margin-bottom:12px;gap:16px;font-size:12px">
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:var(--green);display:inline-block"></span> Revenue</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:var(--red);display:inline-block"></span> Expenses</span>
+        </div>
+        <div class="bar-chart" id="cashflowChart"></div>
+        <div class="card-body" id="cashflowTable" style="padding-top:0"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export -->
+  <div class="pane" id="pane-export">
+    <div class="card">
+      <div class="card-header">📥 Export Data to CSV</div>
+      <div class="card-body">
+        <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px">
+          <label style="font-size:13px;font-weight:600;color:var(--navy)">Filter Month:</label>
+          <input type="month" id="exportMonth"/>
+          <span style="font-size:12px;color:var(--muted)">(leave blank for all data)</span>
+        </div>
+        <div class="export-grid">
+          <div class="export-card">
+            <div><div style="font-size:14px;font-weight:800">💳 Payments</div><div style="font-size:12px;color:var(--muted)">All payment transactions</div></div>
+            <button class="btn" onclick="exportCSV('payments')">Download CSV</button>
+          </div>
+          <div class="export-card">
+            <div><div style="font-size:14px;font-weight:800">💰 Expenses</div><div style="font-size:12px;color:var(--muted)">All expense records</div></div>
+            <button class="btn" onclick="exportCSV('expenses')">Download CSV</button>
+          </div>
+          <div class="export-card">
+            <div><div style="font-size:14px;font-weight:800">👥 Customers</div><div style="font-size:12px;color:var(--muted)">CRM customer profiles</div></div>
+            <button class="btn" onclick="exportCSV('customers')">Download CSV</button>
+          </div>
+          <div class="export-card">
+            <div><div style="font-size:14px;font-weight:800">📦 Inventory</div><div style="font-size:12px;color:var(--muted)">Current stock levels</div></div>
+            <button class="btn" onclick="exportCSV('inventory')">Download CSV</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+document.getElementById('plMonth').value=new Date().toISOString().slice(0,7);
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  if(name==='cashflow') loadCashFlow();
+}
+
+function fmt(n){return'रू '+Math.abs(n).toLocaleString()}
+
+async function loadPL(){
+  const month=document.getElementById('plMonth').value;
+  const r=await fetch(`/api/finance/pl?month=${month}`,{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+
+  document.getElementById('pl-revenue').textContent=fmt(d.revenue);
+  document.getElementById('pl-expense').textContent=fmt(d.totalCosts);
+  document.getElementById('pl-profit').textContent=(d.netProfit>=0?'':'−')+fmt(d.netProfit);
+  document.getElementById('pls-revenue').textContent=fmt(d.revenue);
+  document.getElementById('pls-expense').textContent=fmt(d.expenseTotal);
+  document.getElementById('pls-payroll').textContent=fmt(d.payrollTotal);
+  document.getElementById('pls-net').textContent=(d.netProfit>=0?'+':'-')+fmt(d.netProfit);
+  document.getElementById('pls-transactions').textContent=`${d.transactionCount} transactions`;
+  document.getElementById('marginBadge').textContent=`Margin: ${d.margin}%`;
+  document.getElementById('marginBadge').style.color=d.margin>=30?'var(--green)':d.margin>=10?'var(--navy)':'var(--red)';
+  if(d.expenseTotal>0) document.getElementById('pls-exp-row').style.display='flex';
+  if(d.payrollTotal>0) document.getElementById('pls-pay-row').style.display='flex';
+
+  document.getElementById('revenueByMethod').innerHTML=Object.entries(d.revenueByMethod||{}).map(([m,a])=>`
+    <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid #f0f0f0">
+      <span>${m}</span><strong>${fmt(a)}</strong>
+    </div>`).join('')||'<div style="color:var(--muted);font-size:13px">No data</div>';
+
+  document.getElementById('expByCategory').innerHTML=Object.entries(d.expByCategory||{}).map(([c,a])=>`
+    <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid #f0f0f0">
+      <span>${c}</span><strong style="color:var(--red)">${fmt(a)}</strong>
+    </div>`).join('')||'<div style="color:var(--muted);font-size:13px">No expenses</div>';
+}
+
+async function loadCashFlow(){
+  const r=await fetch('/api/finance/cashflow',{headers:authH(),cache:'no-store'});
+  const data=await r.json();
+  const maxVal=Math.max(...data.map(d=>Math.max(d.revenue,d.costs)),1);
+  document.getElementById('cashflowChart').innerHTML=data.map(d=>`
+    <div class="bar-col">
+      <div class="bar-wrap">
+        <div class="bar revenue" style="height:${Math.round(d.revenue/maxVal*110)}px" title="Revenue: रू ${d.revenue.toLocaleString()}"></div>
+        <div class="bar expense" style="height:${Math.round(d.costs/maxVal*110)}px" title="Costs: रू ${d.costs.toLocaleString()}"></div>
+      </div>
+      <div class="bar-label">${d.month.slice(5)}</div>
+    </div>`).join('');
+  document.getElementById('cashflowTable').innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:16px">
+      <thead><tr style="border-bottom:2px solid var(--border)">
+        <th style="padding:8px;text-align:left">Month</th>
+        <th style="padding:8px;text-align:right;color:var(--green)">Revenue</th>
+        <th style="padding:8px;text-align:right;color:var(--red)">Costs</th>
+        <th style="padding:8px;text-align:right">Net</th>
+      </tr></thead>
+      <tbody>${data.map(d=>`<tr>
+        <td style="padding:8px">${d.month}</td>
+        <td style="padding:8px;text-align:right;color:var(--green)">रू ${d.revenue.toLocaleString()}</td>
+        <td style="padding:8px;text-align:right;color:var(--red)">रू ${d.costs.toLocaleString()}</td>
+        <td style="padding:8px;text-align:right;font-weight:700;color:${d.net>=0?'var(--green)':'var(--red)'}">${d.net>=0?'+':''}रू ${d.net.toLocaleString()}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+}
+
+function exportCSV(type){
+  const month=document.getElementById('exportMonth').value;
+  const url=`/api/finance/export?type=${type}${month?'&month='+month:''}`;
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`${type}-${month||'all'}.csv`;
+  a.click();
+  showToast(`Downloading ${type} CSV…`,'success');
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadPL();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

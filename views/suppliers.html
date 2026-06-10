@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Supplier Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e05a1a;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block}
+.tabs{display:flex;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1400px;margin:0 auto}
+.grid2{display:grid;grid-template-columns:1fr 360px;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f0f2f5;padding:8px 12px;text-align:left;font-weight:700;color:var(--navy);border-bottom:2px solid var(--border)}
+td{padding:9px 12px;border-bottom:1px solid #f0f0f0}
+tr:hover td{background:#fafbfc}
+input,select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;margin-bottom:10px}
+input:focus,select:focus{border-color:var(--blue)}
+label{font-size:12px;font-weight:600;color:var(--navy);display:block;margin-bottom:3px}
+.btn{padding:9px 18px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-primary{background:var(--blue);color:#fff}.btn-success{background:var(--green);color:#fff}.btn-danger{background:var(--red);color:#fff}.btn-orange{background:var(--orange);color:#fff}
+.btn-sm{padding:4px 10px;font-size:11px}
+.pane{display:none}.pane.active{display:block}
+.status-badge{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block}
+.status-Pending{background:#fef3c7;color:#b45309}.status-Ordered{background:#e0f2fe;color:#0369a1}.status-Received{background:#dcfce7;color:#15803d}.status-Cancelled{background:#fee2e2;color:#dc2626}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+.po-items{border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:10px}
+.po-item-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center;font-size:12px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Supplier Management</span></span>
+  <a class="nav-btn" href="/dashboard">📊 Dashboard</a>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('suppliers',this)">🏭 Suppliers</div>
+  <div class="tab" onclick="switchTab('po',this)">📦 Purchase Orders</div>
+</div>
+<div class="content">
+  <!-- Suppliers -->
+  <div class="pane active" id="pane-suppliers">
+    <div class="grid2">
+      <div class="card">
+        <div class="card-header">🏭 Supplier List</div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Name</th><th>Category</th><th>Contact</th><th>Phone</th><th>Email</th><th>Actions</th></tr></thead>
+            <tbody id="suppliersTable"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">➕ Add Supplier</div>
+        <div class="card-body">
+          <label>Name *</label><input id="s-name" placeholder="Supplier name"/>
+          <label>Category</label>
+          <select id="s-cat"><option>General</option><option>Produce</option><option>Meat</option><option>Dairy</option><option>Beverages</option><option>Packaging</option><option>Equipment</option></select>
+          <label>Contact Person</label><input id="s-contact" placeholder="Contact name"/>
+          <label>Phone</label><input id="s-phone" placeholder="98XXXXXXXX"/>
+          <label>Email</label><input id="s-email" placeholder="supplier@email.com"/>
+          <label>Address</label><input id="s-addr" placeholder="Address"/>
+          <button class="btn btn-primary" style="width:100%" onclick="addSupplier()">Add Supplier</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Purchase Orders -->
+  <div class="pane" id="pane-po">
+    <div class="grid2">
+      <div class="card">
+        <div class="card-header">📦 Purchase Orders</div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>ID</th><th>Supplier</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody id="poTable"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">➕ New Purchase Order</div>
+        <div class="card-body">
+          <label>Supplier *</label><select id="po-supplier"><option value="">Select supplier…</option></select>
+          <label>Notes</label><input id="po-notes" placeholder="Optional notes"/>
+          <div class="po-items" id="poItemsContainer">
+            <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:6px">Items</div>
+            <div id="poItemRows"></div>
+            <button class="btn btn-sm btn-primary" onclick="addPOItem()" style="margin-top:4px">+ Add Item</button>
+          </div>
+          <div style="font-size:14px;font-weight:800;color:var(--navy);margin-bottom:10px">Total: रू <span id="poTotal">0</span></div>
+          <button class="btn btn-success" style="width:100%" onclick="createPO()">Create Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let suppliers=[];
+let poItems=[{name:'',qty:1,unit:'kg',price:0}];
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  if(name==='suppliers') loadSuppliers();
+  if(name==='po'){loadPOs();loadSupplierDropdown();}
+}
+
+async function loadSuppliers(){
+  const r=await fetch('/api/suppliers',{headers:authH(),cache:'no-store'});
+  suppliers=await r.json();
+  const tbody=document.getElementById('suppliersTable');
+  if(!suppliers.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">No suppliers yet</td></tr>';return;}
+  tbody.innerHTML=suppliers.map(s=>`
+    <tr>
+      <td><strong>${s.name}</strong></td>
+      <td>${s.category}</td>
+      <td>${s.contact||'—'}</td>
+      <td>${s.phone||'—'}</td>
+      <td>${s.email||'—'}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="removeSupplier(${s.id})">Remove</button></td>
+    </tr>`).join('');
+}
+
+async function addSupplier(){
+  const name=document.getElementById('s-name').value.trim();
+  if(!name){showToast('Name required','error');return;}
+  const r=await fetch('/api/suppliers',{method:'POST',headers:authH(),body:JSON.stringify({name,category:document.getElementById('s-cat').value,contact:document.getElementById('s-contact').value,phone:document.getElementById('s-phone').value,email:document.getElementById('s-email').value,address:document.getElementById('s-addr').value})});
+  const d=await r.json();
+  if(d.success){showToast('Supplier added!','success');loadSuppliers();['s-name','s-contact','s-phone','s-email','s-addr'].forEach(id=>document.getElementById(id).value='');}
+  else showToast(d.message,'error');
+}
+
+async function removeSupplier(id){
+  if(!confirm('Remove supplier?'))return;
+  await fetch(`/api/suppliers/${id}`,{method:'DELETE',headers:authH()});
+  loadSuppliers();
+}
+
+async function loadPOs(){
+  const r=await fetch('/api/suppliers/purchase-orders',{headers:authH(),cache:'no-store'});
+  const pos=await r.json();
+  const tbody=document.getElementById('poTable');
+  if(!pos.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">No purchase orders yet</td></tr>';return;}
+  tbody.innerHTML=pos.map(o=>`
+    <tr>
+      <td>#${String(o.id).padStart(4,'0')}</td>
+      <td>${o.supplier?.name||'—'}</td>
+      <td><strong>रू ${o.totalAmount.toLocaleString()}</strong></td>
+      <td><span class="status-badge status-${o.status}">${o.status}</span></td>
+      <td>${new Date(o.orderedAt).toLocaleDateString()}</td>
+      <td>
+        <select onchange="updatePOStatus(${o.id},this.value)" style="width:auto;margin:0;padding:4px 6px;font-size:11px">
+          <option>Change status…</option>
+          ${['Pending','Ordered','Received','Cancelled'].map(s=>`<option value="${s}">${s}</option>`).join('')}
+        </select>
+      </td>
+    </tr>`).join('');
+}
+
+async function loadSupplierDropdown(){
+  const r=await fetch('/api/suppliers',{headers:authH(),cache:'no-store'});
+  suppliers=await r.json();
+  const sel=document.getElementById('po-supplier');
+  sel.innerHTML='<option value="">Select supplier…</option>'+suppliers.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+}
+
+function addPOItem(){
+  poItems.push({name:'',qty:1,unit:'kg',price:0});
+  renderPOItems();
+}
+
+function renderPOItems(){
+  document.getElementById('poItemRows').innerHTML=poItems.map((item,i)=>`
+    <div class="po-item-row">
+      <input placeholder="Item name" value="${item.name}" onchange="poItems[${i}].name=this.value" style="margin:0"/>
+      <input type="number" placeholder="Qty" value="${item.qty}" onchange="poItems[${i}].qty=parseFloat(this.value);updatePOTotal()" style="margin:0"/>
+      <input placeholder="Unit" value="${item.unit}" onchange="poItems[${i}].unit=this.value" style="margin:0"/>
+      <input type="number" placeholder="Price" value="${item.price}" onchange="poItems[${i}].price=parseInt(this.value)||0;updatePOTotal()" style="margin:0"/>
+      <button onclick="poItems.splice(${i},1);renderPOItems()" style="background:var(--red);color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer">×</button>
+    </div>`).join('');
+  updatePOTotal();
+}
+
+function updatePOTotal(){
+  const total=poItems.reduce((s,i)=>s+(i.qty*i.price),0);
+  document.getElementById('poTotal').textContent=Math.round(total).toLocaleString();
+}
+
+async function createPO(){
+  const supplierId=document.getElementById('po-supplier').value;
+  if(!supplierId){showToast('Select a supplier','error');return;}
+  const items=poItems.filter(i=>i.name.trim());
+  if(!items.length){showToast('Add at least one item','error');return;}
+  const r=await fetch('/api/suppliers/purchase-orders',{method:'POST',headers:authH(),body:JSON.stringify({supplierId,items,notes:document.getElementById('po-notes').value})});
+  const d=await r.json();
+  if(d.success){showToast('Purchase order created!','success');poItems=[{name:'',qty:1,unit:'kg',price:0}];renderPOItems();loadPOs();}
+  else showToast(d.message,'error');
+}
+
+async function updatePOStatus(id,status){
+  if(!status||status==='Change status…')return;
+  const r=await fetch(`/api/suppliers/purchase-orders/${id}`,{method:'PATCH',headers:authH(),body:JSON.stringify({status})});
+  const d=await r.json();
+  if(d.success){showToast(`Status updated to ${status}`,'success');loadPOs();}
+  else showToast(d.message,'error');
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadSuppliers();
+renderPOItems();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

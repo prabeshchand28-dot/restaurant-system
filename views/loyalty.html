@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Loyalty Program</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e05a1a;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btns{display:flex;gap:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;font-family:var(--font);text-decoration:none}
+.nav-btn:hover{background:rgba(255,255,255,.25)}
+.content{padding:24px;max-width:1400px;margin:0 auto}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px}
+.stat-card .sv{font-size:28px;font-weight:900;color:var(--navy)}
+.stat-card .sl{font-size:12px;color:var(--muted);margin-top:2px}
+.grid2{display:grid;grid-template-columns:1fr 380px;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f0f2f5;padding:8px 12px;text-align:left;font-weight:700;color:var(--navy);border-bottom:2px solid var(--border)}
+td{padding:9px 12px;border-bottom:1px solid #f0f0f0}
+tr:hover td{background:#fafbfc}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.badge.Bronze{background:#fef3c7;color:#b45309}
+.badge.Silver{background:#f0f0f0;color:#555}
+.badge.Gold{background:#fef9c3;color:#a16207}
+.badge.Platinum{background:#ede9fe;color:#6d28d9}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;margin-bottom:10px}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:9px 18px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-success{background:var(--green);color:#fff}
+.btn-danger{background:var(--red);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px}
+label{font-size:12px;font-weight:600;color:var(--navy);display:block;margin-bottom:3px}
+.section-title{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--border)}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{background:var(--green)}
+.toast.error{background:var(--red)}
+.tier-badge{text-align:center;padding:20px}
+.tier-badge .tier-name{font-size:32px;font-weight:900}
+.tier-badge .tier-pts{font-size:14px;color:var(--muted);margin-top:4px}
+.progress-bar{height:8px;background:#e8eef8;border-radius:4px;margin:10px 0}
+.progress-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--blue),var(--navy));transition:width .5s}
+.lookup-result{background:#f8f9fb;border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:12px;display:none}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div><span class="brand">🍽️ Restaurant System <span>Loyalty Program</span></span></div>
+  <div class="nav-btns">
+    <a class="nav-btn" href="/dashboard">📊 Dashboard</a>
+    <a class="nav-btn" href="/crm">👥 CRM</a>
+  </div>
+</div>
+
+<div class="content">
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card"><div class="sv" id="st-total">—</div><div class="sl">Total Members</div></div>
+    <div class="stat-card"><div class="sv" id="st-pts">—</div><div class="sl">Total Points Issued</div></div>
+    <div class="stat-card"><div class="sv" id="st-gold">—</div><div class="sl">Gold+ Members</div></div>
+    <div class="stat-card"><div class="sv" id="st-spent">—</div><div class="sl">Total Spent (रू)</div></div>
+  </div>
+
+  <div class="grid2">
+    <!-- Left: members table -->
+    <div class="card">
+      <div class="card-header">
+        🏅 Loyalty Members
+        <input id="searchInput" placeholder="Search name / phone…" style="width:200px;margin:0;padding:5px 10px;font-size:12px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:5px;color:#fff" oninput="filterMembers()"/>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Name</th><th>Phone</th><th>Points</th><th>Tier</th><th>Spent (रू)</th><th>Action</th></tr></thead>
+          <tbody id="membersTable"><tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted)">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Right: forms -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+
+      <!-- Register -->
+      <div class="card">
+        <div class="card-header">➕ Register Member</div>
+        <div class="card-body">
+          <label>Name *</label><input id="reg-name" placeholder="Customer name"/>
+          <label>Phone *</label><input id="reg-phone" placeholder="98XXXXXXXX"/>
+          <label>Email</label><input id="reg-email" placeholder="optional"/>
+          <label>Birthday (MM-DD)</label><input id="reg-bday" placeholder="06-15"/>
+          <button class="btn btn-primary" style="width:100%" onclick="registerMember()">Register</button>
+        </div>
+      </div>
+
+      <!-- Lookup & Actions -->
+      <div class="card">
+        <div class="card-header">🔍 Lookup & Points</div>
+        <div class="card-body">
+          <label>Phone Number</label>
+          <div style="display:flex;gap:6px;margin-bottom:10px">
+            <input id="lookup-phone" placeholder="98XXXXXXXX" style="margin:0"/>
+            <button class="btn btn-primary btn-sm" onclick="lookupMember()">Look up</button>
+          </div>
+          <div class="lookup-result" id="lookupResult"></div>
+          <div style="margin-top:12px">
+            <div class="section-title">Earn Points (after order)</div>
+            <label>Order Amount (रू)</label><input id="earn-amount" type="number" placeholder="500"/>
+            <button class="btn btn-success" style="width:100%" onclick="earnPoints()">+ Earn Points</button>
+          </div>
+          <div style="margin-top:12px">
+            <div class="section-title">Redeem Points</div>
+            <label>Points to Redeem</label><input id="redeem-pts" type="number" placeholder="50"/>
+            <button class="btn btn-danger" style="width:100%" onclick="redeemPoints()">− Redeem</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const token = localStorage.getItem('token');
+const authH = () => ({ Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' });
+
+let allMembers = [];
+let currentPhone = '';
+
+async function load() {
+  try {
+    const r = await fetch('/api/loyalty', { headers: authH(), cache: 'no-store' });
+    allMembers = await r.json();
+    renderMembers(allMembers);
+    updateStats(allMembers);
+  } catch (e) { showToast('Load error: ' + e.message, 'error'); }
+}
+
+function updateStats(members) {
+  document.getElementById('st-total').textContent = members.length;
+  document.getElementById('st-pts').textContent = members.reduce((s,m)=>s+m.totalPoints,0).toLocaleString();
+  document.getElementById('st-gold').textContent = members.filter(m=>['Gold','Platinum'].includes(m.tier)).length;
+  document.getElementById('st-spent').textContent = members.reduce((s,m)=>s+m.totalSpent,0).toLocaleString();
+}
+
+function renderMembers(list) {
+  const tbody = document.getElementById('membersTable');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted)">No members yet</td></tr>'; return; }
+  tbody.innerHTML = list.map(m => `
+    <tr>
+      <td><strong>${m.name}</strong></td>
+      <td>${m.phone}</td>
+      <td><strong style="color:var(--blue)">${m.totalPoints.toLocaleString()}</strong></td>
+      <td><span class="badge ${m.tier}">${m.tier}</span></td>
+      <td>रू ${m.totalSpent.toLocaleString()}</td>
+      <td><button class="btn btn-sm btn-primary" onclick="selectMember('${m.phone}')">Select</button></td>
+    </tr>`).join('');
+}
+
+function filterMembers() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  renderMembers(allMembers.filter(m => m.name.toLowerCase().includes(q) || m.phone.includes(q)));
+}
+
+async function registerMember() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const bday  = document.getElementById('reg-bday').value.trim();
+  if (!name || !phone) { showToast('Name and phone required', 'error'); return; }
+  try {
+    const r = await fetch('/api/loyalty', { method:'POST', headers: authH(), body: JSON.stringify({ name, phone, email, birthday: bday }) });
+    const d = await r.json();
+    if (d.success) { showToast('Member registered!', 'success'); load(); ['reg-name','reg-email','reg-bday'].forEach(id => document.getElementById(id).value=''); document.getElementById('reg-phone').value=''; }
+    else showToast(d.message, 'error');
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+function selectMember(phone) {
+  document.getElementById('lookup-phone').value = phone;
+  lookupMember();
+}
+
+async function lookupMember() {
+  const phone = document.getElementById('lookup-phone').value.trim();
+  if (!phone) return;
+  currentPhone = phone;
+  try {
+    const r = await fetch(`/api/loyalty/${phone}`, { headers: authH(), cache: 'no-store' });
+    if (!r.ok) { document.getElementById('lookupResult').style.display='none'; showToast('Member not found', 'error'); return; }
+    const m = await r.json();
+    const nextTier = m.tier === 'Bronze' ? { name:'Silver', pts:500 } : m.tier === 'Silver' ? { name:'Gold', pts:2000 } : m.tier === 'Gold' ? { name:'Platinum', pts:5000 } : null;
+    const prog = nextTier ? Math.min(100, Math.round(m.totalPoints / nextTier.pts * 100)) : 100;
+    document.getElementById('lookupResult').style.display = 'block';
+    document.getElementById('lookupResult').innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+        <div>
+          <div style="font-size:16px;font-weight:800">${m.name}</div>
+          <div style="font-size:12px;color:var(--muted)">${m.phone} · ${m.email||'—'}</div>
+        </div>
+        <span class="badge ${m.tier}" style="margin-left:auto">${m.tier}</span>
+      </div>
+      <div style="display:flex;gap:16px;font-size:13px;margin-bottom:8px">
+        <div><span style="color:var(--muted)">Points:</span> <strong style="color:var(--blue)">${m.totalPoints.toLocaleString()}</strong></div>
+        <div><span style="color:var(--muted)">Spent:</span> <strong>रू ${m.totalSpent.toLocaleString()}</strong></div>
+        <div><span style="color:var(--muted)">Visits:</span> <strong>${(m.transactions||[]).length}</strong></div>
+      </div>
+      ${nextTier ? `<div style="font-size:11px;color:var(--muted)">${prog}% to ${nextTier.name}</div><div class="progress-bar"><div class="progress-bar-fill" style="width:${prog}%"></div></div>` : '<div style="font-size:11px;color:#6d28d9;font-weight:700">🏆 Platinum Member</div>'}
+    `;
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function earnPoints() {
+  if (!currentPhone) { showToast('Lookup a member first', 'error'); return; }
+  const amt = document.getElementById('earn-amount').value;
+  if (!amt) { showToast('Enter order amount', 'error'); return; }
+  try {
+    const r = await fetch('/api/loyalty/earn', { method:'POST', headers: authH(), body: JSON.stringify({ phone: currentPhone, orderAmount: parseInt(amt) }) });
+    const d = await r.json();
+    if (d.success) { showToast(`✓ ${d.pointsEarned} points earned! Total: ${d.totalPoints}`, 'success'); document.getElementById('earn-amount').value=''; load(); lookupMember(); }
+    else showToast(d.message, 'error');
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function redeemPoints() {
+  if (!currentPhone) { showToast('Lookup a member first', 'error'); return; }
+  const pts = document.getElementById('redeem-pts').value;
+  if (!pts) { showToast('Enter points to redeem', 'error'); return; }
+  try {
+    const r = await fetch('/api/loyalty/redeem', { method:'POST', headers: authH(), body: JSON.stringify({ phone: currentPhone, points: parseInt(pts) }) });
+    const d = await r.json();
+    if (d.success) { showToast(`✓ Redeemed! Discount: रू ${d.discountAmount}`, 'success'); document.getElementById('redeem-pts').value=''; load(); lookupMember(); }
+    else showToast(d.message, 'error');
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+let toastT;
+function showToast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 3500);
+}
+
+load();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Marketing Campaigns</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--purple:#6a1b9a;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.tabs{display:flex;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.pane{display:none}.pane.active{display:block}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select,textarea{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+textarea{resize:vertical;min-height:80px}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}
+.btn-purple{background:var(--purple)}
+.grid{display:grid;grid-template-columns:400px 1fr;gap:20px}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase}
+.badge-draft{background:#e3e3e3;color:#555}
+.badge-sent{background:#e7f5ed;color:var(--green)}
+.badge-scheduled{background:#e8efff;color:var(--blue)}
+.campaign-item{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color .2s}
+.campaign-item:hover{border-color:var(--blue)}
+.audience-box{background:linear-gradient(135deg,var(--purple),var(--blue));color:#fff;border-radius:10px;padding:20px;text-align:center;margin-top:10px}
+.audience-box .num{font-size:36px;font-weight:900}
+.audience-box .lbl{font-size:12px;opacity:.8;margin-top:4px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Marketing Campaigns</span></span>
+  <div><a class="nav-btn" href="/notifications">🔔 Notifications</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('list',this)">📋 Campaigns</div>
+  <div class="tab" onclick="switchTab('create',this)">➕ New Campaign</div>
+</div>
+<div class="content">
+
+  <!-- Campaign List -->
+  <div class="pane active" id="pane-list">
+    <div id="campaignList">
+      <div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Create Campaign -->
+  <div class="pane" id="pane-create">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="card-header">✉️ Campaign Details</div>
+          <div class="card-body">
+            <label>Campaign Name</label>
+            <input id="campName" placeholder="e.g. Monsoon Special Offer"/>
+            <label>Channel</label>
+            <select id="campChannel">
+              <option value="SMS">📱 SMS</option>
+              <option value="EMAIL">✉️ Email</option>
+              <option value="PUSH">🔔 Push Notification</option>
+            </select>
+            <label>Target Audience</label>
+            <select id="campGroup" onchange="previewAudience()">
+              <option value="ALL">🌍 All Customers</option>
+              <option value="VIP">⭐ VIP Members (Gold/Platinum)</option>
+              <option value="LOYALTY">💎 Loyalty Members</option>
+              <option value="INACTIVE">💤 Inactive (30+ days)</option>
+            </select>
+            <div class="audience-box" id="audienceBox">
+              <div class="num" id="audienceCount">—</div>
+              <div class="lbl">recipients in selected audience</div>
+            </div>
+            <label>Message</label>
+            <textarea id="campMsg" placeholder="Write your campaign message here...&#10;You can use {name} for personalization"></textarea>
+            <label>Schedule (optional)</label>
+            <input type="datetime-local" id="campSchedule"/>
+            <div style="display:flex;gap:8px;margin-top:14px">
+              <button class="btn btn-green" style="flex:1" onclick="createCampaign('DRAFT')">💾 Save Draft</button>
+              <button class="btn btn-purple" style="flex:1" onclick="createCampaign('SEND')">🚀 Create & Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header">📊 Audience Segments</div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px">Choose the right audience for maximum impact.</p>
+            <div style="display:grid;gap:10px">
+              <div style="background:#f8f9fb;border-radius:8px;padding:12px;border-left:4px solid var(--blue)">
+                <div style="font-weight:800;font-size:13px">🌍 All Customers</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px">Send to everyone with a registered profile. Best for big announcements.</div>
+              </div>
+              <div style="background:#f8f9fb;border-radius:8px;padding:12px;border-left:4px solid var(--gold,#d4af37)">
+                <div style="font-weight:800;font-size:13px">⭐ VIP Members</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px">Gold and Platinum tier loyalty members. High-value customers.</div>
+              </div>
+              <div style="background:#f8f9fb;border-radius:8px;padding:12px;border-left:4px solid var(--green)">
+                <div style="font-weight:800;font-size:13px">💎 Loyalty Members</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px">Any customer with a loyalty account. Use for points promotions.</div>
+              </div>
+              <div style="background:#f8f9fb;border-radius:8px;padding:12px;border-left:4px solid var(--red)">
+                <div style="font-weight:800;font-size:13px">💤 Inactive Customers</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px">Haven't visited in 30+ days. Re-engage with special discounts.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">💡 Message Tips</div>
+          <div class="card-body">
+            <div style="font-size:13px;line-height:1.8;color:var(--muted)">
+              <div>• Use <strong style="color:var(--navy)">{name}</strong> to personalize with customer name</div>
+              <div>• Keep SMS under 160 characters</div>
+              <div>• Include a clear call-to-action</div>
+              <div>• Add expiry dates to create urgency</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+async function loadCampaigns(){
+  const r=await fetch('/api/campaigns',{headers:authH(),cache:'no-store'});
+  const list=await r.json();
+  if(!list.length){document.getElementById('campaignList').innerHTML='<div style="text-align:center;padding:60px;color:var(--muted)"><div style="font-size:48px">📢</div><div style="margin-top:10px;font-size:14px">No campaigns yet. Create your first one!</div></div>';return;}
+  const ch={SMS:'📱',EMAIL:'✉️',PUSH:'🔔'};
+  const grp={ALL:'🌍 All',VIP:'⭐ VIP',LOYALTY:'💎 Loyalty',INACTIVE:'💤 Inactive'};
+  document.getElementById('campaignList').innerHTML=list.map(c=>`
+    <div class="campaign-item">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:900;font-size:15px">${c.name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">${ch[c.channel]||''} ${c.channel} · ${grp[c.targetGroup]||c.targetGroup}</div>
+          ${c.scheduledAt?`<div style="font-size:11px;color:var(--blue);margin-top:4px">⏰ Scheduled: ${new Date(c.scheduledAt).toLocaleString()}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <span class="badge badge-${(c.status||'draft').toLowerCase()}">${c.status||'DRAFT'}</span>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">${new Date(c.createdAt).toLocaleDateString()}</div>
+          ${c.sentCount?`<div style="font-size:11px;color:var(--green);font-weight:700">${c.sentCount} sent</div>`:''}
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:10px;background:#f8f9fb;padding:8px;border-radius:6px">${c.message}</div>
+      ${c.status!=='SENT'?`<div style="margin-top:10px"><button class="btn btn-purple" style="font-size:11px;padding:5px 14px" onclick="sendCampaign(${c.id})">🚀 Send Now</button></div>`:''}
+    </div>`).join('');
+}
+
+async function previewAudience(){
+  const group=document.getElementById('campGroup').value;
+  const r=await fetch(`/api/campaigns/preview?targetGroup=${group}`,{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('audienceCount').textContent=d.count??'—';
+}
+
+async function createCampaign(action){
+  const body={name:document.getElementById('campName').value,channel:document.getElementById('campChannel').value,targetGroup:document.getElementById('campGroup').value,message:document.getElementById('campMsg').value,scheduledAt:document.getElementById('campSchedule').value||null};
+  if(!body.name||!body.message){showToast('Name and message required','error');return;}
+  const r=await fetch('/api/campaigns',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!d.id){showToast(d.message||'Error','error');return;}
+  if(action==='SEND'){
+    const sr=await fetch(`/api/campaigns/${d.id}/send`,{method:'POST',headers:authH()});
+    const sd=await sr.json();
+    showToast(`Campaign sent to ${sd.sentCount} recipients!`,'success');
+  } else {
+    showToast('Campaign saved as draft','success');
+  }
+  document.getElementById('campName').value='';document.getElementById('campMsg').value='';
+  switchTab('list',document.querySelector('.tab'));loadCampaigns();
+}
+
+async function sendCampaign(id){
+  const r=await fetch(`/api/campaigns/${id}/send`,{method:'POST',headers:authH()});
+  const d=await r.json();
+  if(d.sentCount!==undefined){showToast(`Sent to ${d.sentCount} recipients!`,'success');loadCampaigns();}
+  else showToast(d.message||'Error','error');
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  if(name==='create')previewAudience();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadCampaigns();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

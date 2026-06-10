@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Advanced Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1300px;margin:0 auto}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.metric{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px}
+.metric .num{font-size:24px;font-weight:900;color:var(--blue)}.metric .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.metric .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+select,input{padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+select:focus,input:focus{border-color:var(--blue)}
+.heat-cell{border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;cursor:default;transition:transform .1s}
+.heat-cell:hover{transform:scale(1.1)}
+.bar-item{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px}
+.bar-track{flex:1;height:10px;background:#f0f0f0;border-radius:5px;overflow:hidden}
+.bar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--blue),var(--green))}
+.cat-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Advanced Analytics</span></span>
+  <div><a class="nav-btn" href="/reports">📄 Reports</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+
+  <!-- Controls -->
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
+    <label style="font-size:13px;font-weight:700;color:var(--navy)">Months:</label>
+    <select id="months" onchange="loadAll()"><option value="3">Last 3 months</option><option value="6" selected>Last 6 months</option><option value="12">Last 12 months</option></select>
+    <button onclick="loadAll()" style="padding:6px 14px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:13px;font-weight:700;cursor:pointer">Refresh</button>
+    <span id="lastUpdated" style="font-size:11px;color:var(--muted)"></span>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="metrics" id="kpiRow">
+    <div class="metric"><div class="num" id="k-customers">—</div><div class="lbl">Total Customers</div></div>
+    <div class="metric"><div class="num" id="k-new" style="color:var(--green)">—</div><div class="lbl">New This Month</div></div>
+    <div class="metric"><div class="num" id="k-avgspend">—</div><div class="lbl">Avg. Spend (रू)</div></div>
+    <div class="metric"><div class="num" id="k-revenue" style="color:var(--blue)">—</div><div class="lbl">Period Revenue (रू)</div></div>
+  </div>
+
+  <!-- Revenue Trend -->
+  <div class="card">
+    <div class="card-header">📈 Revenue Trend</div>
+    <div class="card-body"><canvas id="revChart" height="80"></canvas></div>
+  </div>
+
+  <div class="grid2">
+    <!-- Best Sellers -->
+    <div class="card">
+      <div class="card-header">🏆 Best Sellers</div>
+      <div class="card-body" id="bestSellers">Loading...</div>
+    </div>
+    <!-- Category Breakdown -->
+    <div class="card">
+      <div class="card-header">🍕 Revenue by Category</div>
+      <div class="card-body">
+        <canvas id="catChart" height="180"></canvas>
+        <div id="catLegend" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Peak Hours Heatmap -->
+  <div class="card">
+    <div class="card-header">🕐 Peak Hours Heatmap</div>
+    <div class="card-body">
+      <div id="heatmap" style="overflow-x:auto"></div>
+    </div>
+  </div>
+
+  <!-- Top Spenders -->
+  <div class="card">
+    <div class="card-header">💎 Top Spenders</div>
+    <div class="card-body" id="topSpenders">Loading...</div>
+  </div>
+
+</div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token});
+let revChartInst=null,catChartInst=null;
+
+async function loadAll(){
+  const months=document.getElementById('months').value;
+  document.getElementById('lastUpdated').textContent='Refreshing...';
+  await Promise.all([loadRevenue(months),loadPeakHours(),loadBestSellers(months),loadCategories(months),loadCustomers()]);
+  document.getElementById('lastUpdated').textContent='Updated: '+new Date().toLocaleTimeString();
+}
+
+async function loadRevenue(months){
+  const r=await fetch(`/api/analytics/revenue-trend?months=${months}`,{headers:authH(),cache:'no-store'});
+  const data=await r.json();
+  const labels=data.map(d=>d.month);
+  const rev=data.map(d=>d.revenue);
+  const costs=data.map(d=>d.costs||0);
+  const profit=data.map(d=>d.profit||d.revenue-(d.costs||0));
+  const total=rev.reduce((a,b)=>a+b,0);
+  document.getElementById('k-revenue').textContent='रू '+total.toLocaleString();
+  const ctx=document.getElementById('revChart').getContext('2d');
+  if(revChartInst)revChartInst.destroy();
+  revChartInst=new Chart(ctx,{type:'bar',data:{labels,datasets:[
+    {label:'Revenue',data:rev,backgroundColor:'rgba(38,83,160,.7)',borderRadius:4},
+    {label:'Costs',data:costs,backgroundColor:'rgba(192,57,43,.5)',borderRadius:4},
+    {label:'Profit',type:'line',data:profit,borderColor:'#1a7a3a',backgroundColor:'rgba(26,122,58,.1)',tension:.4,fill:true,yAxisID:'y'}
+  ]},options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true}}}});
+}
+
+async function loadPeakHours(){
+  const r=await fetch('/api/analytics/peak-hours',{headers:authH(),cache:'no-store'});
+  const data=await r.json();
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const hours=Array.from({length:24},(_,i)=>i);
+  const maxVal=Math.max(...data.map(d=>d.count));
+  const cellW=36;const cellH=28;
+  const lookup={};
+  data.forEach(d=>{lookup[`${d.dayOfWeek}_${d.hour}`]=d.count});
+  const getColor=(v)=>{
+    if(!v)return '#f0f0f0';
+    const ratio=v/maxVal;
+    const r=Math.round(38+ratio*(192-38));
+    const g=Math.round(83+ratio*(57-83));
+    const b=Math.round(160+ratio*(43-160));
+    return `rgb(${r},${g},${b})`;
+  };
+  let html=`<div style="display:inline-block">
+    <div style="display:flex;margin-bottom:4px;margin-left:44px">
+      ${hours.map(h=>`<div style="width:${cellW}px;text-align:center;font-size:9px;font-weight:700;color:var(--muted)">${h}h</div>`).join('')}
+    </div>`;
+  days.forEach((day,di)=>{
+    html+=`<div style="display:flex;align-items:center;margin-bottom:3px">
+      <div style="width:40px;font-size:11px;font-weight:700;color:var(--navy)">${day}</div>
+      ${hours.map(h=>{const v=lookup[`${di}_${h}`]||0;const bg=getColor(v);return `<div class="heat-cell" style="width:${cellW}px;height:${cellH}px;background:${bg};color:${v>maxVal*.5?'#fff':'#333'}">${v||''}</div>`}).join('')}
+    </div>`;
+  });
+  html+='</div>';
+  document.getElementById('heatmap').innerHTML=html;
+}
+
+async function loadBestSellers(months){
+  const r=await fetch(`/api/analytics/best-sellers?months=${months}`,{headers:authH(),cache:'no-store'});
+  const items=await r.json();
+  const max=items[0]?.quantity||1;
+  document.getElementById('bestSellers').innerHTML=items.slice(0,10).map((item,i)=>`
+    <div class="bar-item">
+      <div style="width:18px;font-weight:900;color:var(--muted);font-size:12px">${i+1}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${item.quantity/max*100}%"></div></div>
+      </div>
+      <div style="text-align:right;min-width:70px">
+        <div style="font-weight:900;font-size:13px">${item.quantity} sold</div>
+        <div style="font-size:11px;color:var(--muted)">रू ${(item.revenue||0).toLocaleString()}</div>
+      </div>
+    </div>`).join('');
+}
+
+async function loadCategories(months){
+  const r=await fetch(`/api/analytics/category-breakdown?months=${months}`,{headers:authH(),cache:'no-store'});
+  const cats=await r.json();
+  const colors=['#2653a0','#1a7a3a','#c0392b','#e65100','#6a1b9a','#00838f','#558b2f','#ad1457'];
+  const ctx=document.getElementById('catChart').getContext('2d');
+  if(catChartInst)catChartInst.destroy();
+  catChartInst=new Chart(ctx,{type:'doughnut',data:{labels:cats.map(c=>c.category||'Uncategorized'),datasets:[{data:cats.map(c=>c.revenue),backgroundColor:colors.slice(0,cats.length)}]},options:{responsive:true,plugins:{legend:{display:false}}}});
+  document.getElementById('catLegend').innerHTML=cats.map((c,i)=>`<div style="display:flex;align-items:center;gap:4px;font-size:12px"><div class="cat-dot" style="background:${colors[i]}"></div>${c.category||'Other'}: <strong>रू ${(c.revenue||0).toLocaleString()}</strong></div>`).join('');
+}
+
+async function loadCustomers(){
+  const r=await fetch('/api/analytics/customer-metrics',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('k-customers').textContent=d.total;
+  document.getElementById('k-new').textContent=d.newThisMonth;
+  document.getElementById('k-avgspend').textContent='रू '+(d.avgSpend||0).toLocaleString();
+  const topEl=document.getElementById('topSpenders');
+  if(d.topSpenders&&d.topSpenders.length){
+    topEl.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="border-bottom:2px solid var(--border)"><th style="padding:8px;text-align:left">Customer</th><th style="padding:8px;text-align:left">Phone</th><th style="padding:8px">Visits</th><th style="padding:8px">Total Spend</th></tr></thead>
+      <tbody>${d.topSpenders.map((s,i)=>`<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:8px"><strong>${i+1}. ${s.name||'Guest'}</strong></td><td style="padding:8px;color:var(--muted)">${s.phone||'—'}</td><td style="padding:8px;text-align:center">${s.visits||0}</td><td style="padding:8px;text-align:center;font-weight:900;color:var(--green)">रू ${(s.totalSpend||0).toLocaleString()}</td></tr>`).join('')}</tbody>
+    </table>`;
+  } else {
+    topEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted)">No customer data</div>';
+  }
+}
+
+loadAll();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

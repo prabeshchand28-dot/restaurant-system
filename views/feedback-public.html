@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Share Your Feedback</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--gold:#f5a623;--bg:#f0f4ff;--white:#fff;--border:#d0d5e0;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.box{background:var(--white);border-radius:20px;padding:32px;max-width:480px;width:100%;box-shadow:0 8px 40px rgba(26,58,107,.12)}
+.header{text-align:center;margin-bottom:24px}
+.logo{font-size:40px;margin-bottom:8px}
+h1{font-size:22px;font-weight:900;color:var(--navy)}
+.sub{font-size:13px;color:#666;margin-top:4px}
+.section{margin-bottom:20px}
+.section-title{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:8px}
+.stars{display:flex;gap:6px;cursor:pointer}
+.star{font-size:32px;color:#ddd;transition:color .15s;user-select:none}
+.star.active{color:var(--gold)}
+.highlights{display:flex;flex-wrap:wrap;gap:6px}
+.hl-chip{padding:6px 12px;border:1px solid var(--border);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
+.hl-chip.selected{background:var(--blue);color:#fff;border-color:var(--blue)}
+textarea{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);outline:none;resize:vertical;min-height:80px}
+textarea:focus{border-color:var(--blue)}
+input[type=text]{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);outline:none}
+input:focus{border-color:var(--blue)}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:var(--font);background:linear-gradient(135deg,var(--blue),var(--navy));color:#fff;margin-top:8px}
+.success{text-align:center;display:none}
+.success .icon{font-size:64px;animation:pop .5s ease-out}
+@keyframes pop{0%{transform:scale(0)}80%{transform:scale(1.1)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+<div class="box">
+  <div id="form">
+    <div class="header">
+      <div class="logo">🍽️</div>
+      <h1>How was your experience?</h1>
+      <div class="sub" id="tableInfo">Share your honest feedback</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🍛 Food Quality</div>
+      <div class="stars" id="stars-food" data-key="food" onclick="rate(this,event)">
+        <span class="star" data-val="1">★</span><span class="star" data-val="2">★</span><span class="star" data-val="3">★</span><span class="star" data-val="4">★</span><span class="star" data-val="5">★</span>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">😊 Service</div>
+      <div class="stars" id="stars-service" data-key="service" onclick="rate(this,event)">
+        <span class="star" data-val="1">★</span><span class="star" data-val="2">★</span><span class="star" data-val="3">★</span><span class="star" data-val="4">★</span><span class="star" data-val="5">★</span>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">✨ Ambience</div>
+      <div class="stars" id="stars-ambience" data-key="ambience" onclick="rate(this,event)">
+        <span class="star" data-val="1">★</span><span class="star" data-val="2">★</span><span class="star" data-val="3">★</span><span class="star" data-val="4">★</span><span class="star" data-val="5">★</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🏆 Highlights (optional)</div>
+      <div class="highlights">
+        <span class="hl-chip" onclick="this.classList.toggle('selected')">Great Food</span>
+        <span class="hl-chip" onclick="this.classList.toggle('selected')">Fast Service</span>
+        <span class="hl-chip" onclick="this.classList.toggle('selected')">Friendly Staff</span>
+        <span class="hl-chip" onclick="this.classList.toggle('selected')">Good Value</span>
+        <span class="hl-chip" onclick="this.classList.toggle('selected')">Nice Ambience</span>
+        <span class="hl-chip" onclick="this.classList.toggle('selected')">Would Return</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">📝 Your Comments (optional)</div>
+      <textarea id="comment" placeholder="Tell us what you loved or how we can improve..."></textarea>
+    </div>
+
+    <div class="section">
+      <div class="section-title">👤 Your Name (optional)</div>
+      <input type="text" id="name" placeholder="e.g. Priya Sharma"/>
+    </div>
+
+    <button class="btn" onclick="submit()">Submit Feedback ✨</button>
+  </div>
+
+  <div class="success" id="success">
+    <div class="icon">🎉</div>
+    <h2 style="font-size:22px;font-weight:900;color:var(--navy);margin-top:12px">Thank You!</h2>
+    <p style="color:#666;margin-top:8px;font-size:14px">Your feedback helps us improve. We truly appreciate it!</p>
+    <a href="/menu" style="display:inline-block;margin-top:20px;padding:10px 24px;background:var(--blue);color:#fff;border-radius:8px;font-weight:700;text-decoration:none;font-size:13px">🍽️ View Menu</a>
+  </div>
+</div>
+<script>
+const params=new URLSearchParams(window.location.search);
+const tableNo=params.get('table');
+if(tableNo)document.getElementById('tableInfo').textContent=`Table ${tableNo}`;
+const ratings={food:0,service:0,ambience:0};
+
+function rate(container,e){
+  const star=e.target.closest('.star');
+  if(!star)return;
+  const val=parseInt(star.dataset.val);
+  const key=container.dataset.key;
+  ratings[key]=val;
+  container.querySelectorAll('.star').forEach(s=>s.classList.toggle('active',parseInt(s.dataset.val)<=val));
+}
+
+async function submit(){
+  if(!ratings.food){alert('Please rate the food!');return;}
+  const highlights=[...document.querySelectorAll('.hl-chip.selected')].map(c=>c.textContent);
+  const body={tableNo,foodRating:ratings.food,serviceRating:ratings.service,ambienceRating:ratings.ambience,comment:document.getElementById('comment').value,customerName:document.getElementById('name').value||'Anonymous',highlights};
+  const r=await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.success){document.getElementById('form').style.display='none';document.getElementById('success').style.display='block';}
+  else alert(d.message||'Error submitting. Please try again.');
+}
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

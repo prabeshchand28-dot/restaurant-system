@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Promotions</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.grid{display:grid;grid-template-columns:360px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px;font-weight:700;border:none;border-radius:4px;cursor:pointer;font-family:var(--font)}
+.btn-green{background:var(--green);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-gray{background:#999;color:#fff}
+.promo-item{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.promo-item.inactive{opacity:.55}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+.badge-green{background:#e7f5ed;color:var(--green)}
+.badge-red{background:#fce8e7;color:var(--red)}
+.badge-blue{background:#e8efff;color:var(--blue)}
+.badge-orange{background:#fff3e0;color:#e65100}
+.calc-result{background:#f0f9f0;border:1px solid #a8d5b5;border-radius:8px;padding:12px;margin-top:12px;font-size:16px;font-weight:800;color:var(--green);text-align:center;display:none}
+.time-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Promotions</span></span>
+  <div><a class="nav-btn" href="/coupons">🎟️ Coupons</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="grid">
+    <!-- Create form -->
+    <div>
+      <div class="card">
+        <div class="card-header">➕ Create Promotion</div>
+        <div class="card-body">
+          <label>Promotion Name</label>
+          <input id="pName" placeholder="e.g. Happy Hour 50% Off"/>
+          <label>Type</label>
+          <select id="pType" onchange="updateTypeUI()">
+            <option value="HAPPY_HOUR">Happy Hour</option>
+            <option value="PERCENTAGE">Percentage Discount</option>
+            <option value="FLAT">Flat Discount</option>
+            <option value="BOGO">Buy One Get One</option>
+          </select>
+          <label>Discount Value (%)</label>
+          <input type="number" id="pValue" placeholder="e.g. 20" min="1" max="100"/>
+          <label>Min Order Amount (रू)</label>
+          <input type="number" id="pMin" placeholder="0 = no minimum"/>
+
+          <div id="happyHourSection">
+            <label>Active Days</label>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px" id="dayPicker">
+              <label style="margin:0;display:flex;align-items:center;gap:4px;font-weight:400"><input type="checkbox" value="MON" checked/> Mon</label>
+              <label style="margin:0;display:flex;align-items:center;gap:4px;font-weight:400"><input type="checkbox" value="TUE" checked/> Tue</label>
+              <label style="margin:0;display:flex;align-items:center;gap:4px;font-weight:400"><input type="checkbox" value="WED" checked/> Wed</label>
+              <label style="margin:0;display:flex;align-items:center;gap:4px;font-weight:400"><input type="checkbox" value="THU" checked/> Thu</label>
+              <label style="margin:0;display:flex;align-items:center;gap:4px;font-weight:400"><input type="checkbox" value="FRI" checked/> Fri</label>
+              <label style="margin:0;display:flex;align-items:center;gap:4px;font-weight:400"><input type="checkbox" value="SAT"/> Sat</label>
+              <label style="margin:0;display:flex;align-items:center;gap:4px;font-weight:400"><input type="checkbox" value="SUN"/> Sun</label>
+            </div>
+            <div class="time-grid">
+              <div><label>Start Time</label><input type="time" id="pStart" value="17:00"/></div>
+              <div><label>End Time</label><input type="time" id="pEnd" value="19:00"/></div>
+            </div>
+          </div>
+
+          <label>Valid From</label>
+          <input type="date" id="pFrom"/>
+          <label>Valid To</label>
+          <input type="date" id="pTo"/>
+          <label>Description (optional)</label>
+          <textarea id="pDesc" rows="2" placeholder="Brief description..."></textarea>
+          <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="createPromo()">Create Promotion</button>
+        </div>
+      </div>
+
+      <!-- Calculator -->
+      <div class="card">
+        <div class="card-header">🧮 Discount Calculator</div>
+        <div class="card-body">
+          <label>Order Amount (रू)</label>
+          <input type="number" id="calcAmount" placeholder="Enter order total"/>
+          <label>Promotion</label>
+          <select id="calcPromo"></select>
+          <button class="btn btn-primary" style="margin-top:10px;width:100%" onclick="calcDiscount()">Calculate</button>
+          <div class="calc-result" id="calcResult"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div>
+      <div class="card">
+        <div class="card-header">
+          🎉 All Promotions
+          <span id="promoCount" style="font-size:11px;font-weight:500;opacity:.8"></span>
+        </div>
+        <div class="card-body" id="promoList">
+          <div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+const today=new Date().toISOString().slice(0,10);
+document.getElementById('pFrom').value=today;
+const nextM=new Date(); nextM.setMonth(nextM.getMonth()+1);
+document.getElementById('pTo').value=nextM.toISOString().slice(0,10);
+
+function updateTypeUI(){
+  const t=document.getElementById('pType').value;
+  document.getElementById('happyHourSection').style.display=t==='HAPPY_HOUR'?'block':'none';
+}
+
+async function loadPromos(){
+  const r=await fetch('/api/promotions',{headers:authH(),cache:'no-store'});
+  const promos=await r.json();
+  document.getElementById('promoCount').textContent=`(${promos.length} total)`;
+  const sel=document.getElementById('calcPromo');
+  sel.innerHTML='';
+  if(!promos.length){
+    document.getElementById('promoList').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No promotions yet</div>';
+    return;
+  }
+  document.getElementById('promoList').innerHTML=promos.map(p=>`
+    <div class="promo-item${p.active?'':' inactive'}">
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:14px;margin-bottom:4px">${p.name}</div>
+        <div style="margin-bottom:6px">
+          <span class="badge badge-blue">${p.type.replace('_',' ')}</span>
+          <span class="badge ${p.active?'badge-green':'badge-red'}" style="margin-left:4px">${p.active?'ACTIVE':'INACTIVE'}</span>
+          ${p.type==='HAPPY_HOUR'?`<span class="badge badge-orange" style="margin-left:4px">⏰ ${p.startTime}–${p.endTime}</span>`:''}
+        </div>
+        <div style="font-size:12px;color:var(--muted)">${p.discountPercent}% off${p.minOrder?` · min रू ${p.minOrder}`:''} · ${p.validFrom?.slice(0,10)} → ${p.validTo?.slice(0,10)}</div>
+        ${p.description?`<div style="font-size:12px;color:#888;margin-top:4px">${p.description}</div>`:''}
+        ${p.type==='HAPPY_HOUR'?`<div style="font-size:11px;color:var(--blue);margin-top:4px">Days: ${(p.days||[]).join(', ')}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn-sm ${p.active?'btn-gray':'btn-green'}" onclick="togglePromo(${p.id})">${p.active?'Disable':'Enable'}</button>
+        <button class="btn-sm btn-red" onclick="deletePromo(${p.id})">Delete</button>
+      </div>
+    </div>`).join('');
+  sel.innerHTML=promos.filter(p=>p.active).map(p=>`<option value="${p.id}">${p.name} (${p.discountPercent}%)</option>`).join('');
+}
+
+async function createPromo(){
+  const days=[...document.querySelectorAll('#dayPicker input:checked')].map(c=>c.value);
+  const body={
+    name:document.getElementById('pName').value.trim(),
+    type:document.getElementById('pType').value,
+    discountPercent:Number(document.getElementById('pValue').value),
+    minOrder:Number(document.getElementById('pMin').value)||0,
+    days,
+    startTime:document.getElementById('pStart').value,
+    endTime:document.getElementById('pEnd').value,
+    validFrom:document.getElementById('pFrom').value,
+    validTo:document.getElementById('pTo').value,
+    description:document.getElementById('pDesc').value.trim(),
+  };
+  if(!body.name||!body.discountPercent){showToast('Name and discount are required','error');return;}
+  const r=await fetch('/api/promotions',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Promotion created!','success');document.getElementById('pName').value='';document.getElementById('pValue').value='';loadPromos();}
+  else showToast(d.message||'Error','error');
+}
+
+async function togglePromo(id){
+  await fetch(`/api/promotions/${id}/toggle`,{method:'PATCH',headers:authH()});
+  loadPromos();
+}
+
+async function deletePromo(id){
+  if(!confirm('Delete this promotion?'))return;
+  await fetch(`/api/promotions/${id}`,{method:'DELETE',headers:authH()});
+  showToast('Deleted','success');loadPromos();
+}
+
+async function calcDiscount(){
+  const amount=Number(document.getElementById('calcAmount').value);
+  const promoId=document.getElementById('calcPromo').value;
+  if(!amount||!promoId){showToast('Fill both fields','error');return;}
+  const r=await fetch('/api/promotions/calculate',{method:'POST',headers:authH(),body:JSON.stringify({amount,promoId:Number(promoId)})});
+  const d=await r.json();
+  if(d.finalAmount!==undefined){
+    const el=document.getElementById('calcResult');
+    el.style.display='block';
+    el.innerHTML=`Original: रू ${amount.toLocaleString()} → <span style="color:var(--red)">-रू ${d.discount.toLocaleString()}</span> → <strong>रू ${d.finalAmount.toLocaleString()}</strong>`;
+  }else showToast(d.message||'Error','error');
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+updateTypeUI();
+loadPromos();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

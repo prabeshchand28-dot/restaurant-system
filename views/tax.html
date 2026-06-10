@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Tax Configuration</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.tabs{display:flex;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.pane{display:none}.pane.active{display:block}
+.grid{display:grid;grid-template-columns:360px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px;font-weight:700;border:none;border-radius:4px;cursor:pointer;font-family:var(--font)}
+.tax-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8f9fb;text-align:left;padding:10px 12px;font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid #f0f0f0}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase}
+.badge-green{background:#e7f5ed;color:var(--green)}
+.badge-blue{background:#e8efff;color:var(--blue)}
+.badge-gray{background:#f0f0f0;color:#555}
+.calc-box{background:#f0f9f0;border:1px solid #a8d5b5;border-radius:10px;padding:16px;margin-top:14px;display:none}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Tax Configuration</span></span>
+  <div><a class="nav-btn" href="/finance">📈 Finance</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('rates',this)">⚙️ Tax Rates</div>
+  <div class="tab" onclick="switchTab('report',this)">📊 Tax Report</div>
+  <div class="tab" onclick="switchTab('calc',this)">🧮 Calculator</div>
+</div>
+<div class="content">
+
+  <!-- Rates -->
+  <div class="pane active" id="pane-rates">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="card-header">➕ Add Tax Rate</div>
+          <div class="card-body">
+            <label>Tax Name</label>
+            <input id="tName" placeholder="e.g. VAT 13%"/>
+            <label>Rate (%)</label>
+            <input type="number" id="tRate" placeholder="e.g. 13" min="0" max="100" step="0.1"/>
+            <label>Applies To</label>
+            <select id="tCategory">
+              <option value="ALL">All Items</option>
+              <option value="FOOD">Food Only</option>
+              <option value="BEVERAGE">Beverages Only</option>
+              <option value="SERVICE">Service Charge</option>
+            </select>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-weight:400">
+              <input type="checkbox" id="tInclusive" style="width:auto"/> Tax inclusive in price
+            </label>
+            <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="createTax()">Add Tax Rate</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header">⚙️ Active Tax Rates</div>
+          <div class="card-body" id="taxList">
+            <div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tax Report -->
+  <div class="pane" id="pane-report">
+    <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;background:var(--white);padding:12px 16px;border-radius:10px;border:1px solid var(--border)">
+      <label style="margin:0;font-size:13px;font-weight:700;color:var(--navy)">Month:</label>
+      <input type="month" id="reportMonth" style="width:180px" onchange="loadReport()"/>
+      <button class="btn btn-primary" onclick="loadReport()">Load</button>
+    </div>
+    <div class="card">
+      <div class="card-header">📊 Tax Collection Report</div>
+      <div class="card-body" id="reportBody">
+        <div style="text-align:center;padding:40px;color:var(--muted)">Select a month and click Load</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calculator -->
+  <div class="pane" id="pane-calc">
+    <div style="max-width:500px">
+      <div class="card">
+        <div class="card-header">🧮 Tax Calculator</div>
+        <div class="card-body">
+          <label>Order Amount (रू)</label>
+          <input type="number" id="calcAmount" placeholder="Enter order subtotal"/>
+          <label>Category</label>
+          <select id="calcCategory">
+            <option value="ALL">All / General</option>
+            <option value="FOOD">Food</option>
+            <option value="BEVERAGE">Beverage</option>
+            <option value="SERVICE">Service</option>
+          </select>
+          <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="calculate()">Calculate Tax</button>
+          <div class="calc-box" id="calcResult"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+document.getElementById('reportMonth').value=new Date().toISOString().slice(0,7);
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+}
+
+async function loadTaxes(){
+  const r=await fetch('/api/tax',{headers:authH(),cache:'no-store'});
+  const taxes=await r.json();
+  if(!taxes.length){document.getElementById('taxList').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No tax rates configured. Nepal default: VAT 13%</div>';return;}
+  document.getElementById('taxList').innerHTML=taxes.map(t=>`
+    <div class="tax-item${t.active?'':'" style="opacity:.5'}">
+      <div>
+        <div style="font-weight:800;font-size:14px">${t.name}</div>
+        <div style="margin-top:4px">
+          <span class="badge badge-blue">${t.rate}%</span>
+          <span class="badge badge-gray" style="margin-left:4px">${t.category}</span>
+          ${t.inclusive?'<span class="badge badge-green" style="margin-left:4px">Inclusive</span>':''}
+          ${!t.active?'<span class="badge" style="background:#fce8e7;color:var(--red);margin-left:4px">INACTIVE</span>':''}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-sm" style="background:${t.active?'#999':'var(--green)'};color:#fff" onclick="toggleTax(${t.id})">${t.active?'Disable':'Enable'}</button>
+        <button class="btn-sm" style="background:var(--red);color:#fff" onclick="deleteTax(${t.id})">Del</button>
+      </div>
+    </div>`).join('');
+}
+
+async function createTax(){
+  const body={name:document.getElementById('tName').value.trim(),rate:+document.getElementById('tRate').value,category:document.getElementById('tCategory').value,inclusive:document.getElementById('tInclusive').checked};
+  if(!body.name||!body.rate){showToast('Name and rate required','error');return;}
+  const r=await fetch('/api/tax',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Tax rate added!','success');document.getElementById('tName').value='';document.getElementById('tRate').value='';loadTaxes();}
+  else showToast(d.message||'Error','error');
+}
+
+async function toggleTax(id){await fetch(`/api/tax/${id}/toggle`,{method:'PATCH',headers:authH()});loadTaxes();}
+async function deleteTax(id){if(!confirm('Delete this tax rate?'))return;await fetch(`/api/tax/${id}`,{method:'DELETE',headers:authH()});showToast('Deleted','success');loadTaxes();}
+
+async function loadReport(){
+  const month=document.getElementById('reportMonth').value;
+  const r=await fetch(`/api/tax/report?month=${month}`,{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  const byMethod=Object.entries(d.byPaymentMethod||{}).map(([m,a])=>`<tr><td>${m}</td><td style="text-align:right;color:var(--blue);font-weight:700">रू ${(a||0).toLocaleString()}</td></tr>`).join('');
+  const taxRows=(d.taxBreakdown||[]).map(t=>`<tr><td>${t.name} (${t.rate}%)</td><td>${t.category}</td><td style="text-align:right">${t.inclusive?'Inclusive':'Exclusive'}</td><td style="text-align:right;font-weight:700;color:var(--red)">रू ${(t.taxAmount||0).toLocaleString()}</td></tr>`).join('');
+  document.getElementById('reportBody').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+      <div style="background:#f0f9f0;border:1px solid #a8d5b5;border-radius:8px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:900;color:var(--green)">रू ${(d.totalRevenue||0).toLocaleString()}</div><div style="font-size:11px;color:var(--muted)">Total Revenue</div></div>
+      <div style="background:#fce8e7;border:1px solid #f0b0aa;border-radius:8px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:900;color:var(--red)">रू ${(d.taxBreakdown||[]).reduce((s,t)=>s+t.taxAmount,0).toLocaleString()}</div><div style="font-size:11px;color:var(--muted)">Total Tax</div></div>
+      <div style="background:#e8efff;border:1px solid #b0c0f0;border-radius:8px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:900;color:var(--blue)">${d.transactionCount}</div><div style="font-size:11px;color:var(--muted)">Transactions</div></div>
+    </div>
+    <div style="margin-bottom:16px"><div style="font-size:13px;font-weight:800;color:var(--navy);margin-bottom:8px">Tax Breakdown</div>
+    <table><thead><tr><th>Tax Name</th><th>Category</th><th>Type</th><th style="text-align:right">Amount</th></tr></thead><tbody>${taxRows||'<tr><td colspan="4" style="text-align:center;color:var(--muted)">No active taxes</td></tr>'}</tbody></table></div>
+    <div><div style="font-size:13px;font-weight:800;color:var(--navy);margin-bottom:8px">Revenue by Payment Method</div>
+    <table><thead><tr><th>Method</th><th style="text-align:right">Amount</th></tr></thead><tbody>${byMethod||'<tr><td colspan="2" style="text-align:center;color:var(--muted)">No payments</td></tr>'}</tbody></table></div>`;
+}
+
+async function calculate(){
+  const amount=+document.getElementById('calcAmount').value;
+  const category=document.getElementById('calcCategory').value;
+  if(!amount){showToast('Enter an amount','error');return;}
+  const r=await fetch('/api/tax/calculate',{method:'POST',headers:authH(),body:JSON.stringify({amount,category})});
+  const d=await r.json();
+  const rows=d.breakdown.map(t=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0"><span>${t.name} (${t.rate}%${t.inclusive?' incl':''})</span><span style="color:var(--red)">+रू ${t.taxAmount}</span></div>`).join('');
+  const el=document.getElementById('calcResult');
+  el.style.display='block';
+  el.innerHTML=`${rows}<div style="border-top:2px solid var(--green);padding-top:8px;margin-top:8px;display:flex;justify-content:space-between"><span style="font-weight:700">Total Tax</span><span style="font-weight:900;color:var(--red)">रू ${d.totalTax}</span></div><div style="display:flex;justify-content:space-between;font-size:18px;font-weight:900;color:var(--navy)"><span>Total with Tax</span><span>रू ${d.totalWithTax}</span></div>`;
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadTaxes();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

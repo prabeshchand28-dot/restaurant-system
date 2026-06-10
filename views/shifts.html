@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Shift Scheduling</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block}
+.content{padding:24px;max-width:1400px;margin:0 auto}
+.toolbar{display:flex;align-items:center;gap:12px;margin-bottom:20px;background:var(--white);padding:12px 16px;border-radius:10px;border:1px solid var(--border)}
+.toolbar label{font-size:13px;font-weight:600;color:var(--navy);white-space:nowrap}
+.grid2{display:grid;grid-template-columns:1fr 340px;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day-col{background:#f8f9fb;border:1px solid var(--border);border-radius:8px;min-height:200px;padding:8px}
+.day-header{font-size:12px;font-weight:800;color:var(--navy);text-align:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.day-header.today{color:var(--blue)}
+.shift-block{background:var(--blue);color:#fff;border-radius:6px;padding:5px 8px;margin-bottom:4px;font-size:11px;cursor:pointer}
+.shift-block:hover{background:var(--navy)}
+.shift-block .sb-name{font-weight:700}
+.shift-block .sb-time{opacity:.8}
+.role-admin{background:#7c3aed}.role-manager{background:#0369a1}.role-waiter{background:#15803d}.role-kitchen{background:#b45309}
+input,select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;margin-bottom:10px}
+input:focus,select:focus{border-color:var(--blue)}
+label{font-size:12px;font-weight:600;color:var(--navy);display:block;margin-bottom:3px}
+.btn{padding:9px 18px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-primary{background:var(--blue);color:#fff}.btn-danger{background:var(--red);color:#fff}.btn-sm{padding:4px 10px;font-size:11px}
+.summary-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Shift Scheduling</span></span>
+  <a class="nav-btn" href="/dashboard">📊 Dashboard</a>
+</div>
+<div class="content">
+  <div class="toolbar">
+    <label>Week starting:</label>
+    <input type="date" id="weekStart" style="width:auto;margin:0" onchange="loadWeek()"/>
+    <button class="btn btn-primary btn-sm" onclick="prevWeek()">◀ Prev</button>
+    <button class="btn btn-primary btn-sm" onclick="nextWeek()">Next ▶</button>
+    <span id="weekLabel" style="font-size:13px;color:var(--muted);margin-left:8px"></span>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-header">📅 Weekly Schedule</div>
+      <div style="padding:12px">
+        <div class="week-grid" id="weekGrid"></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <div class="card-header">➕ Add Shift</div>
+        <div class="card-body">
+          <label>Staff Name *</label><input id="sh-name" placeholder="Staff name"/>
+          <label>Role</label>
+          <select id="sh-role"><option value="waiter">Waiter</option><option value="kitchen">Kitchen</option><option value="manager">Manager</option><option value="admin">Admin</option></select>
+          <label>Date *</label><input id="sh-date" type="date"/>
+          <label>Start Time *</label><input id="sh-start" type="time" value="09:00"/>
+          <label>End Time *</label><input id="sh-end" type="time" value="17:00"/>
+          <label>Position / Notes</label><input id="sh-pos" placeholder="e.g. Floor, Bar, Cashier"/>
+          <button class="btn btn-primary" style="width:100%" onclick="addShift()">Add Shift</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">📊 Weekly Summary</div>
+        <div class="card-body" id="summaryPanel"><div style="color:var(--muted);font-size:13px">Load a week to see summary</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function getMonday(){
+  const d=new Date();
+  const day=d.getDay();
+  d.setDate(d.getDate()-(day===0?6:day-1));
+  return d.toISOString().slice(0,10);
+}
+
+function init(){
+  const weekStart=document.getElementById('weekStart');
+  weekStart.value=getMonday();
+  document.getElementById('sh-date').value=new Date().toISOString().slice(0,10);
+  loadWeek();
+}
+
+function prevWeek(){
+  const d=new Date(document.getElementById('weekStart').value);
+  d.setDate(d.getDate()-7);
+  document.getElementById('weekStart').value=d.toISOString().slice(0,10);
+  loadWeek();
+}
+
+function nextWeek(){
+  const d=new Date(document.getElementById('weekStart').value);
+  d.setDate(d.getDate()+7);
+  document.getElementById('weekStart').value=d.toISOString().slice(0,10);
+  loadWeek();
+}
+
+async function loadWeek(){
+  const startDate=document.getElementById('weekStart').value;
+  if(!startDate)return;
+  const start=new Date(startDate);
+  const end=new Date(start);end.setDate(end.getDate()+6);
+  const fmt=d=>d.toISOString().slice(0,10);
+  document.getElementById('weekLabel').textContent=`${fmt(start)} → ${fmt(end)}`;
+
+  const [shiftsR,summaryR]=await Promise.all([
+    fetch(`/api/shifts?week=${startDate}`,{headers:authH(),cache:'no-store'}),
+    fetch(`/api/shifts/summary?startDate=${startDate}`,{headers:authH(),cache:'no-store'}),
+  ]);
+  const shifts=await shiftsR.json();
+  const summary=await summaryR.json();
+
+  // Build week grid
+  const grid=document.getElementById('weekGrid');
+  const today=new Date().toISOString().slice(0,10);
+  grid.innerHTML='';
+  for(let i=0;i<7;i++){
+    const d=new Date(start);d.setDate(d.getDate()+i);
+    const dateStr=fmt(d);
+    const dayShifts=shifts.filter(s=>s.date===dateStr);
+    const isToday=dateStr===today;
+    const col=document.createElement('div');
+    col.className='day-col';
+    col.innerHTML=`<div class="day-header ${isToday?'today':''}">${DAYS[d.getDay()]}<br><span style="font-size:10px;font-weight:400">${d.getDate()}/${d.getMonth()+1}</span></div>`+
+      dayShifts.map(s=>`<div class="shift-block role-${s.userRole}" onclick="deleteShift(${s.id},'${s.userName}')">
+        <div class="sb-name">${s.userName}</div>
+        <div class="sb-time">${s.startTime}–${s.endTime}</div>
+        ${s.position?`<div class="sb-time">${s.position}</div>`:''}
+      </div>`).join('');
+    grid.appendChild(col);
+  }
+
+  // Summary
+  const panel=document.getElementById('summaryPanel');
+  if(!summary.staff||!summary.staff.length){panel.innerHTML='<div style="color:var(--muted);font-size:13px">No shifts this week</div>';return;}
+  panel.innerHTML=summary.staff.map(s=>`
+    <div class="summary-row">
+      <div><strong>${s.userName}</strong><span style="font-size:11px;color:var(--muted);margin-left:6px">${s.userRole}</span></div>
+      <div style="color:var(--blue);font-weight:700">${s.totalHours.toFixed(1)}h · ${s.shifts.length} shifts</div>
+    </div>`).join('');
+}
+
+async function addShift(){
+  const userName=document.getElementById('sh-name').value.trim();
+  const userRole=document.getElementById('sh-role').value;
+  const date=document.getElementById('sh-date').value;
+  const startTime=document.getElementById('sh-start').value;
+  const endTime=document.getElementById('sh-end').value;
+  const position=document.getElementById('sh-pos').value;
+  if(!userName||!date||!startTime||!endTime){showToast('Name, date, start & end time required','error');return;}
+  const r=await fetch('/api/shifts',{method:'POST',headers:authH(),body:JSON.stringify({userId:0,userName,userRole,date,startTime,endTime,position})});
+  const d=await r.json();
+  if(d.success){showToast('Shift added!','success');document.getElementById('sh-name').value='';document.getElementById('sh-pos').value='';loadWeek();}
+  else showToast(d.message,'error');
+}
+
+async function deleteShift(id,name){
+  if(!confirm(`Remove ${name}'s shift?`))return;
+  await fetch(`/api/shifts/${id}`,{method:'DELETE',headers:authH()});
+  loadWeek();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+init();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

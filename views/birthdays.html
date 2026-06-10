@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Customer Birthday Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--pink:#c0392b;--purple:#6c3483;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:20px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--border)}
+.tab{padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;color:var(--muted)}
+.tab.active{color:var(--navy);border-color:var(--navy)}
+.panel{display:none}.panel.active{display:block}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}.btn-pink{background:#e91e63}
+.bday-card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;transition:box-shadow .2s}
+.bday-card:hover{box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.bday-card.today{border:2px solid #e91e63;background:#fff5f9}
+.bday-card.soon{border-left:4px solid var(--orange)}
+.days-badge{display:inline-block;padding:4px 10px;border-radius:100px;font-size:12px;font-weight:900}
+.days-0{background:#fce8f0;color:#e91e63}
+.days-few{background:#fff3e0;color:var(--orange)}
+.days-later{background:#f0f4ff;color:var(--blue)}
+.month-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.month-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;cursor:pointer;transition:all .2s}
+.month-card:hover,.month-card.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Birthday Tracker 🎂</span></span>
+  <div><a class="nav-btn" href="/crm">👥 CRM</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-total" style="color:var(--navy)">—</div><div class="lbl">Total Registered</div></div>
+    <div class="stat"><div class="num" id="s-today" style="color:#e91e63">—</div><div class="lbl">🎂 Today</div></div>
+    <div class="stat"><div class="num" id="s-month" style="color:var(--orange)">—</div><div class="lbl">This Month</div></div>
+    <div class="stat"><div class="num" id="s-offers" style="color:var(--green)">—</div><div class="lbl">🎁 Offers Sent</div></div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('upcoming')">⏰ Upcoming</div>
+    <div class="tab" onclick="switchTab('add')">➕ Add Customer</div>
+    <div class="tab" onclick="switchTab('all')">📋 All Records</div>
+  </div>
+
+  <!-- UPCOMING -->
+  <div class="panel active" id="panel-upcoming">
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+      <span style="font-size:13px;font-weight:700">Next</span>
+      <select id="upDays" onchange="loadUpcoming()" style="width:100px">
+        <option value="7">7 days</option>
+        <option value="14">14 days</option>
+        <option value="30" selected>30 days</option>
+        <option value="60">60 days</option>
+      </select>
+    </div>
+    <div id="upcomingList">Loading...</div>
+  </div>
+
+  <!-- ADD -->
+  <div class="panel" id="panel-add">
+    <div style="max-width:500px">
+      <div class="card">
+        <div class="card-header">🎂 Register Birthday</div>
+        <div class="card-body">
+          <label>Customer Name</label><input id="bName" placeholder="Full name"/>
+          <label>Phone</label><input id="bPhone" placeholder="98XXXXXXXX" type="tel"/>
+          <label>Email</label><input id="bEmail" placeholder="email@example.com" type="email"/>
+          <label>Birthday (MM-DD or full date)</label>
+          <input type="date" id="bDate"/>
+          <label>Notes</label><input id="bNotes" placeholder="e.g. Prefers chocolate cake..."/>
+          <button class="btn btn-green" style="width:100%;margin-top:14px" onclick="addBirthday()">🎂 Register</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALL -->
+  <div class="panel" id="panel-all">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <input id="allSearch" placeholder="Search name or phone..." oninput="loadAll()" style="width:220px"/>
+      <select id="allMonth" onchange="loadAll()" style="width:140px">
+        <option value="">All Months</option>
+        <option value="1">January</option><option value="2">February</option>
+        <option value="3">March</option><option value="4">April</option>
+        <option value="5">May</option><option value="6">June</option>
+        <option value="7">July</option><option value="8">August</option>
+        <option value="9">September</option><option value="10">October</option>
+        <option value="11">November</option><option value="12">December</option>
+      </select>
+    </div>
+    <div id="allList">Loading...</div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+async function loadStats(){
+  const r=await fetch('/api/birthdays/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-total').textContent=d.total;
+  document.getElementById('s-today').textContent=d.today;
+  document.getElementById('s-month').textContent=d.thisMonth;
+  document.getElementById('s-offers').textContent=d.offersSent;
+}
+
+async function loadUpcoming(){
+  const days=document.getElementById('upDays').value;
+  const r=await fetch(`/api/birthdays/upcoming?days=${days}`,{headers:authH(),cache:'no-store'});
+  const list=await r.json();
+  if(!list.length){document.getElementById('upcomingList').innerHTML='<div style="text-align:center;padding:60px;background:var(--white);border-radius:12px;color:var(--muted)">No upcoming birthdays in this period</div>';return;}
+  document.getElementById('upcomingList').innerHTML=list.map(b=>{
+    const d=b.daysUntil;
+    const bd=new Date(b.birthDate);
+    const cls=d===0?'today':d<=7?'soon':'';
+    const daysCls=d===0?'days-0':d<=7?'days-few':'days-later';
+    const label=d===0?'🎂 TODAY!':d===1?'Tomorrow':`${d} days`;
+    return `<div class="bday-card ${cls}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:900;font-size:15px">🎂 ${b.customerName}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">
+            ${months[bd.getMonth()]} ${bd.getDate()}${b.phone?' · 📞 '+b.phone:''}${b.email?' · '+b.email:''}
+          </div>
+          ${b.notes?`<div style="font-size:12px;color:var(--muted);margin-top:2px">${b.notes}</div>`:''}
+          ${b.offerSent?`<div style="font-size:11px;color:var(--green);margin-top:4px">🎁 Offer sent: ${b.offerCode} on ${new Date(b.offerSentAt).toLocaleDateString()}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <span class="days-badge ${daysCls}">${label}</span>
+          ${!b.offerSent?`<button class="btn btn-pink" style="font-size:11px;padding:5px 10px;background:#e91e63" onclick="sendOffer(${b.id})">🎁 Send Offer</button>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadAll(){
+  const search=document.getElementById('allSearch').value;
+  const month=document.getElementById('allMonth').value;
+  let url='/api/birthdays?a=1';
+  if(search)url+=`&search=${encodeURIComponent(search)}`;if(month)url+=`&month=${month}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const list=await r.json();
+  if(!list.length){document.getElementById('allList').innerHTML='<div style="text-align:center;padding:60px;background:var(--white);border-radius:12px;color:var(--muted)">No records</div>';return;}
+  document.getElementById('allList').innerHTML=list.map(b=>{
+    const bd=new Date(b.birthDate);
+    return `<div class="bday-card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-weight:800;font-size:14px">🎂 ${b.customerName}</div>
+          <div style="font-size:12px;color:var(--muted)">${months[bd.getMonth()]} ${bd.getDate()}${b.phone?' · '+b.phone:''}${b.email?' · '+b.email:''}</div>
+          ${b.offerSent?`<div style="font-size:11px;color:var(--green);margin-top:3px">🎁 Offer sent: ${b.offerCode}</div>`:''}
+        </div>
+        <div style="display:flex;gap:5px">
+          ${!b.offerSent?`<button class="btn" style="font-size:11px;padding:4px 9px;background:#e91e63" onclick="sendOffer(${b.id})">🎁 Offer</button>`:''}
+          <button class="btn btn-red" style="font-size:11px;padding:4px 9px" onclick="delBday(${b.id})">Del</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function addBirthday(){
+  const name=document.getElementById('bName').value.trim();
+  const date=document.getElementById('bDate').value;
+  if(!name||!date){showToast('Name and birthday required','error');return;}
+  const body={customerName:name,phone:document.getElementById('bPhone').value,email:document.getElementById('bEmail').value,birthDate:date,notes:document.getElementById('bNotes').value};
+  const r=await fetch('/api/birthdays',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Birthday registered!','success');document.getElementById('bName').value='';document.getElementById('bPhone').value='';document.getElementById('bEmail').value='';document.getElementById('bDate').value='';document.getElementById('bNotes').value='';loadStats();switchTab('upcoming');}
+  else showToast(d.message||'Error','error');
+}
+
+async function sendOffer(id){
+  const r=await fetch(`/api/birthdays/${id}/offer`,{method:'PATCH',headers:authH(),body:JSON.stringify({})});
+  const d=await r.json();
+  if(d.id){showToast(`🎁 Offer sent! Code: ${d.offerCode}`,'success');loadStats();loadUpcoming();loadAll();}
+}
+
+async function delBday(id){
+  if(!confirm('Delete?'))return;
+  await fetch(`/api/birthdays/${id}`,{method:'DELETE',headers:authH()});
+  loadStats();loadAll();
+}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['upcoming','add','all'][i]===tab));
+  document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('active',['panel-upcoming','panel-add','panel-all'][i]==='panel-'+tab));
+  if(tab==='all')loadAll();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadStats();loadUpcoming();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

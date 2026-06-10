@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Incident Report Log</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--red);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.8;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:20px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--red);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select,textarea{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+textarea{resize:vertical;min-height:70px}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--red);color:#fff}
+.btn-green{background:var(--green)}.btn-blue{background:var(--blue)}
+.inc-card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px}
+.inc-card.CRITICAL{border-left:6px solid var(--red);background:#fff5f5}
+.inc-card.HIGH{border-left:4px solid var(--orange)}
+.inc-card.MEDIUM{border-left:4px solid #f5a623}
+.inc-card.LOW{border-left:4px solid var(--muted)}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800}
+.st-OPEN{background:#fdecea;color:var(--red)}.st-INVESTIGATING{background:#fff3e0;color:var(--orange)}.st-RESOLVED{background:#e8efff;color:var(--blue)}.st-CLOSED{background:#e7f5ed;color:var(--green)}
+.sev-CRITICAL{background:#fdecea;color:var(--red)}.sev-HIGH{background:#fff3e0;color:var(--orange)}.sev-MEDIUM{background:#fffde7;color:#b7860a}.sev-LOW{background:#f0f0f0;color:var(--muted)}
+.type-icons{ACCIDENT:'💥',INJURY:'🤕',THEFT:'🔓',COMPLAINT:'😠',SAFETY:'⚠️',OTHER:'📋'}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Incident Report Log</span></span>
+  <div><a class="nav-btn" href="/disciplinary">📋 Disciplinary</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-open" style="color:var(--red)">—</div><div class="lbl">Open Incidents</div></div>
+    <div class="stat"><div class="num" id="s-critical" style="color:var(--red)">—</div><div class="lbl">Critical</div></div>
+    <div class="stat"><div class="num" id="s-high" style="color:var(--orange)">—</div><div class="lbl">High</div></div>
+    <div class="stat"><div class="num" id="s-month" style="color:var(--navy)">—</div><div class="lbl">This Month</div></div>
+    <div class="stat"><div class="num" id="s-total" style="color:var(--muted)">—</div><div class="lbl">Total Logged</div></div>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <div class="card-header">⚠️ Log Incident</div>
+        <div class="card-body">
+          <label>Incident Title *</label><input id="iTitle" placeholder="Brief description of incident"/>
+          <div class="frow">
+            <div><label>Type</label>
+              <select id="iType">
+                <option value="ACCIDENT">💥 Accident</option>
+                <option value="INJURY">🤕 Injury</option>
+                <option value="THEFT">🔓 Theft</option>
+                <option value="COMPLAINT">😠 Complaint</option>
+                <option value="SAFETY">⚠️ Safety Hazard</option>
+                <option value="OTHER">📋 Other</option>
+              </select>
+            </div>
+            <div><label>Severity</label>
+              <select id="iSev">
+                <option value="LOW">🟡 Low</option>
+                <option value="MEDIUM" selected>🟠 Medium</option>
+                <option value="HIGH">🔴 High</option>
+                <option value="CRITICAL">🚨 Critical</option>
+              </select>
+            </div>
+          </div>
+          <label>Incident Date & Time</label><input type="datetime-local" id="iDate"/>
+          <label>Description</label><textarea id="iDesc" placeholder="Detailed description of what happened..."></textarea>
+          <label>Involved Party</label><input id="iParty" placeholder="Staff/guest name"/>
+          <label>Reported By</label><input id="iBy" placeholder="Your name"/>
+          <label>Witnesses</label><input id="iWitness" placeholder="Names of witnesses..."/>
+          <label>Immediate Action Taken</label><textarea id="iAction" placeholder="What was done immediately..." style="min-height:50px"></textarea>
+          <label>Follow-up Date</label><input type="date" id="iFollowup"/>
+          <button class="btn" style="width:100%;margin-top:14px" onclick="logIncident()">⚠️ Log Incident</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <select id="fType" onchange="loadIncidents()" style="width:130px">
+          <option value="">All Types</option>
+          <option value="ACCIDENT">Accident</option>
+          <option value="INJURY">Injury</option>
+          <option value="THEFT">Theft</option>
+          <option value="COMPLAINT">Complaint</option>
+          <option value="SAFETY">Safety</option>
+          <option value="OTHER">Other</option>
+        </select>
+        <select id="fSev" onchange="loadIncidents()" style="width:120px">
+          <option value="">All Severity</option>
+          <option value="CRITICAL">Critical</option>
+          <option value="HIGH">High</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="LOW">Low</option>
+        </select>
+        <select id="fStatus" onchange="loadIncidents()" style="width:130px">
+          <option value="">All Status</option>
+          <option value="OPEN">Open</option>
+          <option value="INVESTIGATING">Investigating</option>
+          <option value="RESOLVED">Resolved</option>
+          <option value="CLOSED">Closed</option>
+        </select>
+      </div>
+      <div id="incList">Loading...</div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+const TYPE_ICONS={ACCIDENT:'💥',INJURY:'🤕',THEFT:'🔓',COMPLAINT:'😠',SAFETY:'⚠️',OTHER:'📋'};
+// set default datetime to now
+const nowStr=new Date().toISOString().slice(0,16);
+document.getElementById('iDate').value=nowStr;
+
+async function init(){loadStats();loadIncidents();}
+
+async function loadStats(){
+  const r=await fetch('/api/incidents/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-open').textContent=d.open;
+  document.getElementById('s-critical').textContent=d.critical;
+  document.getElementById('s-high').textContent=d.high;
+  document.getElementById('s-month').textContent=d.thisMonth;
+  document.getElementById('s-total').textContent=d.total;
+}
+
+async function loadIncidents(){
+  const type=document.getElementById('fType').value;
+  const severity=document.getElementById('fSev').value;
+  const status=document.getElementById('fStatus').value;
+  let url='/api/incidents?a=1';
+  if(type)url+=`&type=${type}`;if(severity)url+=`&severity=${severity}`;if(status)url+=`&status=${status}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const items=await r.json();
+  if(!items.length){document.getElementById('incList').innerHTML='<div style="text-align:center;padding:60px;background:var(--white);border-radius:12px;color:var(--muted)">No incidents logged</div>';return;}
+  document.getElementById('incList').innerHTML=items.map(i=>`<div class="inc-card ${i.severity}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span class="badge st-${i.status}">${i.status}</span>
+          <span class="badge sev-${i.severity}">${i.severity}</span>
+          <span style="font-size:12px;color:var(--muted)">${TYPE_ICONS[i.type]||'📋'} ${i.type}</span>
+        </div>
+        <div style="font-size:15px;font-weight:900;margin-top:4px">${i.title}</div>
+        <div style="font-size:12px;color:var(--muted)">${new Date(i.incidentDate).toLocaleString()} ${i.reportedBy?'· Reported by: '+i.reportedBy:''}</div>
+        ${i.involvedParty?`<div style="font-size:12px;margin-top:3px"><span style="font-weight:700">Involved:</span> ${i.involvedParty}</div>`:''}
+      </div>
+    </div>
+    ${i.description?`<div style="font-size:12px;color:#333;margin-top:8px;border-left:3px solid var(--border);padding-left:8px">${i.description}</div>`:''}
+    ${i.actionTaken?`<div style="font-size:12px;color:var(--blue);margin-top:6px"><span style="font-weight:700">Action:</span> ${i.actionTaken}</div>`:''}
+    ${i.followUpDate?`<div style="font-size:11px;color:var(--orange);margin-top:3px">📅 Follow-up: ${new Date(i.followUpDate).toLocaleDateString()}</div>`:''}
+    <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+      ${i.status==='OPEN'?`<button class="btn btn-blue" style="font-size:11px;padding:5px 10px" onclick="updateStatus(${i.id},'INVESTIGATING')">🔍 Investigate</button>`:''}
+      ${['OPEN','INVESTIGATING'].includes(i.status)?`<button class="btn btn-green" style="font-size:11px;padding:5px 10px" onclick="updateStatus(${i.id},'RESOLVED')">✅ Resolve</button>`:''}
+      ${i.status==='RESOLVED'?`<button class="btn" style="font-size:11px;padding:5px 10px;background:#555" onclick="updateStatus(${i.id},'CLOSED')">🔒 Close</button>`:''}
+      <button class="btn" style="font-size:11px;padding:5px 10px;background:var(--red)" onclick="delInc(${i.id})">Del</button>
+    </div>
+  </div>`).join('');
+}
+
+async function logIncident(){
+  const title=document.getElementById('iTitle').value.trim();
+  if(!title){showToast('Enter incident title','error');return;}
+  const body={title,type:document.getElementById('iType').value,severity:document.getElementById('iSev').value,incidentDate:document.getElementById('iDate').value,description:document.getElementById('iDesc').value,involvedParty:document.getElementById('iParty').value,reportedBy:document.getElementById('iBy').value,witnesses:document.getElementById('iWitness').value,actionTaken:document.getElementById('iAction').value,followUpDate:document.getElementById('iFollowup').value||undefined};
+  const r=await fetch('/api/incidents',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Incident logged','success');['iTitle','iDesc','iParty','iBy','iWitness','iAction','iFollowup'].forEach(id=>document.getElementById(id).value='');loadStats();loadIncidents();}
+  else showToast(d.message||'Error','error');
+}
+
+async function updateStatus(id,status){
+  const resolvedBy=status==='RESOLVED'||status==='CLOSED'?prompt('Resolved/closed by:'):'';
+  if(resolvedBy===null)return;
+  await fetch(`/api/incidents/${id}`,{method:'PATCH',headers:authH(),body:JSON.stringify({status,resolvedBy})});
+  showToast('Updated','success');loadStats();loadIncidents();
+}
+
+async function delInc(id){
+  if(!confirm('Delete incident record?'))return;
+  await fetch(`/api/incidents/${id}`,{method:'DELETE',headers:authH()});
+  loadStats();loadIncidents();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+init();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Mobile Order</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
@@ -25,6 +25,7 @@
 }
 html{font-size:15px}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;position:relative;overflow-x:hidden}
+
 ::-webkit-scrollbar{width:0}
 img{display:block}
 
@@ -189,14 +190,16 @@ img{display:block}
 .no-items{text-align:center;padding:40px 20px;color:var(--muted)}
 .no-items .icon{font-size:40px;margin-bottom:8px}
 
-/* ── BOTTOM BAR ── */
+/* ── BOTTOM BAR (mobile only) ── */
 .bottom-bar{
-  position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:480px;
   background:var(--bottom-bar);padding:10px 14px;z-index:200;
   display:none;
   box-shadow:0 -4px 20px rgba(0,0,0,.3);
 }
 .bottom-bar.show{display:flex;gap:10px;align-items:center}
+@media(min-width:769px){.bottom-bar{display:none!important}}
 .bottom-checkout-btn{
   flex:1;background:#fff;color:var(--bottom-bar);border:none;border-radius:10px;
   padding:13px 16px;font-family:var(--font);font-size:14px;font-weight:800;
@@ -219,6 +222,11 @@ img{display:block}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;align-items:flex-end;justify-content:center}
 .overlay.open{display:flex}
 .sheet{background:#fff;border-radius:20px 20px 0 0;padding:24px 18px;width:100%;max-width:480px;animation:sheetUp .3s ease;max-height:85vh;overflow-y:auto}
+@media(min-width:769px){
+  .overlay{align-items:center;justify-content:center}
+  .sheet{border-radius:16px;max-width:520px;max-height:80vh}
+  @keyframes sheetUp{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .sheet-handle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 18px}
 .sheet-title{font-size:18px;font-weight:800;margin-bottom:14px}
@@ -345,6 +353,7 @@ img{display:block}
      WELCOME SCREEN
 ══════════════════════════ -->
 <div id="welcome">
+
   <div class="wl-card">
     <div class="wl-logo">🍽️</div>
     <div class="wl-title">Welcome!</div>
@@ -385,7 +394,7 @@ img{display:block}
       </div>
     </div>
 
-    <button class="wl-start-btn" id="startBtn" onclick="startOrdering()" disabled>
+    <button class="wl-start-btn" id="startBtn" onclick="startOrdering()">
       View Menu  →
     </button>
   </div>
@@ -447,7 +456,7 @@ img{display:block}
     </div>
   </div>
 
-  <!-- Bottom bar -->
+  <!-- Bottom bar (mobile only) -->
   <div class="bottom-bar" id="bottomBar">
     <button class="bottom-checkout-btn" onclick="openSheet('cartSheet')">
       <span>
@@ -461,7 +470,6 @@ img{display:block}
       <span class="bottom-cart-count" id="bottomCartCount">0</span>
     </button>
   </div>
-
 </div><!-- /app -->
 
 <!-- ══════════════════════════
@@ -581,8 +589,8 @@ img{display:block}
 /* ── INIT ── */
 const params  = new URLSearchParams(location.search);
 const tableNo = parseInt(params.get('table')) || 1;
-document.getElementById('wl-table-no').textContent = tableNo;
-document.getElementById('appTableNo').textContent  = tableNo;
+document.getElementById('wl-table-no').textContent  = tableNo;
+document.getElementById('appTableNo').textContent   = tableNo;
 
 /* ── SESSION MANAGEMENT ──────────────────────────────────
    sessionStorage automatically clears when tab closes.
@@ -604,20 +612,22 @@ function clearSession() {
 
 /* ── GUEST COUNTER ── */
 const gc = { m:0, f:0, c:0 };
+let guestCount = 1; // default
+
 function adj(t, d) {
   gc[t] = Math.max(0, gc[t] + d);
   document.getElementById(`cnt-${t}`).textContent = gc[t];
   document.getElementById(`btn-${t}-minus`).disabled = gc[t] === 0;
   const total = gc.m + gc.f + gc.c;
   document.getElementById('guestTotal').textContent = total;
-  document.getElementById('startBtn').disabled = total === 0;
+  // Button always enabled — minimum 1 guest
 }
 
 async function startOrdering() {
-  const total  = gc.m + gc.f + gc.c;
+  const total  = Math.max(1, gc.m + gc.f + gc.c);
+  guestCount   = total;
   const gender = gc.f > 0 && gc.m === 0 ? 'Female' : gc.m > 0 && gc.f === 0 ? 'Male' : 'Mixed';
 
-  // Clear any previous session data for this table — fresh start
   clearSession();
 
   try {
@@ -626,8 +636,9 @@ async function startOrdering() {
       body: JSON.stringify({ table:tableNo, count:total, gender }),
     });
   } catch {}
+
   document.getElementById('welcome').style.display = 'none';
-  document.getElementById('app').style.display     = 'flex';
+  document.getElementById('app').classList.add('show');
   document.getElementById('appGuestChip').textContent = `👥 ${total}`;
   loadMenu();
 }
@@ -656,12 +667,24 @@ function foodEmoji(cat, name) {
 
 async function loadMenu() {
   try {
-    const r = await fetch('/api/menu');
+    const r = await fetch('/api/menu', { cache: 'no-store' });
     menu = (await r.json()).filter(m => m.available !== false);
+    // Cache menu in localStorage for offline use
+    localStorage.setItem('cached_menu', JSON.stringify(menu));
+    localStorage.setItem('cached_menu_time', Date.now().toString());
     buildCatTabs();
     renderMenu('All');
   } catch {
-    showToast('Could not load menu');
+    // Offline fallback — load from localStorage cache
+    const cached = localStorage.getItem('cached_menu');
+    if (cached) {
+      menu = JSON.parse(cached);
+      buildCatTabs();
+      renderMenu('All');
+      showToast('📴 Offline — Cached menu loaded');
+    } else {
+      showToast('❌ Menu load garna sakiena. Internet check garus.');
+    }
   }
 }
 
@@ -823,13 +846,39 @@ async function placeOrder() {
   });
   const guests = gc.m + gc.f + gc.c;
   try {
-    const r = await fetch('/api/orders', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ table:tableNo, items, guests }),
-    });
-    const d = await r.json();
+    const orderBody = { table: tableNo, items, guests };
+    let d;
+
+    // Use OfflineManager if available, else raw fetch
+    if (window.OfflineManager && !navigator.onLine) {
+      d = await OfflineManager.apiFetch('POST', '/api/orders', orderBody);
+      if (d.offline) {
+        // Save locally so "My Orders" shows something
+        const localOrder = {
+          id: 'offline_' + Date.now(),
+          table: tableNo, items, guests,
+          status: 'Pending', offline: true,
+          time: new Date().toISOString(),
+        };
+        addSessionOrderId(localOrder.id);
+        cart = {}; updateBottomBar(); renderMenu(currentCat);
+        closeSheet('cartSheet');
+        document.getElementById('ordersNotifDot').classList.add('show');
+        showToast('📴 Offline — Order saved. Internet auda sync huncha!');
+        myOrders.push(localOrder);
+        renderMyOrders();
+        btn.disabled = false; btn.textContent = 'Place Order  🍽️';
+        return;
+      }
+    } else {
+      const r = await fetch('/api/orders', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderBody),
+      });
+      d = await r.json();
+    }
+
     if (d.success) {
-      // Save order ID to this session so only this customer sees it
       addSessionOrderId(d.order.id);
       cart = {}; updateBottomBar(); renderMenu(currentCat);
       closeSheet('cartSheet');
@@ -839,7 +888,7 @@ async function placeOrder() {
     } else {
       showToast('⚠️ ' + (d.message || 'Failed'));
     }
-  } catch { showToast('❌ Connection error'); }
+  } catch { showToast('❌ Connection error — Order could not be placed'); }
   btn.disabled = false; btn.textContent = 'Place Order  🍽️';
 }
 
@@ -909,76 +958,99 @@ setInterval(() => {
 /* ── BILL SHEET ── */
 let billRequested = false;
 
-function openBillSheet() {
+async function openBillSheet() {
+  // Pehile orders load garau, tab bill sheet kholau
+  await loadMyOrders();
   renderBillSheet();
   openSheet('billSheet');
 }
 
 function renderBillSheet() {
   const el = document.getElementById('billSheetContent');
+
+  // Desktop POS: cart bata items lau if myOrders empty
   const active = myOrders.filter(o => o.status !== 'Cancelled');
 
-  if (!active.length) {
-    el.innerHTML = `<div class="bill-empty"><div class="icon">🍽️</div><p>No orders yet</p></div>`;
-    return;
-  }
+  // Cart ma items cha bhane tyo pani dekhau (order place nagarda aghi)
+  const cartItems = Object.entries(cart).map(([id, q]) => {
+    const m = menu.find(x => x.id === parseInt(id));
+    return m ? { name: m.name, price: m.discount > 0 ? Math.round(m.price*(1-m.discount/100)) : m.price, qty: q } : null;
+  }).filter(Boolean);
 
-  // Merge all items across orders
+  // Items: placed orders + current cart
   const itemMap = {};
   active.forEach(o => o.items.forEach(i => {
     if (itemMap[i.name]) itemMap[i.name].qty += i.qty;
     else itemMap[i.name] = { name: i.name, price: i.price, qty: i.qty };
   }));
+  cartItems.forEach(i => {
+    if (itemMap[i.name]) itemMap[i.name].qty += i.qty;
+    else itemMap[i.name] = { ...i };
+  });
+
   const items    = Object.values(itemMap);
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
   const vat      = Math.round(subtotal * 0.13);
   const total    = subtotal + vat;
 
-  const itemRows = items.map(i => `
-    <div class="bill-item">
-      <span class="bi-name">${i.name}</span>
-      <span class="bi-qty">×${i.qty}</span>
-      <span class="bi-price">Rs ${(i.price * i.qty).toLocaleString()}</span>
-    </div>`).join('');
+  const itemRows = items.length
+    ? items.map(i => `
+      <div class="bill-item">
+        <span class="bi-name">${i.name}</span>
+        <span class="bi-qty">×${i.qty}</span>
+        <span class="bi-price">Rs ${(i.price * i.qty).toLocaleString()}</span>
+      </div>`).join('')
+    : `<div style="text-align:center;color:var(--muted);padding:16px 0;font-size:13px">No items ordered yet</div>`;
+
+  const summaryBlock = items.length ? `
+    <div class="bill-totals">
+      <div class="bill-row"><span>Subtotal</span><span>Rs ${subtotal.toLocaleString()}</span></div>
+      <div class="bill-row"><span>VAT (13%)</span><span>Rs ${vat.toLocaleString()}</span></div>
+      <div class="bill-row grand"><span>Total</span><span>Rs ${total.toLocaleString()}</span></div>
+    </div>` : '';
 
   const requestedMsg = billRequested
-    ? `<div class="bill-requested-msg" style="display:block">
-        <div style="font-size:28px;margin-bottom:6px">✅</div>
-        <div style="font-weight:800;font-size:14px;color:#1a5c1a">Bill Request Sent!</div>
+    ? `<div class="bill-requested-msg" style="display:block;text-align:center;padding:16px;background:#f0fdf4;border-radius:12px;border:1.5px solid #22c55e;margin-bottom:10px">
+        <div style="font-size:32px;margin-bottom:6px">✅</div>
+        <div style="font-weight:800;font-size:15px;color:#1a5c1a">Bill Request Sent!</div>
         <div style="font-size:12px;color:var(--muted);margin-top:4px">Staff will come to your table shortly.</div>
+        <button onclick="billRequested=false;renderBillSheet()" style="margin-top:10px;background:none;border:1px solid #1a5c1a;color:#1a5c1a;padding:6px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-family:var(--font)">Send Again</button>
       </div>`
     : `<button class="bill-request-btn" id="reqBillBtn" onclick="requestBill()">
-        💳 Request Bill — Rs ${total.toLocaleString()}
+        🔔 Request Bill${total > 0 ? ' — Rs ' + total.toLocaleString() : ''}
       </button>`;
 
   el.innerHTML = `
     <div class="bill-header">
       <div class="bh-title">Table ${tableNo}</div>
-      <div class="bh-meta">${items.length} item type${items.length !== 1 ? 's' : ''} · ${active.length} order${active.length !== 1 ? 's' : ''}</div>
+      <div class="bh-meta">${items.length > 0 ? items.length + ' item type(s) ordered' : 'Call staff for bill'}</div>
     </div>
     <div class="bill-items-list">${itemRows}</div>
-    <div class="bill-totals">
-      <div class="bill-row"><span>Subtotal</span><span>Rs ${subtotal.toLocaleString()}</span></div>
-      <div class="bill-row"><span>VAT (13%)</span><span>Rs ${vat.toLocaleString()}</span></div>
-      <div class="bill-row grand"><span>Total</span><span>Rs ${total.toLocaleString()}</span></div>
-    </div>
+    ${summaryBlock}
     ${requestedMsg}
-    <button class="cancel-btn" onclick="closeSheet('billSheet')">Close</button>`;
+    <button class="cancel-btn" onclick="closeSheet('billSheet')" style="width:100%;margin-top:8px">Close</button>`;
 }
 
 async function requestBill() {
   const btn = document.getElementById('reqBillBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending...'; }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending request...'; }
   try {
-    await fetch('/api/orders/0/call-bell', {
-      method: 'POST',
+    const res = await fetch('/api/orders/0/call-bell', {
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ table: tableNo, message: 'Request bill' }),
+      body:    JSON.stringify({ table: tableNo, message: 'Request bill' }),
     });
-    billRequested = true;
-    renderBillSheet();
-  } catch {
-    if (btn) { btn.disabled = false; btn.textContent = '💳 Request Bill'; }
+    const data = await res.json();
+    if (data.success !== false) {
+      billRequested = true;
+      renderBillSheet();
+      showToast('✅ Staff notified — bill request sent!');
+    } else {
+      throw new Error(data.message || 'Failed');
+    }
+  } catch(e) {
+    showToast('❌ Could not send request: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '🔔 Request Bill'; }
   }
 }
 
@@ -1046,7 +1118,9 @@ function showToast(msg) {
   clearTimeout(toastT);
   toastT = setTimeout(()=>t.classList.remove('show'), 3500);
 }
+
 </script>
 <script src="/js/offline.js" defer></script>
+<script src="/js/autoupdate.js"></script>
 </body>
 </html>

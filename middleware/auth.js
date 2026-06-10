@@ -52,4 +52,13 @@ function generateToken(user) {
   );
 }
 
-module.exports = { authMiddleware, roleMiddleware, generateToken };
+// Export the middleware function itself as the default so that
+// `const auth = require('./auth')` works directly as Express middleware.
+// Named exports are attached so destructured imports also work:
+//   const { verifyToken } = require('./auth')
+//   const { authMiddleware, roleMiddleware } = require('./auth')
+module.exports = authMiddleware;
+module.exports.authMiddleware = authMiddleware;
+module.exports.verifyToken    = authMiddleware;   // alias used by many routes
+module.exports.roleMiddleware = roleMiddleware;
+module.exports.generateToken  = generateToken;

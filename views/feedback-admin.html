@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Customer Feedback</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--gold:#f5a623;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:22px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+.star-row{display:flex;gap:2px;font-size:14px;color:var(--gold)}
+select,input[type=text]{padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+.btn{padding:7px 14px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-outline{background:transparent;color:var(--blue);border:1px solid var(--blue)}
+.fb-card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;background:var(--white)}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase}
+.s-NEW{background:#e8efff;color:var(--blue)}.s-REVIEWED{background:#fff3e0;color:#b78800}.s-RESPONDED{background:#e7f5ed;color:var(--green)}
+.chip{display:inline-block;background:#f0f0f0;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;margin:2px}
+.rating-bar{display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px}
+.bar-track{flex:1;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;background:var(--gold)}
+.respond-area{margin-top:10px;background:#f8f9fb;border-radius:8px;padding:10px}
+.respond-area input{width:100%;margin-bottom:6px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Customer Feedback</span></span>
+  <div><a class="nav-btn" href="/feedback" target="_blank">📝 Public Form</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-total">—</div><div class="lbl">Total Reviews</div></div>
+    <div class="stat"><div class="num" id="s-avg" style="color:var(--gold)">—</div><div class="lbl">⭐ Avg Rating</div></div>
+    <div class="stat"><div class="num" id="s-food" style="color:var(--green)">—</div><div class="lbl">Food Rating</div></div>
+    <div class="stat"><div class="num" id="s-service">—</div><div class="lbl">Service Rating</div></div>
+    <div class="stat"><div class="num" id="s-new" style="color:var(--blue)">—</div><div class="lbl">⚡ New</div></div>
+  </div>
+
+  <!-- Rating Distribution -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-header">⭐ Rating Distribution</div>
+    <div class="card-body" id="distSection">Loading...</div>
+  </div>
+
+  <!-- Filters + List -->
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+    <select id="filterStatus" onchange="loadFeedback()">
+      <option value="">All</option>
+      <option value="NEW">New</option>
+      <option value="REVIEWED">Reviewed</option>
+      <option value="RESPONDED">Responded</option>
+    </select>
+    <select id="filterRating" onchange="loadFeedback()">
+      <option value="">Any Rating</option>
+      <option value="5">⭐⭐⭐⭐⭐ 5 stars</option>
+      <option value="4">4+ stars</option>
+      <option value="3">3+ stars</option>
+    </select>
+    <a class="btn" href="/feedback?table=1" target="_blank" style="text-decoration:none">📋 QR Link Preview</a>
+  </div>
+
+  <div id="feedbackList">Loading...</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+async function loadSummary(){
+  const r=await fetch('/api/feedback/summary',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-total').textContent=d.count;
+  document.getElementById('s-avg').textContent=d.avgOverall||'—';
+  document.getElementById('s-food').textContent=d.avgFood||'—';
+  document.getElementById('s-service').textContent=d.avgService||'—';
+  document.getElementById('s-new').textContent=d.new;
+
+  const dist=d.distribution||{};
+  const max=Math.max(...Object.values(dist))||1;
+  document.getElementById('distSection').innerHTML=[5,4,3,2,1].map(v=>`
+    <div class="rating-bar">
+      <span style="width:16px;font-size:12px;font-weight:700;text-align:right">${v}</span>
+      <span style="font-size:12px;color:var(--gold)">★</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${(dist[v]||0)/max*100}%"></div></div>
+      <span style="font-size:12px;color:var(--muted);min-width:24px">${dist[v]||0}</span>
+    </div>`).join('');
+}
+
+async function loadFeedback(){
+  const status=document.getElementById('filterStatus').value;
+  const rating=document.getElementById('filterRating').value;
+  let url='/api/feedback?a=1';
+  if(status)url+=`&status=${status}`;if(rating)url+=`&rating=${rating}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const entries=await r.json();
+  if(!entries.length){document.getElementById('feedbackList').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted);background:var(--white);border-radius:12px">No feedback found</div>';return;}
+  document.getElementById('feedbackList').innerHTML=entries.map(e=>{
+    const highlights=e.highlights?JSON.parse(e.highlights):[];
+    const stars=n=>n?'★'.repeat(n)+'☆'.repeat(5-n):'—';
+    return `<div class="fb-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px">
+        <div>
+          <div style="font-weight:900;font-size:14px">${e.customerName}</div>
+          ${e.tableNo?`<div style="font-size:11px;color:var(--muted)">Table ${e.tableNo}</div>`:''}
+          <div style="font-size:11px;color:var(--muted)">${new Date(e.createdAt).toLocaleDateString()}</div>
+        </div>
+        <div style="text-align:right">
+          <span class="badge s-${e.status}">${e.status}</span>
+          <div class="star-row" style="justify-content:flex-end;margin-top:4px">${stars(e.overallRating)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Overall: ${e.overallRating}/5</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;background:#f8f9fb;border-radius:8px;padding:8px">
+        <div style="text-align:center;font-size:11px"><div style="color:var(--gold)">${stars(e.foodRating)}</div><div style="font-weight:700">Food</div></div>
+        <div style="text-align:center;font-size:11px"><div style="color:var(--gold)">${stars(e.serviceRating)}</div><div style="font-weight:700">Service</div></div>
+        <div style="text-align:center;font-size:11px"><div style="color:var(--gold)">${stars(e.ambienceRating)}</div><div style="font-weight:700">Ambience</div></div>
+      </div>
+      ${e.comment?`<div style="margin-top:8px;font-size:13px;color:#333;background:#fffbf0;padding:8px;border-radius:6px">"${e.comment}"</div>`:''}
+      ${highlights.length?`<div style="margin-top:6px">${highlights.map(h=>`<span class="chip">${h}</span>`).join('')}</div>`:''}
+      ${e.response?`<div style="margin-top:8px;background:#e7f5ed;border-radius:6px;padding:8px;font-size:12px"><strong>Our response:</strong> ${e.response}</div>`:''}
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+        ${e.status==='NEW'?`<button class="btn btn-outline" style="font-size:11px;padding:4px 10px" onclick="markReviewed(${e.id})">Mark Reviewed</button>`:''}
+        <button class="btn btn-green" style="font-size:11px;padding:4px 10px" onclick="toggleReply(${e.id})">💬 Reply</button>
+      </div>
+      <div id="reply-${e.id}" style="display:none" class="respond-area">
+        <input id="resp-${e.id}" placeholder="Write your response..."/>
+        <input id="by-${e.id}" placeholder="Your name / Manager"/>
+        <button class="btn" style="font-size:11px;padding:4px 12px" onclick="sendReply(${e.id})">Send Reply</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleReply(id){const el=document.getElementById('reply-'+id);el.style.display=el.style.display==='none'?'block':'none';}
+
+async function markReviewed(id){
+  await fetch(`/api/feedback/${id}/status`,{method:'PATCH',headers:authH(),body:JSON.stringify({status:'REVIEWED'})});
+  showToast('Marked as reviewed','success');loadFeedback();loadSummary();
+}
+
+async function sendReply(id){
+  const response=document.getElementById('resp-'+id).value;
+  const respondedBy=document.getElementById('by-'+id).value;
+  if(!response){showToast('Write a response first','error');return;}
+  const r=await fetch(`/api/feedback/${id}/respond`,{method:'PATCH',headers:authH(),body:JSON.stringify({response,respondedBy})});
+  const d=await r.json();
+  if(d.id){showToast('Response saved!','success');loadFeedback();loadSummary();}
+  else showToast(d.message||'Error','error');
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadSummary();loadFeedback();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

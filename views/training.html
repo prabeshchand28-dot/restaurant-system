@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Staff Training</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.tabs{display:flex;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.pane{display:none}.pane.active{display:block}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select,textarea{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:22px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase}
+.s-PENDING{background:#e8efff;color:var(--blue)}.s-IN_PROGRESS{background:#fff3e0;color:var(--orange)}.s-COMPLETED{background:#e7f5ed;color:var(--green)}.s-FAILED{background:#fce8e7;color:var(--red)}
+.cat-chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.cat-GENERAL{background:#f0f0f0;color:#555}.cat-SAFETY{background:#fce8e7;color:var(--red)}.cat-SERVICE{background:#e8efff;color:var(--blue)}.cat-KITCHEN{background:#fff3e0;color:var(--orange)}.cat-HYGIENE{background:#e7f5ed;color:var(--green)}
+.progress-ring{transform:rotate(-90deg)}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Staff Training</span></span>
+  <div><a class="nav-btn" href="/staff">👥 Staff</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('overview',this)">📊 Overview</div>
+  <div class="tab" onclick="switchTab('modules',this)">📚 Modules</div>
+  <div class="tab" onclick="switchTab('assign',this)">📋 Assign & Track</div>
+</div>
+<div class="content">
+
+  <!-- Overview -->
+  <div class="pane active" id="pane-overview">
+    <div class="stats">
+      <div class="stat"><div class="num" id="s-total">—</div><div class="lbl">Assignments</div></div>
+      <div class="stat"><div class="num" id="s-completed" style="color:var(--green)">—</div><div class="lbl">Completed</div></div>
+      <div class="stat"><div class="num" id="s-pending" style="color:var(--blue)">—</div><div class="lbl">Pending</div></div>
+      <div class="stat"><div class="num" id="s-overdue" style="color:var(--red)">—</div><div class="lbl">Overdue</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">📋 All Training Records</div>
+      <div class="card-body" style="padding:0">
+        <div style="display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap">
+          <select id="filterStatus" onchange="loadRecords()" style="width:140px">
+            <option value="">All Statuses</option>
+            <option value="PENDING">Pending</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="FAILED">Failed</option>
+          </select>
+          <select id="filterStaff" onchange="loadRecords()" style="width:160px">
+            <option value="">All Staff</option>
+          </select>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="border-bottom:2px solid var(--border)"><th style="padding:10px;text-align:left">Module</th><th style="padding:10px;text-align:left">Staff</th><th style="padding:10px;text-align:left">Category</th><th style="padding:10px;text-align:center">Status</th><th style="padding:10px;text-align:center">Score</th><th style="padding:10px;text-align:left">Expires</th><th style="padding:10px"></th></tr></thead>
+          <tbody id="recordsTable"><tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modules -->
+  <div class="pane" id="pane-modules">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="card-header">➕ Create Training Module</div>
+          <div class="card-body">
+            <label>Module Title</label>
+            <input id="modTitle" placeholder="e.g. Food Safety Fundamentals"/>
+            <label>Category</label>
+            <select id="modCat">
+              <option value="GENERAL">🎓 General</option>
+              <option value="SAFETY">⚠️ Safety</option>
+              <option value="SERVICE">😊 Service</option>
+              <option value="KITCHEN">👨‍🍳 Kitchen</option>
+              <option value="HYGIENE">🧼 Hygiene</option>
+            </select>
+            <label>Duration (minutes)</label>
+            <input type="number" id="modDur" value="30" min="5"/>
+            <label>Description</label>
+            <input id="modDesc" placeholder="Brief description..."/>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:12px">
+              <input type="checkbox" id="modMandatory" style="width:16px;height:16px"/>
+              <label style="margin:0;font-size:13px;font-weight:700;color:var(--navy)">Mandatory for all staff</label>
+            </div>
+            <button class="btn btn-green" style="width:100%;margin-top:14px" onclick="createModule()">Create Module</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header">📚 All Training Modules</div>
+          <div class="card-body" style="padding:0 16px" id="moduleList">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assign -->
+  <div class="pane" id="pane-assign">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="card-header">📋 Assign Module to Staff</div>
+          <div class="card-body">
+            <label>Training Module</label>
+            <select id="assignModule"><option value="">Select module...</option></select>
+            <label>Staff Members</label>
+            <div id="assignStaffList" style="border:1px solid var(--border);border-radius:6px;max-height:200px;overflow-y:auto">Loading...</div>
+            <label>Assigned By</label>
+            <input id="assignBy" placeholder="Manager name"/>
+            <label>Expiry Date (optional)</label>
+            <input type="date" id="assignExpiry"/>
+            <button class="btn btn-green" style="width:100%;margin-top:14px" onclick="assignModule()">Assign Training</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header">✅ Update Training Status</div>
+          <div class="card-body">
+            <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Mark training as complete or update progress from the Overview tab.</p>
+            <div style="display:grid;gap:8px">
+              <div style="background:#e7f5ed;border-radius:8px;padding:10px;font-size:12px"><strong style="color:var(--green)">✅ COMPLETED</strong> — Staff finished the module, optionally with a score.</div>
+              <div style="background:#fff3e0;border-radius:8px;padding:10px;font-size:12px"><strong style="color:var(--orange)">🔄 IN_PROGRESS</strong> — Staff has started but not finished.</div>
+              <div style="background:#fce8e7;border-radius:8px;padding:10px;font-size:12px"><strong style="color:var(--red)">❌ FAILED</strong> — Did not pass. Re-assignment may be needed.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let allStaff=[];
+let allModules=[];
+
+async function loadStats(){
+  const r=await fetch('/api/training/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-total').textContent=d.total;
+  document.getElementById('s-completed').textContent=d.completed;
+  document.getElementById('s-pending').textContent=d.pending;
+  document.getElementById('s-overdue').textContent=d.overdue;
+}
+
+async function loadRecords(){
+  const status=document.getElementById('filterStatus').value;
+  const staffId=document.getElementById('filterStaff').value;
+  let url='/api/training/records?a=1';
+  if(status)url+=`&status=${status}`;if(staffId)url+=`&staffId=${staffId}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const records=await r.json();
+  const catEmoji={GENERAL:'🎓',SAFETY:'⚠️',SERVICE:'😊',KITCHEN:'👨‍🍳',HYGIENE:'🧼'};
+  document.getElementById('recordsTable').innerHTML=records.map(rec=>`
+    <tr style="border-bottom:1px solid #f0f0f0">
+      <td style="padding:10px"><strong>${rec.module?.title||'—'}</strong>${rec.module?.mandatory?'<span style="margin-left:4px;font-size:9px;background:var(--red);color:#fff;border-radius:4px;padding:1px 5px">REQUIRED</span>':''}</td>
+      <td style="padding:10px">${rec.staffName}</td>
+      <td style="padding:10px"><span class="cat-chip cat-${rec.module?.category||'GENERAL'}">${catEmoji[rec.module?.category]||''} ${rec.module?.category||'—'}</span></td>
+      <td style="padding:10px;text-align:center"><span class="badge s-${rec.status}">${rec.status.replace('_',' ')}</span></td>
+      <td style="padding:10px;text-align:center">${rec.score!==null&&rec.score!==undefined?rec.score+'%':'—'}</td>
+      <td style="padding:10px;font-size:11px;color:${rec.expiresAt&&new Date(rec.expiresAt)<new Date()?'var(--red)':'var(--muted)'}">
+        ${rec.expiresAt?new Date(rec.expiresAt).toLocaleDateString():'—'}
+      </td>
+      <td style="padding:10px">
+        <select onchange="updateRecord(${rec.id},this.value)" style="padding:4px;border:1px solid var(--border);border-radius:4px;font-size:11px">
+          <option value="">Change...</option>
+          <option value="PENDING">Pending</option>
+          <option value="IN_PROGRESS">In Progress</option>
+          <option value="COMPLETED">Completed</option>
+          <option value="FAILED">Failed</option>
+        </select>
+      </td>
+    </tr>`).join('');
+}
+
+async function updateRecord(id,status){
+  if(!status)return;
+  const score=status==='COMPLETED'?prompt('Score (0-100, or leave blank):'):'';
+  const r=await fetch(`/api/training/records/${id}`,{method:'PATCH',headers:authH(),body:JSON.stringify({status,score:score||undefined})});
+  const d=await r.json();
+  if(d.id){showToast('Updated!','success');loadRecords();loadStats();}
+  else showToast(d.message||'Error','error');
+}
+
+async function loadModules(){
+  const r=await fetch('/api/training/modules',{headers:authH(),cache:'no-store'});
+  allModules=await r.json();
+  const catEmoji={GENERAL:'🎓',SAFETY:'⚠️',SERVICE:'😊',KITCHEN:'👨‍🍳',HYGIENE:'🧼'};
+  document.getElementById('moduleList').innerHTML=allModules.map(m=>`
+    <div style="padding:12px 0;border-bottom:1px solid #f0f0f0">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:800;font-size:13px">${m.title}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${m.description||''}</div>
+          <div style="margin-top:4px"><span class="cat-chip cat-${m.category}">${catEmoji[m.category]||''} ${m.category}</span> <span style="font-size:11px;color:var(--muted)">⏱️ ${m.durationMin}min</span> ${m.mandatory?'<span style="font-size:10px;background:var(--red);color:#fff;border-radius:4px;padding:1px 5px">REQUIRED</span>':''}</div>
+        </div>
+        <button onclick="deleteModule(${m.id})" class="btn" style="background:var(--red);font-size:11px;padding:4px 10px;flex-shrink:0">Del</button>
+      </div>
+    </div>`).join('') || '<div style="text-align:center;padding:30px;color:var(--muted)">No modules yet</div>';
+
+  // Also populate assign dropdown
+  const sel=document.getElementById('assignModule');
+  sel.innerHTML='<option value="">Select module...</option>';
+  allModules.forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.title;sel.appendChild(o);});
+}
+
+async function createModule(){
+  const body={title:document.getElementById('modTitle').value,category:document.getElementById('modCat').value,durationMin:document.getElementById('modDur').value,description:document.getElementById('modDesc').value,mandatory:document.getElementById('modMandatory').checked};
+  if(!body.title){showToast('Title required','error');return;}
+  const r=await fetch('/api/training/modules',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Module created!','success');document.getElementById('modTitle').value='';loadModules();}
+  else showToast(d.message||'Error','error');
+}
+
+async function deleteModule(id){
+  if(!confirm('Delete module? This removes all training records.'))return;
+  await fetch(`/api/training/modules/${id}`,{method:'DELETE',headers:authH()});
+  showToast('Deleted','success');loadModules();
+}
+
+async function loadStaffForAssign(){
+  const r=await fetch('/api/staff',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  allStaff=d.data||d;
+  document.getElementById('assignStaffList').innerHTML=allStaff.map(s=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border-bottom:1px solid #f0f0f0">
+      <input type="checkbox" class="assign-cb" value="${s.id}" style="width:15px;height:15px"/>
+      <span style="font-weight:700;font-size:13px">${s.name}</span>
+      <span style="font-size:11px;color:var(--muted)">${s.position||''}</span>
+    </label>`).join('');
+  // Also populate staff filter in overview
+  const sel=document.getElementById('filterStaff');
+  sel.innerHTML='<option value="">All Staff</option>';
+  allStaff.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.name;sel.appendChild(o);});
+}
+
+async function assignModule(){
+  const moduleId=document.getElementById('assignModule').value;
+  const staffIds=[...document.querySelectorAll('.assign-cb:checked')].map(cb=>parseInt(cb.value));
+  if(!moduleId||!staffIds.length){showToast('Select module and staff','error');return;}
+  const body={moduleId:parseInt(moduleId),staffIds,assignedBy:document.getElementById('assignBy').value,expiresAt:document.getElementById('assignExpiry').value||null};
+  const r=await fetch('/api/training/assign',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(Array.isArray(d)){showToast(`Assigned to ${d.length} staff!`,'success');loadRecords();loadStats();}
+  else showToast(d.message||'Error','error');
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  if(name==='modules'){loadModules();loadStaffForAssign();}
+  if(name==='assign'){loadModules();loadStaffForAssign();}
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadStats();loadStaffForAssign();loadRecords();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

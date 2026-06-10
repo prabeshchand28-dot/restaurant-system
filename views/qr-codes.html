@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>QR Code Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.tabs{display:flex;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.pane{display:none}.pane.active{display:block}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+.qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.qr-item{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.qr-item .qr-canvas{margin:0 auto 10px;width:150px;height:150px}
+.qr-item .table-label{font-weight:900;font-size:16px;margin-bottom:4px}
+.qr-item .table-url{font-size:10px;color:var(--muted);word-break:break-all;margin-bottom:10px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px;font-weight:700;border:none;border-radius:4px;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+@media print{.topbar,.tabs,.card:not(.qr-card){display:none}.qr-grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>QR Code Generator</span></span>
+  <div><button class="nav-btn" onclick="window.print()">🖨️ Print All</button><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('table',this)">🍽️ Table Menu QRs</div>
+  <div class="tab" onclick="switchTab('custom',this)">🔗 Custom QR</div>
+  <div class="tab" onclick="switchTab('wifi',this)">📶 WiFi QR</div>
+</div>
+<div class="content">
+
+  <!-- Table QRs -->
+  <div class="pane active" id="pane-table">
+    <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;background:var(--white);padding:12px 16px;border-radius:10px;border:1px solid var(--border)">
+      <label style="margin:0;font-size:13px;font-weight:700">Base URL:</label>
+      <input id="baseUrl" style="max-width:350px" value="" placeholder="Auto-detected from browser"/>
+      <button class="btn" onclick="loadTableQRs()">Generate QRs</button>
+      <span style="font-size:12px;color:var(--muted)">Scanning opens /menu?table=N on that URL</span>
+    </div>
+    <div class="card qr-card">
+      <div class="card-header">📱 Table QR Codes — Scan to view digital menu</div>
+      <div class="card-body">
+        <div class="qr-grid" id="tableQRGrid">
+          <div style="text-align:center;padding:40px;color:var(--muted);grid-column:1/-1">Click "Generate QRs" to create QR codes for all tables</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom QR -->
+  <div class="pane" id="pane-custom">
+    <div style="max-width:500px">
+      <div class="card">
+        <div class="card-header">🔗 Custom QR Code</div>
+        <div class="card-body">
+          <label>Label</label>
+          <input id="cLabel" placeholder="e.g. Order Online"/>
+          <label>URL / Text</label>
+          <input id="cUrl" placeholder="https://... or any text"/>
+          <label>QR Size</label>
+          <select id="cSize">
+            <option value="150">Small (150px)</option>
+            <option value="200" selected>Medium (200px)</option>
+            <option value="280">Large (280px)</option>
+          </select>
+          <button class="btn" style="width:100%;margin-top:14px" onclick="genCustomQR()">Generate</button>
+          <div id="customQRResult" style="margin-top:20px;text-align:center"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WiFi QR -->
+  <div class="pane" id="pane-wifi">
+    <div style="max-width:500px">
+      <div class="card">
+        <div class="card-header">📶 WiFi QR Code</div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Customers scan this to connect to WiFi without typing the password</p>
+          <label>Network Name (SSID)</label>
+          <input id="wSsid" placeholder="RestaurantWiFi"/>
+          <label>Password</label>
+          <input id="wPass" placeholder="WiFi password" type="password"/>
+          <label>Security Type</label>
+          <select id="wType">
+            <option value="WPA">WPA/WPA2</option>
+            <option value="WEP">WEP</option>
+            <option value="nopass">Open (no password)</option>
+          </select>
+          <button class="btn" style="width:100%;margin-top:14px" onclick="genWifiQR()">Generate WiFi QR</button>
+          <div id="wifiQRResult" style="margin-top:20px;text-align:center"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+document.getElementById('baseUrl').value=window.location.origin;
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+}
+
+function makeQR(container,text,size=150){
+  container.innerHTML='';
+  new QRCode(container,{text,width:size,height:size,colorDark:'#1a3a6b',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+}
+
+async function loadTableQRs(){
+  const base=document.getElementById('baseUrl').value||window.location.origin;
+  const r=await fetch(`/api/qr/tables?baseUrl=${encodeURIComponent(base)}`,{headers:authH(),cache:'no-store'});
+  const tables=await r.json();
+  if(!tables.length){document.getElementById('tableQRGrid').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted);grid-column:1/-1">No active tables found</div>';return;}
+  document.getElementById('tableQRGrid').innerHTML=tables.map(t=>`
+    <div class="qr-item">
+      <div class="qr-canvas" id="tqr-${t.tableNumber}"></div>
+      <div class="table-label">${t.label||'Table '+t.tableNumber}</div>
+      <div class="table-url">${t.url}</div>
+      <button class="btn-sm" onclick="downloadQR('tqr-${t.tableNumber}','table-${t.tableNumber}')">⬇ Download</button>
+    </div>`).join('');
+  tables.forEach(t=>makeQR(document.getElementById('tqr-'+t.tableNumber),t.qrContent,150));
+}
+
+function genCustomQR(){
+  const label=document.getElementById('cLabel').value||'QR Code';
+  const url=document.getElementById('cUrl').value.trim();
+  const size=+document.getElementById('cSize').value;
+  if(!url){alert('Enter a URL or text');return;}
+  const el=document.getElementById('customQRResult');
+  el.innerHTML=`<div style="margin-bottom:8px;font-size:14px;font-weight:700">${label}</div><div id="customQRCanvas" style="display:inline-block"></div><br><button class="btn-sm" style="margin-top:10px" onclick="downloadQR('customQRCanvas','custom-qr')">⬇ Download</button>`;
+  makeQR(document.getElementById('customQRCanvas'),url,size);
+}
+
+function genWifiQR(){
+  const ssid=document.getElementById('wSsid').value.trim();
+  const pass=document.getElementById('wPass').value;
+  const type=document.getElementById('wType').value;
+  if(!ssid){alert('Enter WiFi name');return;}
+  const qrContent=`WIFI:T:${type};S:${ssid};P:${pass};H:false;`;
+  const el=document.getElementById('wifiQRResult');
+  el.innerHTML=`<div style="margin-bottom:8px;font-size:14px;font-weight:700">📶 ${ssid}</div><div id="wifiQRCanvas" style="display:inline-block"></div><div style="font-size:12px;color:var(--muted);margin-top:8px">Scan to connect · ${type}</div><br><button class="btn-sm" style="margin-top:10px" onclick="downloadQR('wifiQRCanvas','wifi-qr')">⬇ Download</button>`;
+  makeQR(document.getElementById('wifiQRCanvas'),qrContent,200);
+}
+
+function downloadQR(containerId,filename){
+  const container=document.getElementById(containerId);
+  const canvas=container.querySelector('canvas');
+  if(!canvas){alert('QR not generated yet');return;}
+  const a=document.createElement('a');
+  a.download=`${filename}.png`;
+  a.href=canvas.toDataURL('image/png');
+  a.click();
+}
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

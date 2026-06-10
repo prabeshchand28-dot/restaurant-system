@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Audit Log</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block}
+.content{padding:24px;max-width:1400px;margin:0 auto}
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;background:var(--white);padding:12px 16px;border-radius:10px;border:1px solid var(--border);flex-wrap:wrap}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+select,input{padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+select:focus,input:focus{border-color:var(--blue)}
+.btn{padding:7px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#f0f2f5;padding:8px 12px;text-align:left;font-weight:700;color:var(--navy);border-bottom:2px solid var(--border)}
+td{padding:8px 12px;border-bottom:1px solid #f0f0f0;vertical-align:top}
+tr:hover td{background:#fafbfc}
+.action-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:800;letter-spacing:.5px}
+.action-CREATE{background:#dcfce7;color:#15803d}.action-UPDATE{background:#e0f2fe;color:#0369a1}.action-DELETE{background:#fee2e2;color:#dc2626}.action-LOGIN{background:#fef9c3;color:#a16207}.action-PAYMENT{background:#ede9fe;color:#6d28d9}.action-LOGOUT{background:#f0f0f0;color:#555}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px}
+.sv{font-size:24px;font-weight:900;color:var(--navy)}.sl{font-size:11px;color:var(--muted);margin-top:2px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Audit Log</span></span>
+  <a class="nav-btn" href="/dashboard">📊 Dashboard</a>
+</div>
+<div class="content">
+  <div class="stats-grid" id="statsGrid"></div>
+
+  <div class="toolbar">
+    <label style="font-size:12px;font-weight:600;color:var(--navy)">Filter:</label>
+    <select id="f-resource"><option value="">All Resources</option><option>orders</option><option>payments</option><option>menu</option><option>staff</option><option>loyalty</option><option>coupons</option><option>expenses</option></select>
+    <select id="f-action"><option value="">All Actions</option><option>CREATE</option><option>UPDATE</option><option>DELETE</option><option>LOGIN</option><option>PAYMENT</option></select>
+    <button class="btn" onclick="load()">Apply</button>
+    <span style="font-size:12px;color:var(--muted);margin-left:auto" id="totalCount"></span>
+  </div>
+
+  <div class="card">
+    <div class="card-header">📋 Activity Log</div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Resource</th><th>Details</th><th>IP</th></tr></thead>
+        <tbody id="auditTable"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+async function loadStats(){
+  const r=await fetch('/api/audit/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  const grid=document.getElementById('statsGrid');
+  grid.innerHTML=`
+    <div class="stat-card"><div class="sv">${d.total||0}</div><div class="sl">Total Events</div></div>
+    ${Object.entries(d.byAction||{}).slice(0,5).map(([a,c])=>`<div class="stat-card"><div class="sv">${c}</div><div class="sl">${a}</div></div>`).join('')}
+  `;
+}
+
+async function load(){
+  const resource=document.getElementById('f-resource').value;
+  const action=document.getElementById('f-action').value;
+  let url='/api/audit?limit=200';
+  if(resource) url+=`&resource=${resource}`;
+  if(action) url+=`&action=${action}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('totalCount').textContent=`${d.total||0} total events`;
+  const tbody=document.getElementById('auditTable');
+  if(!d.logs||!d.logs.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">No logs found</td></tr>';return;}
+  tbody.innerHTML=d.logs.map(l=>`
+    <tr>
+      <td style="white-space:nowrap;color:var(--muted)">${new Date(l.createdAt).toLocaleString()}</td>
+      <td><strong>${l.userName||'System'}</strong>${l.userRole?`<br><span style="font-size:10px;color:var(--muted)">${l.userRole}</span>`:''}</td>
+      <td><span class="action-badge action-${l.action}">${l.action}</span></td>
+      <td>${l.resource}${l.resourceId?` #${l.resourceId}`:''}</td>
+      <td style="max-width:300px;color:var(--muted)">${l.details||'—'}</td>
+      <td style="font-size:11px;color:var(--muted)">${l.ip||'—'}</td>
+    </tr>`).join('');
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadStats();
+load();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

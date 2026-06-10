@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Branch Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.grid{display:grid;grid-template-columns:380px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+input:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px;font-weight:700;border:none;border-radius:4px;cursor:pointer;font-family:var(--font)}
+.branch-card{border:1px solid var(--border);border-radius:12px;padding:16px;background:linear-gradient(135deg,#f8f9fb,var(--white));position:relative;overflow:hidden;margin-bottom:14px}
+.branch-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--blue)}
+.branch-stat{text-align:center;padding:10px}
+.branch-stat .val{font-size:20px;font-weight:900;color:var(--blue)}
+.branch-stat .lbl{font-size:11px;color:var(--muted)}
+.badge-green{background:#e7f5ed;color:var(--green);display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800}
+.badge-red{background:#fce8e7;color:var(--red);display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Branch Management</span></span>
+  <div><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="grid">
+    <!-- Form -->
+    <div>
+      <div class="card">
+        <div class="card-header">🏢 Add / Edit Branch</div>
+        <div class="card-body">
+          <input type="hidden" id="editId"/>
+          <label>Branch Name</label>
+          <input id="bName" placeholder="e.g. Thamel Outlet"/>
+          <label>Address</label>
+          <input id="bAddress" placeholder="Full address"/>
+          <label>Phone</label>
+          <input id="bPhone" placeholder="+977-01XXXXXXX"/>
+          <label>Email</label>
+          <input id="bEmail" placeholder="branch@restaurant.com" type="email"/>
+          <label>Branch Manager</label>
+          <input id="bManager" placeholder="Manager name"/>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <button class="btn btn-primary" style="flex:1" onclick="saveBranch()">Save Branch</button>
+            <button class="btn" style="background:#f0f2f5;color:var(--navy)" onclick="clearForm()">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Branch list -->
+    <div>
+      <div class="card">
+        <div class="card-header">🏢 All Branches (Live Stats)</div>
+        <div class="card-body" id="branchList">
+          <div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+async function loadBranches(){
+  const r=await fetch('/api/branches/summary',{headers:authH(),cache:'no-store'});
+  const branches=await r.json();
+  if(!branches.length){
+    document.getElementById('branchList').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No branches yet. Add one to get started.</div>';
+    return;
+  }
+  document.getElementById('branchList').innerHTML=branches.map(b=>`
+    <div class="branch-card${b.active?'':'" style="opacity:.55'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div>
+          <div style="font-size:16px;font-weight:900">${b.name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${b.address}</div>
+          <div style="font-size:12px;color:var(--muted)">${b.phone} ${b.email?'· '+b.email:''}</div>
+          ${b.manager?`<div style="font-size:12px;color:var(--blue);margin-top:4px">👤 ${b.manager}</div>`:''}
+        </div>
+        <span class="${b.active?'badge-green':'badge-red'}">${b.active?'ACTIVE':'INACTIVE'}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px">
+        <div class="branch-stat"><div class="val">${b.ordersToday}</div><div class="lbl">Today's Orders</div></div>
+        <div class="branch-stat" style="border-left:1px solid var(--border)"><div class="val">रू ${(b.revenueToday||0).toLocaleString()}</div><div class="lbl">Today's Revenue</div></div>
+        <div class="branch-stat" style="border-left:1px solid var(--border)"><div class="val">${b.staffCount}</div><div class="lbl">Staff</div></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-sm" style="background:var(--blue);color:#fff" onclick="editBranch(${b.id},'${b.name}','${b.address}','${b.phone}','${b.email}','${b.manager}')">Edit</button>
+        <button class="btn-sm" style="background:${b.active?'#999':'var(--green)'};color:#fff" onclick="toggleBranch(${b.id})">${b.active?'Disable':'Enable'}</button>
+        <button class="btn-sm" style="background:var(--red);color:#fff" onclick="deleteBranch(${b.id})">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+function editBranch(id,name,address,phone,email,manager){
+  document.getElementById('editId').value=id;
+  document.getElementById('bName').value=name;
+  document.getElementById('bAddress').value=address;
+  document.getElementById('bPhone').value=phone;
+  document.getElementById('bEmail').value=email;
+  document.getElementById('bManager').value=manager;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function clearForm(){
+  document.getElementById('editId').value='';
+  ['bName','bAddress','bPhone','bEmail','bManager'].forEach(id=>document.getElementById(id).value='');
+}
+
+async function saveBranch(){
+  const id=document.getElementById('editId').value;
+  const body={name:document.getElementById('bName').value.trim(),address:document.getElementById('bAddress').value.trim(),phone:document.getElementById('bPhone').value.trim(),email:document.getElementById('bEmail').value.trim(),manager:document.getElementById('bManager').value.trim()};
+  if(!body.name){showToast('Branch name required','error');return;}
+  const url=id?`/api/branches/${id}`:'/api/branches';
+  const method=id?'PATCH':'POST';
+  const r=await fetch(url,{method,headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast(id?'Branch updated!':'Branch added!','success');clearForm();loadBranches();}
+  else showToast(d.message||'Error','error');
+}
+
+async function toggleBranch(id){await fetch(`/api/branches/${id}/toggle`,{method:'PATCH',headers:authH()});loadBranches();}
+async function deleteBranch(id){if(!confirm('Delete this branch?'))return;await fetch(`/api/branches/${id}`,{method:'DELETE',headers:authH()});showToast('Deleted','success');loadBranches();}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadBranches();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

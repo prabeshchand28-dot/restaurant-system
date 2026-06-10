@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Menu 86 Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--border)}
+.tab{padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:none;font-family:var(--font);color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px}
+.tab.active{color:var(--navy);border-bottom-color:var(--navy)}
+.panel{display:none}.panel.active{display:block}
+.board-header{background:var(--red);color:#fff;border-radius:12px 12px 0 0;padding:16px 20px;display:flex;align-items:center;gap:10px}
+.board-header h2{font-size:16px;font-weight:900}
+.board-body{background:var(--white);border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;padding:16px}
+.item-86{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border);gap:10px}
+.item-86:last-child{border-bottom:none}
+.item-86:hover{background:#fff5f5}
+.item-86 .name{font-weight:800;font-size:14px}
+.item-86 .meta{font-size:11px;color:var(--muted);margin-top:2px}
+.item-86 .reason{font-size:12px;color:var(--red);margin-top:3px;font-style:italic}
+.btn{padding:7px 14px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.menu-item{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;transition:all .2s}
+.menu-item.unavailable{border-color:var(--red);background:#fff5f5;opacity:.85}
+.menu-item .item-name{font-weight:800;font-size:13px;margin-bottom:2px}
+.menu-item .cat{font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;background:#f0f0f0;color:var(--muted);display:inline-block;margin-bottom:6px}
+.menu-item .price{font-size:16px;font-weight:900;color:var(--green)}
+.menu-item .toggle-btn{margin-top:10px;width:100%;padding:7px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.available .toggle-btn{background:#ffebee;color:var(--red)}
+.unavailable .toggle-btn{background:#e8f5e9;color:var(--green)}
+.badge-86{position:absolute;top:10px;right:10px;background:var(--red);color:#fff;font-size:9px;font-weight:900;padding:2px 6px;border-radius:4px;letter-spacing:.5px}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+input:focus,select:focus{border-color:var(--blue)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:22px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>86 Board</span></span>
+  <div><a class="nav-btn" href="/menu">🍴 Menu</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-total" style="color:var(--navy)">—</div><div class="lbl">Total Items</div></div>
+    <div class="stat"><div class="num" id="s-86" style="color:var(--red)">—</div><div class="lbl">Currently 86'd</div></div>
+    <div class="stat"><div class="num" id="s-avail" style="color:var(--green)">—</div><div class="lbl">Available</div></div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('board',this)">🚫 86 Board</button>
+    <button class="tab" onclick="switchTab('all',this)">📋 All Menu Items</button>
+  </div>
+
+  <div id="tab-board" class="panel active">
+    <div class="board-header">
+      <span style="font-size:28px">🚫</span>
+      <div><h2>86 BOARD — OUT OF STOCK / UNAVAILABLE</h2><div style="font-size:12px;opacity:.85">Items marked 86 are not available for ordering</div></div>
+      <div id="board-count" style="margin-left:auto;font-size:32px;font-weight:900;background:rgba(0,0,0,.2);border-radius:8px;padding:4px 14px">0</div>
+    </div>
+    <div class="board-body" id="boardList">
+      <div style="text-align:center;padding:60px;color:var(--muted)">All items available ✅</div>
+    </div>
+  </div>
+
+  <div id="tab-all" class="panel">
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+      <input id="search" placeholder="🔍 Search items..." style="width:200px" oninput="renderAll()"/>
+      <select id="catFilter" onchange="renderAll()" style="width:160px"><option value="">All Categories</option></select>
+      <select id="availFilter" onchange="renderAll()" style="width:140px">
+        <option value="">All Items</option>
+        <option value="available">✅ Available</option>
+        <option value="86d">🚫 86'd</option>
+      </select>
+    </div>
+    <div class="menu-grid" id="menuGrid">Loading...</div>
+  </div>
+</div>
+
+<!-- 86 Modal -->
+<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;display:none;align-items:center;justify-content:center">
+  <div style="background:var(--white);border-radius:14px;padding:24px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <h3 style="font-size:16px;font-weight:900;color:var(--red);margin-bottom:4px">🚫 86 Item</h3>
+    <div id="modal-name" style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--navy)"></div>
+    <label style="font-size:12px;font-weight:700;color:var(--navy)">Reason (optional)</label>
+    <input id="modal-reason" style="margin:6px 0 10px;width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none" placeholder="e.g. Out of stock, supplier delayed..."/>
+    <label style="font-size:12px;font-weight:700;color:var(--navy)">86'd by</label>
+    <input id="modal-by" style="margin:6px 0 16px;width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none" placeholder="Manager/Chef name"/>
+    <div style="display:flex;gap:8px">
+      <button class="btn" style="background:#888;flex:1" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-red" style="flex:1" onclick="confirm86()">🚫 Mark 86</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let allItems=[],pendingToggle=null;
+
+async function init(){
+  const [boardR,menuR]=await Promise.all([
+    fetch('/api/menu-86/board',{headers:authH(),cache:'no-store'}),
+    fetch('/api/menu-86/menu',{headers:authH(),cache:'no-store'})
+  ]);
+  const board=await boardR.json();
+  allItems=await menuR.json();
+
+  // populate category filter
+  const cats=[...new Set(allItems.map(i=>i.category).filter(Boolean))].sort();
+  const sel=document.getElementById('catFilter');
+  cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+
+  renderStats();
+  renderBoard(board);
+  renderAll();
+}
+
+function renderStats(){
+  const total=allItems.length;
+  const s86=allItems.filter(i=>!i.available).length;
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-86').textContent=s86;
+  document.getElementById('s-avail').textContent=total-s86;
+}
+
+function renderBoard(board){
+  document.getElementById('board-count').textContent=board.length;
+  if(!board.length){document.getElementById('boardList').innerHTML='<div style="text-align:center;padding:60px;color:var(--muted);font-size:16px">✅ All items are available</div>';return;}
+  document.getElementById('boardList').innerHTML=board.map(b=>{
+    const item=allItems.find(i=>i.id===b.menuItemId);
+    return `<div class="item-86">
+      <div>
+        <div class="name">🚫 ${item?item.name:('Item #'+b.menuItemId)}</div>
+        <div class="meta">${item?item.category:''} ${item?'· रू '+item.price:''}</div>
+        ${b.reason?`<div class="reason">${b.reason}</div>`:''}
+        ${b.updatedBy?`<div style="font-size:11px;color:var(--muted);margin-top:2px">By: ${b.updatedBy}</div>`:''}
+      </div>
+      <button class="btn btn-green" onclick="restoreItem(${b.id})">✅ Restore</button>
+    </div>`;
+  }).join('');
+}
+
+function renderAll(){
+  const search=document.getElementById('search').value.toLowerCase();
+  const cat=document.getElementById('catFilter').value;
+  const avail=document.getElementById('availFilter').value;
+  let items=allItems.filter(i=>{
+    if(search&&!i.name.toLowerCase().includes(search))return false;
+    if(cat&&i.category!==cat)return false;
+    if(avail==='available'&&!i.available)return false;
+    if(avail==='86d'&&i.available)return false;
+    return true;
+  });
+  if(!items.length){document.getElementById('menuGrid').innerHTML='<div style="color:var(--muted);text-align:center;padding:40px;grid-column:1/-1">No items found</div>';return;}
+  document.getElementById('menuGrid').innerHTML=items.map(i=>`
+    <div class="menu-item ${i.available?'available':'unavailable'}">
+      ${!i.available?'<span class="badge-86">86</span>':''}
+      <span class="cat">${i.category||'Uncategorized'}</span>
+      <div class="item-name">${i.name}</div>
+      <div class="price">रू ${i.price}</div>
+      <button class="toggle-btn" onclick="${i.available?`open86Modal(${i.id},'${i.name.replace(/'/g,"\\'")}')`:''};${!i.available?`quickRestore(${i.id})`:''}">${i.available?'🚫 Mark 86':'✅ Restore'}</button>
+    </div>`).join('');
+}
+
+function open86Modal(menuItemId,name){
+  pendingToggle={menuItemId,name};
+  document.getElementById('modal-name').textContent=name;
+  document.getElementById('modal-reason').value='';
+  document.getElementById('modal-by').value='';
+  document.getElementById('modal').style.display='flex';
+}
+
+function closeModal(){document.getElementById('modal').style.display='none';pendingToggle=null;}
+
+async function confirm86(){
+  if(!pendingToggle)return;
+  const reason=document.getElementById('modal-reason').value;
+  const updatedBy=document.getElementById('modal-by').value;
+  const r=await fetch('/api/menu-86/toggle',{method:'POST',headers:authH(),body:JSON.stringify({menuItemId:pendingToggle.menuItemId,available:false,reason,updatedBy})});
+  if((await r.json()).id){showToast('Item 86\'d','success');closeModal();init();}
+  else showToast('Error','error');
+}
+
+async function quickRestore(menuItemId){
+  const item=allItems.find(i=>i.id===menuItemId);
+  if(!item||!item.availabilityRecord){showToast('Error: no record','error');return;}
+  await restoreItem(item.availabilityRecord.id);
+}
+
+async function restoreItem(recordId){
+  const updatedBy=prompt('Restored by:');
+  if(updatedBy===null)return;
+  const r=await fetch(`/api/menu-86/${recordId}/restore`,{method:'PATCH',headers:authH(),body:JSON.stringify({updatedBy})});
+  if((await r.json()).id){showToast('Item restored!','success');init();}
+  else showToast('Error','error');
+}
+
+function switchTab(tab,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+init();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

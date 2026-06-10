@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Delivery Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.tabs{display:flex;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.pane{display:none}.pane.active{display:block}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:26px;font-weight:900;color:var(--blue)}
+.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:380px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px;font-weight:700;border:none;border-radius:4px;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.order-item{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase}
+.badge-yellow{background:#fff9c4;color:#827717}
+.badge-blue{background:#e8efff;color:var(--blue)}
+.badge-orange{background:#fff3e0;color:var(--orange)}
+.badge-green{background:#e7f5ed;color:var(--green)}
+.badge-red{background:#fce8e7;color:var(--red)}
+.status-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.status-btn{padding:6px 12px;border:1px solid var(--border);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;background:var(--white)}
+.status-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.zone-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Delivery Management</span></span>
+  <div><a class="nav-btn" href="/orders">📋 Orders</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('orders',this)">🛵 Delivery Orders</div>
+  <div class="tab" onclick="switchTab('zones',this)">🗺️ Delivery Zones</div>
+  <div class="tab" onclick="switchTab('new',this)">➕ New Delivery</div>
+</div>
+<div class="content">
+
+  <!-- Orders -->
+  <div class="pane active" id="pane-orders">
+    <div class="stats" id="deliveryStats">
+      <div class="stat"><div class="num" id="s-total">—</div><div class="lbl">Total Orders</div></div>
+      <div class="stat"><div class="num" id="s-pending">—</div><div class="lbl">Pending</div></div>
+      <div class="stat"><div class="num" id="s-transit">—</div><div class="lbl">In Transit</div></div>
+      <div class="stat"><div class="num" id="s-delivered">—</div><div class="lbl">Delivered</div></div>
+      <div class="stat"><div class="num" id="s-fees">—</div><div class="lbl">Delivery Revenue</div></div>
+    </div>
+    <div class="status-bar">
+      <button class="status-btn active" onclick="filterOrders('',this)">All</button>
+      <button class="status-btn" onclick="filterOrders('PENDING',this)">🕐 Pending</button>
+      <button class="status-btn" onclick="filterOrders('ASSIGNED',this)">👤 Assigned</button>
+      <button class="status-btn" onclick="filterOrders('PICKED',this)">🛵 Picked Up</button>
+      <button class="status-btn" onclick="filterOrders('DELIVERED',this)">✅ Delivered</button>
+      <button class="status-btn" onclick="filterOrders('CANCELLED',this)">❌ Cancelled</button>
+    </div>
+    <div id="orderList">
+      <div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Zones -->
+  <div class="pane" id="pane-zones">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="card-header">➕ Add Delivery Zone</div>
+          <div class="card-body">
+            <label>Zone Name</label>
+            <input id="zName" placeholder="e.g. Downtown (0-5km)"/>
+            <label>Min Distance (km)</label>
+            <input type="number" id="zMin" value="0" min="0" step="0.5"/>
+            <label>Max Distance (km)</label>
+            <input type="number" id="zMax" placeholder="e.g. 5" min="0" step="0.5"/>
+            <label>Delivery Fee (रू)</label>
+            <input type="number" id="zFee" placeholder="e.g. 100"/>
+            <label>Estimated Time (mins)</label>
+            <input type="number" id="zTime" value="30" min="5"/>
+            <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="createZone()">Add Zone</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header">🗺️ Delivery Zones</div>
+          <div class="card-body" id="zoneList">
+            <div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Order -->
+  <div class="pane" id="pane-new">
+    <div style="max-width:600px">
+      <div class="card">
+        <div class="card-header">🛵 New Delivery Order</div>
+        <div class="card-body">
+          <label>Customer Name</label>
+          <input id="nName" placeholder="Customer name"/>
+          <label>Customer Phone</label>
+          <input id="nPhone" placeholder="+977-98XXXXXXXX"/>
+          <label>Delivery Address</label>
+          <textarea id="nAddress" rows="2" placeholder="Full delivery address..."></textarea>
+          <label>Delivery Zone</label>
+          <select id="nZone" onchange="updateFee()"><option value="">Select zone (optional)</option></select>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+            <div><label>Delivery Fee (रू)</label><input type="number" id="nFee" placeholder="Auto from zone"/></div>
+            <div><label>Est. Time (mins)</label><input type="number" id="nTime" value="30"/></div>
+          </div>
+          <label>Driver Name (optional)</label>
+          <input id="nDriver" placeholder="Driver name"/>
+          <label>Driver Phone (optional)</label>
+          <input id="nDriverPhone" placeholder="Driver phone"/>
+          <label>Notes</label>
+          <textarea id="nNotes" rows="2" placeholder="Special instructions..."></textarea>
+          <button class="btn btn-green" style="width:100%;margin-top:14px;padding:12px" onclick="createOrder()">Create Delivery Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Status Modal -->
+<div id="statusModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;display:flex;align-items:center;justify-content:center">
+  <div style="background:var(--white);border-radius:16px;padding:24px;width:380px;max-width:95vw">
+    <h3 style="margin-bottom:16px;font-size:16px">Update Delivery Status</h3>
+    <input type="hidden" id="modalOrderId"/>
+    <label>New Status</label>
+    <select id="modalStatus">
+      <option value="PENDING">🕐 Pending</option>
+      <option value="ASSIGNED">👤 Assigned to Driver</option>
+      <option value="PICKED">🛵 Picked Up</option>
+      <option value="DELIVERED">✅ Delivered</option>
+      <option value="CANCELLED">❌ Cancelled</option>
+    </select>
+    <label>Driver Name</label>
+    <input id="modalDriver" placeholder="Driver name"/>
+    <label>Driver Phone</label>
+    <input id="modalDriverPhone" placeholder="Driver phone"/>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-green" style="flex:1" onclick="saveStatus()">Update</button>
+      <button class="btn" style="background:#f0f2f5;color:var(--navy);flex:1" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let currentFilter='';
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  if(name==='orders') loadOrders();
+  if(name==='zones') loadZones();
+  if(name==='new') loadZoneSelect();
+}
+
+async function loadStats(){
+  const r=await fetch('/api/delivery/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-total').textContent=d.total;
+  document.getElementById('s-pending').textContent=d.pending;
+  document.getElementById('s-transit').textContent=d.inTransit;
+  document.getElementById('s-delivered').textContent=d.delivered;
+  document.getElementById('s-fees').textContent='रू '+(d.totalFees||0).toLocaleString();
+}
+
+async function loadOrders(){
+  loadStats();
+  const url='/api/delivery/orders'+(currentFilter?'?status='+currentFilter:'');
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const orders=await r.json();
+  if(!orders.length){
+    document.getElementById('orderList').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No delivery orders</div>';
+    return;
+  }
+  const statusBadge={PENDING:'badge-yellow',ASSIGNED:'badge-blue',PICKED:'badge-orange',DELIVERED:'badge-green',CANCELLED:'badge-red'};
+  document.getElementById('orderList').innerHTML=orders.map(o=>`
+    <div class="order-item">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-weight:800;font-size:15px">${o.customerName}</div>
+          <div style="font-size:12px;color:var(--muted)">${o.customerPhone}</div>
+        </div>
+        <div>
+          <span class="badge ${statusBadge[o.status]||'badge-blue'}">${o.status}</span>
+          ${o.zone?`<span class="badge badge-blue" style="margin-left:4px">${o.zone.name}</span>`:''}
+        </div>
+      </div>
+      <div style="font-size:13px;color:#333;margin-bottom:6px">📍 ${o.address}</div>
+      ${o.driverName?`<div style="font-size:12px;color:var(--green)">🛵 ${o.driverName} ${o.driverPhone?'· '+o.driverPhone:''}</div>`:''}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+        <div style="font-size:12px;color:var(--muted)">
+          Fee: <strong>रू ${(o.deliveryFee||0).toLocaleString()}</strong>
+          · ETA: ${o.estimatedMins} min
+          · ${new Date(o.createdAt).toLocaleTimeString()}
+        </div>
+        ${o.status!=='DELIVERED'&&o.status!=='CANCELLED'?`<button class="btn-sm" onclick="openModal(${o.id},'${o.status}','${o.driverName||''}','${o.driverPhone||''}')">Update Status</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function filterOrders(status,el){
+  currentFilter=status;
+  document.querySelectorAll('.status-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  loadOrders();
+}
+
+async function loadZones(){
+  const r=await fetch('/api/delivery/zones',{headers:authH(),cache:'no-store'});
+  const zones=await r.json();
+  if(!zones.length){
+    document.getElementById('zoneList').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No zones yet</div>';
+    return;
+  }
+  document.getElementById('zoneList').innerHTML=zones.map(z=>`
+    <div class="zone-item${z.active?'':'" style="opacity:.5'}">
+      <div>
+        <div style="font-weight:800;font-size:14px">${z.name}</div>
+        <div style="font-size:12px;color:var(--muted)">${z.minDistance}–${z.maxDistance}km · रू ${z.deliveryFee} · ~${z.estimatedMins} min</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-sm" style="background:${z.active?'#999':'var(--green)'}" onclick="toggleZone(${z.id})">${z.active?'Disable':'Enable'}</button>
+        <button class="btn-sm" style="background:var(--red)" onclick="deleteZone(${z.id})">Del</button>
+      </div>
+    </div>`).join('');
+}
+
+async function loadZoneSelect(){
+  const r=await fetch('/api/delivery/zones',{headers:authH(),cache:'no-store'});
+  const zones=await r.json();
+  const sel=document.getElementById('nZone');
+  sel.innerHTML='<option value="">Select zone (optional)</option>';
+  zones.filter(z=>z.active).forEach(z=>{
+    const o=document.createElement('option');
+    o.value=z.id; o.textContent=`${z.name} (रू ${z.deliveryFee})`;
+    o.dataset.fee=z.deliveryFee; o.dataset.time=z.estimatedMins;
+    sel.appendChild(o);
+  });
+}
+
+function updateFee(){
+  const sel=document.getElementById('nZone');
+  const opt=sel.options[sel.selectedIndex];
+  if(opt.dataset.fee){
+    document.getElementById('nFee').value=opt.dataset.fee;
+    document.getElementById('nTime').value=opt.dataset.time;
+  }
+}
+
+async function createZone(){
+  const body={name:document.getElementById('zName').value.trim(),minDistance:+document.getElementById('zMin').value,maxDistance:+document.getElementById('zMax').value,deliveryFee:+document.getElementById('zFee').value||0,estimatedMins:+document.getElementById('zTime').value||30};
+  if(!body.name||!body.maxDistance){showToast('Name and max distance required','error');return;}
+  const r=await fetch('/api/delivery/zones',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Zone added!','success');document.getElementById('zName').value='';loadZones();}
+  else showToast(d.message||'Error','error');
+}
+
+async function toggleZone(id){await fetch(`/api/delivery/zones/${id}/toggle`,{method:'PATCH',headers:authH()});loadZones();}
+async function deleteZone(id){if(!confirm('Delete this zone?'))return;await fetch(`/api/delivery/zones/${id}`,{method:'DELETE',headers:authH()});showToast('Deleted','success');loadZones();}
+
+async function createOrder(){
+  const body={customerName:document.getElementById('nName').value.trim(),customerPhone:document.getElementById('nPhone').value.trim(),address:document.getElementById('nAddress').value.trim(),zoneId:document.getElementById('nZone').value||null,deliveryFee:+document.getElementById('nFee').value||0,estimatedMins:+document.getElementById('nTime').value||30,driverName:document.getElementById('nDriver').value.trim(),driverPhone:document.getElementById('nDriverPhone').value.trim(),notes:document.getElementById('nNotes').value.trim()};
+  if(!body.customerName||!body.customerPhone||!body.address){showToast('Name, phone, address required','error');return;}
+  const r=await fetch('/api/delivery/orders',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Delivery order created!','success');['nName','nPhone','nAddress','nDriver','nDriverPhone','nNotes'].forEach(id=>document.getElementById(id).value='');document.querySelector('.tab').click();}
+  else showToast(d.message||'Error','error');
+}
+
+function openModal(id,status,driver,driverPhone){
+  document.getElementById('modalOrderId').value=id;
+  document.getElementById('modalStatus').value=status;
+  document.getElementById('modalDriver').value=driver;
+  document.getElementById('modalDriverPhone').value=driverPhone;
+  document.getElementById('statusModal').style.display='flex';
+}
+function closeModal(){document.getElementById('statusModal').style.display='none';}
+
+async function saveStatus(){
+  const id=document.getElementById('modalOrderId').value;
+  const body={status:document.getElementById('modalStatus').value,driverName:document.getElementById('modalDriver').value,driverPhone:document.getElementById('modalDriverPhone').value};
+  const r=await fetch(`/api/delivery/orders/${id}/status`,{method:'PATCH',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Status updated!','success');closeModal();loadOrders();}
+  else showToast(d.message||'Error','error');
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadOrders();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

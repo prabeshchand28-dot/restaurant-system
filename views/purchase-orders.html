@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Purchase Orders</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1300px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:20px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:380px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}
+.item-row{display:grid;grid-template-columns:1fr 70px 70px 80px 30px;gap:6px;align-items:center;margin-bottom:6px}
+.item-row input{padding:6px 8px;font-size:12px}
+.po-card{border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.po-head{background:#f8f9fa;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.po-body{padding:12px 14px}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800}
+.s-DRAFT{background:#f0f0f0;color:#888}.s-SENT{background:#e8efff;color:var(--blue)}.s-PARTIAL{background:#fff3e0;color:var(--orange)}.s-RECEIVED{background:#e7f5ed;color:var(--green)}.s-CANCELLED{background:#fce8e7;color:var(--red)}
+.item-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.item-table th{text-align:left;font-size:10px;font-weight:800;text-transform:uppercase;color:var(--muted);padding:4px 8px;border-bottom:1px solid var(--border)}
+.item-table td{padding:5px 8px;border-bottom:1px solid #f5f5f5}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--white);border-radius:14px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto}
+.modal-head{background:var(--navy);color:#fff;padding:14px 18px;font-weight:800;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0}
+.modal-body{padding:18px}
+.hidden{display:none}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Purchase Orders</span></span>
+  <div><a class="nav-btn" href="/suppliers">🏭 Suppliers</a><a class="nav-btn" href="/invoices">🧾 Invoices</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-draft" style="color:var(--muted)">—</div><div class="lbl">Draft</div></div>
+    <div class="stat"><div class="num" id="s-sent" style="color:var(--blue)">—</div><div class="lbl">Sent</div></div>
+    <div class="stat"><div class="num" id="s-partial" style="color:var(--orange)">—</div><div class="lbl">Partial</div></div>
+    <div class="stat"><div class="num" id="s-received" style="color:var(--green)">—</div><div class="lbl">Received</div></div>
+    <div class="stat"><div class="num" id="s-value" style="color:var(--navy)">—</div><div class="lbl">Total Value (रू)</div></div>
+  </div>
+
+  <div class="grid">
+    <!-- Create PO -->
+    <div>
+      <div class="card">
+        <div class="card-header">📦 New Purchase Order</div>
+        <div class="card-body">
+          <label>Supplier Name</label>
+          <input id="pSupplier" placeholder="Supplier name"/>
+          <label>Expected Delivery</label>
+          <input type="date" id="pExpected"/>
+          <label>Created By</label>
+          <input id="pBy" placeholder="Staff name"/>
+          <label>Notes</label>
+          <input id="pNotes" placeholder="Special instructions..."/>
+          <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+            <div style="font-size:12px;font-weight:800;color:var(--navy);margin-bottom:8px">Line Items</div>
+            <div id="itemRows"></div>
+            <button class="btn" style="width:100%;font-size:12px;padding:7px;background:#f0f0f0;color:var(--navy);margin-bottom:10px" onclick="addItemRow()">+ Add Item</button>
+            <div style="font-size:13px;font-weight:700;text-align:right;margin-bottom:8px">Total: <span id="poTotal" style="color:var(--green)">रू 0</span></div>
+          </div>
+          <button class="btn btn-green" style="width:100%" onclick="createPO()">Create PO</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PO List -->
+    <div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <select id="fStatus" onchange="loadPOs()" style="width:130px">
+          <option value="">All Status</option>
+          <option value="DRAFT">Draft</option>
+          <option value="SENT">Sent</option>
+          <option value="PARTIAL">Partial</option>
+          <option value="RECEIVED">Received</option>
+          <option value="CANCELLED">Cancelled</option>
+        </select>
+        <input type="date" id="fFrom" onchange="loadPOs()" style="width:140px"/>
+        <input type="date" id="fTo" onchange="loadPOs()" style="width:140px"/>
+      </div>
+      <div id="poList">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Receive Modal -->
+<div id="receiveModal" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-head"><span>Receive Goods</span><button onclick="closeModal()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer">✕</button></div>
+    <div class="modal-body" id="receiveBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let currentPOId=null;
+
+async function loadStats(){
+  const r=await fetch('/api/purchase-orders/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-draft').textContent=d.draft;
+  document.getElementById('s-sent').textContent=d.sent;
+  document.getElementById('s-partial').textContent=d.partial;
+  document.getElementById('s-received').textContent=d.received;
+  document.getElementById('s-value').textContent='रू '+Math.round(d.totalValue).toLocaleString();
+}
+
+async function loadPOs(){
+  const status=document.getElementById('fStatus').value;
+  const from=document.getElementById('fFrom').value;
+  const to=document.getElementById('fTo').value;
+  let url='/api/purchase-orders?a=1';
+  if(status)url+=`&status=${status}`;if(from)url+=`&from=${from}`;if(to)url+=`&to=${to}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const orders=await r.json();
+  if(!orders.length){document.getElementById('poList').innerHTML='<div style="text-align:center;padding:60px;background:var(--white);border-radius:12px;color:var(--muted)">No purchase orders</div>';return;}
+  document.getElementById('poList').innerHTML=orders.map(po=>`
+    <div class="po-card">
+      <div class="po-head">
+        <div>
+          <span style="font-weight:900;font-size:14px">${po.poNumber}</span>
+          <span class="badge s-${po.status}" style="margin-left:8px">${po.status}</span>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">📦 ${po.supplierName||'—'} · ${new Date(po.orderDate).toLocaleDateString()}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:900;font-size:16px;color:var(--blue)">रू ${po.total.toLocaleString()}</div>
+          <div style="font-size:10px;color:var(--muted)">${po.items.length} items</div>
+        </div>
+      </div>
+      <div class="po-body">
+        <table class="item-table">
+          <tr><th>Item</th><th>Qty</th><th>Unit</th><th>Price</th><th>Total</th><th>Recvd</th></tr>
+          ${po.items.map(i=>`<tr><td>${i.itemName}</td><td>${i.quantity}</td><td>${i.unit}</td><td>रू${i.unitPrice}</td><td>रू${i.total.toFixed(0)}</td><td style="font-weight:700;color:${i.receivedQty>=i.quantity?'var(--green)':'var(--orange)'}">${i.receivedQty}/${i.quantity}</td></tr>`).join('')}
+        </table>
+        ${po.notes?`<div style="font-size:12px;color:var(--muted);margin-top:8px">📝 ${po.notes}</div>`:''}
+        ${po.expectedDate?`<div style="font-size:12px;color:var(--muted);margin-top:4px">📅 Expected: ${new Date(po.expectedDate).toLocaleDateString()}</div>`:''}
+        <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+          ${po.status==='DRAFT'?`<button class="btn" style="font-size:11px;padding:5px 10px;background:var(--blue)" onclick="setStatus(${po.id},'SENT')">📤 Mark Sent</button>`:''}
+          ${['SENT','PARTIAL'].includes(po.status)?`<button class="btn btn-green" style="font-size:11px;padding:5px 10px" onclick="openReceive(${po.id})">📥 Receive Goods</button>`:''}
+          ${po.status!=='CANCELLED'&&po.status!=='RECEIVED'?`<button class="btn" style="font-size:11px;padding:5px 10px;background:#f0f0f0;color:#555" onclick="setStatus(${po.id},'CANCELLED')">Cancel</button>`:''}
+          <button class="btn btn-red" style="font-size:11px;padding:5px 10px" onclick="deletePO(${po.id})">Del</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+let itemCount=0;
+function addItemRow(){
+  const i=itemCount++;
+  const div=document.createElement('div');div.className='item-row';div.id=`ir-${i}`;
+  div.innerHTML=`<input placeholder="Item name" id="in-${i}"/><input type="number" placeholder="Qty" id="iq-${i}" oninput="recalcTotal()"/><input placeholder="Unit" id="iu-${i}" value="kg" style="text-align:center"/><input type="number" placeholder="Price" id="ip-${i}" oninput="recalcTotal()"/><button onclick="removeRow(${i})" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer">✕</button>`;
+  document.getElementById('itemRows').appendChild(div);
+}
+
+function removeRow(i){const el=document.getElementById(`ir-${i}`);if(el)el.remove();recalcTotal();}
+
+function recalcTotal(){
+  let total=0;
+  document.querySelectorAll('[id^="iq-"]').forEach(el=>{
+    const i=el.id.replace('iq-','');
+    const qty=parseFloat(document.getElementById(`iq-${i}`)?.value)||0;
+    const price=parseFloat(document.getElementById(`ip-${i}`)?.value)||0;
+    total+=qty*price;
+  });
+  document.getElementById('poTotal').textContent='रू '+(total*1.13).toFixed(0);
+}
+
+async function createPO(){
+  const items=[];
+  document.querySelectorAll('[id^="in-"]').forEach(el=>{
+    const i=el.id.replace('in-','');
+    const name=el.value.trim();
+    if(!name)return;
+    items.push({itemName:name,quantity:parseFloat(document.getElementById(`iq-${i}`)?.value)||1,unit:document.getElementById(`iu-${i}`)?.value||'kg',unitPrice:parseFloat(document.getElementById(`ip-${i}`)?.value)||0});
+  });
+  if(!items.length){showToast('Add at least one item','error');return;}
+  const body={supplierName:document.getElementById('pSupplier').value,expectedDate:document.getElementById('pExpected').value||null,createdBy:document.getElementById('pBy').value,notes:document.getElementById('pNotes').value,items};
+  const r=await fetch('/api/purchase-orders',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast(`PO Created: ${d.poNumber}`,'success');document.getElementById('itemRows').innerHTML='';itemCount=0;document.getElementById('pSupplier').value='';document.getElementById('pBy').value='';recalcTotal();loadPOs();loadStats();}
+  else showToast(d.message||'Error','error');
+}
+
+async function setStatus(id,status){
+  await fetch(`/api/purchase-orders/${id}/status`,{method:'PATCH',headers:authH(),body:JSON.stringify({status})});
+  loadPOs();loadStats();
+}
+
+async function openReceive(id){
+  currentPOId=id;
+  const r=await fetch(`/api/purchase-orders/${id}`,{headers:authH(),cache:'no-store'});
+  const po=await r.json();
+  document.getElementById('receiveBody').innerHTML=`
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Enter quantities received for each item:</p>
+    ${po.items.map(i=>`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div><div style="font-weight:700">${i.itemName}</div><div style="font-size:11px;color:var(--muted)">Ordered: ${i.quantity} ${i.unit}</div></div>
+      <input type="number" id="rv-${i.id}" value="${i.receivedQty}" max="${i.quantity}" min="0" step="0.1" style="width:100px;text-align:center"/>
+    </div>`).join('')}
+    <button class="btn btn-green" style="width:100%;margin-top:14px" onclick="submitReceive(${JSON.stringify(po.items).replace(/"/g,'&quot;')})">📥 Confirm Receipt</button>`;
+  document.getElementById('receiveModal').classList.remove('hidden');
+}
+
+async function submitReceive(items){
+  const payload=items.map(i=>({id:i.id,receivedQty:parseFloat(document.getElementById(`rv-${i.id}`)?.value)||0}));
+  await fetch(`/api/purchase-orders/${currentPOId}/receive`,{method:'POST',headers:authH(),body:JSON.stringify({items:payload})});
+  showToast('Receipt recorded!','success');closeModal();loadPOs();loadStats();
+}
+
+function closeModal(){document.getElementById('receiveModal').classList.add('hidden');}
+
+async function deletePO(id){
+  if(!confirm('Delete this purchase order?'))return;
+  await fetch(`/api/purchase-orders/${id}`,{method:'DELETE',headers:authH()});
+  loadPOs();loadStats();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+addItemRow();loadStats();loadPOs();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

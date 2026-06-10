@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Floor Plan Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.layout{display:grid;grid-template-columns:220px 1fr;height:calc(100vh - 56px)}
+.sidebar{background:var(--white);border-right:1px solid var(--border);padding:14px;overflow-y:auto}
+.sidebar h3{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.plan-item{padding:8px 10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
+.plan-item:hover{background:#f0f2f5}
+.plan-item.active{background:#e8efff;color:var(--blue)}
+.canvas-area{display:flex;flex-direction:column}
+.toolbar{background:var(--white);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tool-btn{padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:var(--white);font-family:var(--font);display:flex;align-items:center;gap:4px}
+.tool-btn:hover,.tool-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.tool-btn.save-btn{background:var(--green);color:#fff;border-color:var(--green)}
+#canvas{flex:1;background:#f8f9fc;position:relative;overflow:hidden;cursor:default;min-height:500px;background-image:radial-gradient(circle,#d0d5e0 1px,transparent 1px);background-size:30px 30px}
+.table-el{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:move;user-select:none;font-size:11px;font-weight:800;border:2px solid #2653a0;box-shadow:0 2px 8px rgba(0,0,0,.08);transition:box-shadow .2s}
+.table-el.selected{border-color:var(--orange)!important;box-shadow:0 0 0 3px rgba(230,81,0,.2),0 2px 8px rgba(0,0,0,.1)}
+.table-el.round{border-radius:50%;background:linear-gradient(135deg,#e8efff,#cdd7f0)}
+.table-el.rect{border-radius:8px;background:linear-gradient(135deg,#e8efff,#cdd7f0)}
+.table-el.bar{border-radius:4px;background:linear-gradient(135deg,#f3e5f5,#e1bee7);border-color:#8e24aa}
+.table-el.booth{border-radius:8px;background:linear-gradient(135deg,#e8f5e9,#c8e6c9);border-color:#2e7d32}
+.table-num{font-size:14px;font-weight:900;color:#1a1a1a}
+.table-label{font-size:9px;color:var(--muted);margin-top:1px}
+.prop-panel{background:var(--white);border-left:1px solid var(--border);width:180px;padding:14px;font-size:12px;flex-shrink:0}
+.prop-panel h3{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.prop-panel label{display:block;font-size:11px;font-weight:700;color:var(--navy);margin:8px 0 3px}
+.prop-panel input,.prop-panel select{padding:6px 8px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:var(--font);outline:none;width:100%}
+.no-sel{color:var(--muted);font-size:12px;text-align:center;padding:20px 0}
+input[readonly]{background:#f8f9fc;color:var(--muted)}
+.toast{position:fixed;top:14px;right:14px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Floor Plan Editor</span></span>
+  <div><a class="nav-btn" href="/tables">🪑 Tables</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="layout">
+  <div class="sidebar">
+    <h3>Floor Plans</h3>
+    <button onclick="createPlan()" style="width:100%;padding:7px;border:1px dashed var(--border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:none;margin-bottom:12px;color:var(--blue)">+ New Plan</button>
+    <div id="planList"></div>
+  </div>
+  <div class="canvas-area" style="display:flex;flex-direction:row;flex:1;overflow:hidden">
+    <div style="flex:1;display:flex;flex-direction:column">
+      <div class="toolbar">
+        <span style="font-size:13px;font-weight:800;color:var(--navy)" id="planTitle">Select a floor plan</span>
+        <div style="flex:1"></div>
+        <button class="tool-btn" onclick="addTable('round')" id="no-plan" disabled>⭕ Round</button>
+        <button class="tool-btn" onclick="addTable('rect')" disabled id="add-rect">⬜ Rectangle</button>
+        <button class="tool-btn" onclick="addTable('booth')" disabled id="add-booth">🪑 Booth</button>
+        <button class="tool-btn" onclick="addTable('bar')" disabled id="add-bar">🍺 Bar</button>
+        <button class="tool-btn" onclick="deleteSelected()" disabled id="del-btn" style="color:var(--red)">🗑️ Delete</button>
+        <button class="tool-btn save-btn" onclick="savePlan()" disabled id="save-btn">💾 Save</button>
+      </div>
+      <div style="flex:1;position:relative;overflow:hidden">
+        <div id="canvas"></div>
+      </div>
+    </div>
+    <div class="prop-panel" id="propPanel">
+      <h3>Properties</h3>
+      <div class="no-sel" id="noSel">Select a table to edit</div>
+      <div id="propFields" style="display:none">
+        <label>Table #</label><input id="pNum" type="number" oninput="updateSelected()"/>
+        <label>Seats</label><input id="pSeats" type="number" min="1" oninput="updateSelected()"/>
+        <label>Type</label>
+        <select id="pType" onchange="updateSelected()">
+          <option value="round">Round</option>
+          <option value="rect">Rectangle</option>
+          <option value="booth">Booth</option>
+          <option value="bar">Bar</option>
+        </select>
+        <label>Width (px)</label><input id="pW" type="number" min="50" oninput="updateSelected()"/>
+        <label>Height (px)</label><input id="pH" type="number" min="50" oninput="updateSelected()"/>
+        <label>X</label><input id="pX" type="number" readonly/>
+        <label>Y</label><input id="pY" type="number" readonly/>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let plans=[],currentPlan=null,tables=[],selected=null,dragState=null;
+
+async function init(){
+  const r=await fetch('/api/floor-plan',{headers:authH(),cache:'no-store'});
+  plans=await r.json();
+  renderPlanList();
+  if(plans.length)loadPlan(plans[0]);
+}
+
+function renderPlanList(){
+  document.getElementById('planList').innerHTML=plans.map(p=>`
+    <div class="plan-item ${currentPlan&&currentPlan.id===p.id?'active':''}" onclick="loadPlan(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+      <span>${p.name}</span>
+      <button onclick="event.stopPropagation();deletePlan(${p.id})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">×</button>
+    </div>`).join('')||'<div style="color:var(--muted);font-size:12px">No plans yet</div>';
+}
+
+async function createPlan(){
+  const name=prompt('Plan name:','Main Floor');
+  if(!name)return;
+  const r=await fetch('/api/floor-plan',{method:'POST',headers:authH(),body:JSON.stringify({name,layout:'[]'})});
+  const p=await r.json();
+  if(p.id){plans.push(p);renderPlanList();loadPlan(p);}
+}
+
+async function deletePlan(id){
+  if(!confirm('Delete plan?'))return;
+  await fetch(`/api/floor-plan/${id}`,{method:'DELETE',headers:authH()});
+  plans=plans.filter(p=>p.id!==id);
+  if(currentPlan&&currentPlan.id===id){currentPlan=null;tables=[];renderCanvas();}
+  renderPlanList();
+}
+
+function loadPlan(plan){
+  currentPlan=plan;
+  try{tables=JSON.parse(plan.layout)||[];}catch{tables=[];}
+  selected=null;
+  renderPlanList();
+  renderCanvas();
+  enableButtons(true);
+  document.getElementById('planTitle').textContent='✏️ '+plan.name;
+  showProps(null);
+}
+
+function enableButtons(on){
+  ['add-rect','add-booth','add-bar','save-btn','no-plan'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.disabled=!on;
+  });
+}
+
+let tableIdSeq=1;
+function addTable(type){
+  if(!currentPlan)return;
+  const canvas=document.getElementById('canvas');
+  const w=type==='bar'?120:type==='rect'||type==='booth'?90:80;
+  const h=type==='bar'?40:80;
+  const existing=tables.map(t=>t.num);
+  let num=1;while(existing.includes(num))num++;
+  const t={id:'t_'+(tableIdSeq++),num,seats:type==='bar'?6:4,type,x:Math.round(canvas.clientWidth/2-w/2),y:Math.round(200),w,h};
+  tables.push(t);
+  renderCanvas();
+  selectTable(t.id);
+}
+
+function renderCanvas(){
+  const canvas=document.getElementById('canvas');
+  canvas.innerHTML='';
+  tables.forEach(t=>{
+    const el=document.createElement('div');
+    el.className=`table-el ${t.type}${selected===t.id?' selected':''}`;
+    el.id='te_'+t.id;
+    el.style.cssText=`left:${t.x}px;top:${t.y}px;width:${t.w}px;height:${t.h}px;`;
+    el.innerHTML=`<span class="table-num">${t.num}</span><span class="table-label">${t.seats} seats</span>`;
+    el.addEventListener('mousedown',e=>startDrag(e,t.id));
+    el.addEventListener('click',e=>{e.stopPropagation();selectTable(t.id);});
+    canvas.appendChild(el);
+  });
+}
+
+function selectTable(id){
+  selected=id;
+  const t=tables.find(t=>t.id===id);
+  renderCanvas();
+  showProps(t);
+  document.getElementById('del-btn').disabled=!id;
+}
+
+function showProps(t){
+  const noSel=document.getElementById('noSel');
+  const fields=document.getElementById('propFields');
+  if(!t){noSel.style.display='block';fields.style.display='none';return;}
+  noSel.style.display='none';fields.style.display='block';
+  document.getElementById('pNum').value=t.num;
+  document.getElementById('pSeats').value=t.seats;
+  document.getElementById('pType').value=t.type;
+  document.getElementById('pW').value=t.w;
+  document.getElementById('pH').value=t.h;
+  document.getElementById('pX').value=t.x;
+  document.getElementById('pY').value=t.y;
+}
+
+function updateSelected(){
+  if(!selected)return;
+  const t=tables.find(t=>t.id===selected);
+  if(!t)return;
+  t.num=parseInt(document.getElementById('pNum').value)||t.num;
+  t.seats=parseInt(document.getElementById('pSeats').value)||t.seats;
+  t.type=document.getElementById('pType').value;
+  t.w=parseInt(document.getElementById('pW').value)||t.w;
+  t.h=parseInt(document.getElementById('pH').value)||t.h;
+  renderCanvas();
+}
+
+function deleteSelected(){
+  if(!selected)return;
+  tables=tables.filter(t=>t.id!==selected);
+  selected=null;showProps(null);document.getElementById('del-btn').disabled=true;
+  renderCanvas();
+}
+
+function startDrag(e,id){
+  e.preventDefault();
+  const t=tables.find(t=>t.id===id);
+  const canvas=document.getElementById('canvas');
+  const rect=canvas.getBoundingClientRect();
+  dragState={id,startX:e.clientX,startY:e.clientY,origX:t.x,origY:t.y};
+  selectTable(id);
+  function onMove(e2){
+    const dx=e2.clientX-dragState.startX,dy=e2.clientY-dragState.startY;
+    t.x=Math.max(0,dragState.origX+dx);
+    t.y=Math.max(0,dragState.origY+dy);
+    const el=document.getElementById('te_'+id);
+    if(el){el.style.left=t.x+'px';el.style.top=t.y+'px';}
+    document.getElementById('pX').value=t.x;
+    document.getElementById('pY').value=t.y;
+  }
+  function onUp(){dragState=null;document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);}
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+}
+
+document.getElementById('canvas').addEventListener('click',e=>{
+  if(e.target===e.currentTarget){selected=null;showProps(null);renderCanvas();document.getElementById('del-btn').disabled=true;}
+});
+
+async function savePlan(){
+  if(!currentPlan)return;
+  const r=await fetch(`/api/floor-plan/${currentPlan.id}`,{method:'PUT',headers:authH(),body:JSON.stringify({layout:JSON.stringify(tables)})});
+  const d=await r.json();
+  if(d.id){showToast('Floor plan saved!','success');const idx=plans.findIndex(p=>p.id===d.id);if(idx>=0)plans[idx]=d;}
+  else showToast(d.message||'Error','error');
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+init();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

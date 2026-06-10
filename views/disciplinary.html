@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Staff Disciplinary Records</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--yellow:#b7790a;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:20px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select,textarea{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}.btn-orange{background:var(--orange)}
+.disc-card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px}
+.disc-card.VERBAL_WARNING{border-left:4px solid var(--yellow)}
+.disc-card.WRITTEN_WARNING{border-left:4px solid var(--orange)}
+.disc-card.SUSPENSION{border-left:4px solid var(--red)}
+.disc-card.TERMINATION{border-left:4px solid #333}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800}
+.t-VERBAL_WARNING{background:#fffde7;color:var(--yellow)}.t-WRITTEN_WARNING{background:#fff3e0;color:var(--orange)}.t-SUSPENSION{background:#fce8e7;color:var(--red)}.t-TERMINATION{background:#333;color:#fff}
+.st-OPEN{background:#e8efff;color:var(--blue)}.st-RESOLVED{background:#e7f5ed;color:var(--green)}.st-ESCALATED{background:#fce8e7;color:var(--red)}
+.followup-alert{background:#fff3e0;border:1px solid var(--orange);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--orange);font-weight:700;margin-top:6px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Disciplinary Records</span></span>
+  <div><a class="nav-btn" href="/staff">👤 Staff</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-open" style="color:var(--blue)">—</div><div class="lbl">⚠️ Open Cases</div></div>
+    <div class="stat"><div class="num" id="s-followup" style="color:var(--orange)">—</div><div class="lbl">📅 Follow-up Due</div></div>
+    <div class="stat"><div class="num" id="s-escalated" style="color:var(--red)">—</div><div class="lbl">🔺 Escalated</div></div>
+    <div class="stat"><div class="num" id="s-resolved" style="color:var(--green)">—</div><div class="lbl">✅ Resolved</div></div>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <div class="card-header">📝 Log Incident</div>
+        <div class="card-body">
+          <label>Staff Member</label>
+          <select id="rStaff"><option value="">Select staff...</option></select>
+          <label>Type</label>
+          <select id="rType">
+            <option value="VERBAL_WARNING">⚠️ Verbal Warning</option>
+            <option value="WRITTEN_WARNING">📄 Written Warning</option>
+            <option value="SUSPENSION">🚫 Suspension</option>
+            <option value="TERMINATION">❌ Termination</option>
+          </select>
+          <label>Incident Date</label>
+          <input type="date" id="rDate"/>
+          <label>Incident Description</label>
+          <textarea id="rIncident" rows="3" placeholder="Describe what happened..." style="resize:vertical"></textarea>
+          <label>Issued By</label><input id="rIssuedBy" placeholder="Manager name"/>
+          <label>Witnesses</label><input id="rWitnesses" placeholder="Names of witnesses..."/>
+          <label>Action Taken</label><input id="rAction" placeholder="e.g. Verbal reprimand, docked pay..."/>
+          <label>Follow-up Date</label><input type="date" id="rFollowup"/>
+          <label>Notes</label><input id="rNotes" placeholder="Additional notes..."/>
+          <button class="btn btn-red" style="width:100%;margin-top:14px" onclick="logRecord()">📋 Log Record</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <select id="fType" onchange="loadRecords()" style="width:160px">
+          <option value="">All Types</option>
+          <option value="VERBAL_WARNING">Verbal Warning</option>
+          <option value="WRITTEN_WARNING">Written Warning</option>
+          <option value="SUSPENSION">Suspension</option>
+          <option value="TERMINATION">Termination</option>
+        </select>
+        <select id="fStatus" onchange="loadRecords()" style="width:120px">
+          <option value="OPEN">Open</option>
+          <option value="">All Status</option>
+          <option value="RESOLVED">Resolved</option>
+          <option value="ESCALATED">Escalated</option>
+        </select>
+        <select id="fStaff" onchange="loadRecords()" style="width:160px"><option value="">All Staff</option></select>
+      </div>
+      <div id="recList">Loading...</div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+// default date
+document.getElementById('rDate').value=new Date().toISOString().slice(0,10);
+
+async function init(){
+  const r=await fetch('/api/staff',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  const staff=d.data||d;
+  [document.getElementById('rStaff'),document.getElementById('fStaff')].forEach((sel,idx)=>{
+    sel.innerHTML=idx===0?'<option value="">Select staff...</option>':'<option value="">All Staff</option>';
+    staff.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.dataset.name=s.name;o.textContent=s.name;sel.appendChild(o);});
+  });
+  loadStats();loadRecords();
+}
+
+async function loadStats(){
+  const r=await fetch('/api/disciplinary/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-open').textContent=d.open;
+  document.getElementById('s-followup').textContent=d.followUpDue;
+  document.getElementById('s-escalated').textContent=d.escalated;
+  document.getElementById('s-resolved').textContent=d.resolved;
+}
+
+async function loadRecords(){
+  const type=document.getElementById('fType').value;
+  const status=document.getElementById('fStatus').value;
+  const staffId=document.getElementById('fStaff').value;
+  let url='/api/disciplinary?a=1';
+  if(type)url+=`&type=${type}`;if(status)url+=`&status=${status}`;if(staffId)url+=`&staffId=${staffId}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const recs=await r.json();
+  if(!recs.length){document.getElementById('recList').innerHTML='<div style="text-align:center;padding:60px;background:var(--white);border-radius:12px;color:var(--muted)">No records found</div>';return;}
+  const now=new Date();
+  document.getElementById('recList').innerHTML=recs.map(rec=>{
+    const dueSoon=rec.followUpDate&&new Date(rec.followUpDate)<=now&&rec.status==='OPEN';
+    return `<div class="disc-card ${rec.type}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">
+            <span class="badge t-${rec.type}">${rec.type.replace(/_/g,' ')}</span>
+            <span class="badge st-${rec.status}">${rec.status}</span>
+          </div>
+          <div style="font-weight:900;font-size:14px">👤 ${rec.staffName}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${new Date(rec.incidentDate).toLocaleDateString()} · Issued by: ${rec.issuedBy||'Unknown'}</div>
+          <div style="font-size:13px;margin-top:6px;line-height:1.4">${rec.incident}</div>
+          ${rec.actionTaken?`<div style="font-size:12px;color:var(--muted);margin-top:4px">Action: ${rec.actionTaken}</div>`:''}
+          ${rec.witnesses?`<div style="font-size:12px;color:var(--muted)">Witnesses: ${rec.witnesses}</div>`:''}
+          ${rec.followUpDate?`<div style="font-size:12px;color:var(--muted)">Follow-up: ${new Date(rec.followUpDate).toLocaleDateString()}</div>`:''}
+          ${dueSoon?`<div class="followup-alert">⚠️ Follow-up date has passed</div>`:''}
+        </div>
+      </div>
+      ${rec.status==='OPEN'?`<div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-green" style="font-size:11px;padding:5px 10px" onclick="setStatus(${rec.id},'RESOLVED')">✅ Resolve</button>
+        <button class="btn btn-red" style="font-size:11px;padding:5px 10px" onclick="setStatus(${rec.id},'ESCALATED')">🔺 Escalate</button>
+        <button class="btn" style="font-size:11px;padding:5px 10px;background:#f0f0f0;color:#555" onclick="delRec(${rec.id})">Del</button>
+      </div>`:`<div style="margin-top:8px"><button class="btn btn-red" style="font-size:11px;padding:5px 10px" onclick="delRec(${rec.id})">Del</button></div>`}
+    </div>`;
+  }).join('');
+}
+
+async function logRecord(){
+  const staffSel=document.getElementById('rStaff');
+  const staffId=staffSel.value;
+  if(!staffId){showToast('Select staff','error');return;}
+  const incident=document.getElementById('rIncident').value.trim();
+  if(!incident){showToast('Incident description required','error');return;}
+  const staffName=staffSel.options[staffSel.selectedIndex].dataset.name||'';
+  const body={staffId,staffName,type:document.getElementById('rType').value,incident,incidentDate:document.getElementById('rDate').value,issuedBy:document.getElementById('rIssuedBy').value,witnesses:document.getElementById('rWitnesses').value,actionTaken:document.getElementById('rAction').value,followUpDate:document.getElementById('rFollowup').value||null,notes:document.getElementById('rNotes').value};
+  const r=await fetch('/api/disciplinary',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Record logged!','success');document.getElementById('rIncident').value='';document.getElementById('rIssuedBy').value='';document.getElementById('rWitnesses').value='';document.getElementById('rAction').value='';document.getElementById('rNotes').value='';loadStats();loadRecords();}
+  else showToast(d.message||'Error','error');
+}
+
+async function setStatus(id,status){
+  await fetch(`/api/disciplinary/${id}`,{method:'PATCH',headers:authH(),body:JSON.stringify({status})});
+  showToast('Updated!','success');loadStats();loadRecords();
+}
+
+async function delRec(id){
+  if(!confirm('Delete this record?'))return;
+  await fetch(`/api/disciplinary/${id}`,{method:'DELETE',headers:authH()});
+  loadStats();loadRecords();
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+init();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

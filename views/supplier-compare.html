@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Supplier Price Compare</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f0f2f5;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;padding:8px 12px;text-align:left}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.best{color:var(--green);font-weight:900}
+.worst{color:var(--red)}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:800}
+.b-best{background:#e7f5ed;color:var(--green)}.b-worst{background:#fdecea;color:var(--red)}
+.price-input{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:12px}
+.pcard{border:1px solid var(--border);border-radius:8px;padding:10px}
+.pcard label{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.pcard input{font-size:12px;padding:6px 8px}
+.savings-bar{height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden;margin-top:4px}
+.savings-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green),#27ae60)}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Supplier Price Compare</span></span>
+  <div><a class="nav-btn" href="/suppliers">🏭 Suppliers</a><a class="nav-btn" href="/inventory">📦 Inventory</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div style="display:grid;grid-template-columns:340px 1fr;gap:20px">
+    <div>
+      <div class="card">
+        <div class="card-header">🏭 Add Comparison Entry</div>
+        <div class="card-body">
+          <label>Item Name</label><input id="cItem" placeholder="e.g. Chicken (per kg)"/>
+          <label>Unit</label><input id="cUnit" placeholder="e.g. kg, litre, piece" value="kg"/>
+          <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="font-size:12px;font-weight:700;color:var(--navy)">Supplier Quotes</span>
+            <button class="btn" style="font-size:11px;padding:4px 9px" onclick="addSupplierField()">+ Supplier</button>
+          </div>
+          <div id="supplierFields"></div>
+          <button class="btn btn-green" style="width:100%;margin-top:12px" onclick="addComparison()">➕ Add to Compare</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">📊 Savings Summary</div>
+        <div class="card-body" id="savingsSummary">
+          <div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Add items to see savings</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <input id="srch" placeholder="🔍 Filter items..." style="width:200px" oninput="renderTable()"/>
+        <button class="btn" style="font-size:11px;padding:7px 12px;margin-left:auto" onclick="clearAll()">Clear All</button>
+        <button class="btn" style="font-size:11px;padding:7px 12px;background:#555" onclick="window.print()">🖨️ Print</button>
+      </div>
+      <div class="card">
+        <div class="card-header">📋 Price Comparison Table</div>
+        <div style="overflow-x:auto">
+          <div id="compTable" style="padding:16px">
+            <div style="text-align:center;padding:60px;color:var(--muted)">Add items to compare</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let comparisons=[]; // [{item, unit, quotes:[{supplier,price}]}]
+let sfCount=0;
+let supplierNames=[];
+
+async function init(){
+  const r=await fetch('/api/suppliers',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  supplierNames=(d.data||d).map(s=>s.name||s.businessName||'').filter(Boolean);
+  addSupplierField();addSupplierField();addSupplierField();
+}
+
+function addSupplierField(name='',price=''){
+  sfCount++;
+  const id=sfCount;
+  const div=document.createElement('div');
+  div.id='sf_'+id;
+  div.style.cssText='display:grid;grid-template-columns:1fr 100px 28px;gap:6px;margin-bottom:6px;align-items:center';
+  const opts=supplierNames.map(n=>`<option value="${n}" ${n===name?'selected':''}>${n}</option>`).join('');
+  div.innerHTML=`<input placeholder="Supplier name" value="${name}" list="suppList_${id}" style="font-size:12px;padding:6px 8px"/>
+    <datalist id="suppList_${id}">${opts}</datalist>
+    <input type="number" placeholder="Price" value="${price}" style="font-size:12px;padding:6px 8px;text-align:right"/>
+    <button onclick="document.getElementById('sf_${id}').remove()" style="background:none;border:none;color:var(--red);font-size:18px;cursor:pointer">×</button>`;
+  document.getElementById('supplierFields').appendChild(div);
+}
+
+function getQuotes(){
+  const quotes=[];
+  document.querySelectorAll('[id^="sf_"]').forEach(el=>{
+    const inputs=el.querySelectorAll('input');
+    const supplier=inputs[0].value.trim();
+    const price=parseFloat(inputs[1].value);
+    if(supplier&&price>0)quotes.push({supplier,price});
+  });
+  return quotes;
+}
+
+function addComparison(){
+  const item=document.getElementById('cItem').value.trim();
+  const unit=document.getElementById('cUnit').value.trim()||'unit';
+  if(!item){showToast('Enter item name','error');return;}
+  const quotes=getQuotes();
+  if(quotes.length<1){showToast('Add at least 1 supplier quote','error');return;}
+  const existing=comparisons.findIndex(c=>c.item.toLowerCase()===item.toLowerCase());
+  if(existing>=0){comparisons[existing].quotes=[...comparisons[existing].quotes,...quotes];showToast('Updated existing item','success');}
+  else{comparisons.push({item,unit,quotes});showToast('Added!','success');}
+  document.getElementById('cItem').value='';
+  document.getElementById('supplierFields').innerHTML='';sfCount=0;
+  addSupplierField();addSupplierField();addSupplierField();
+  renderTable();renderSavings();
+}
+
+function clearAll(){if(confirm('Clear all comparisons?')){comparisons=[];renderTable();renderSavings();}}
+
+function renderTable(){
+  const q=document.getElementById('srch').value.toLowerCase();
+  const items=comparisons.filter(c=>c.item.toLowerCase().includes(q));
+  if(!items.length){document.getElementById('compTable').innerHTML='<div style="text-align:center;padding:60px;color:var(--muted)">No items yet</div>';return;}
+
+  // Collect all supplier names
+  const allSuppliers=[...new Set(items.flatMap(c=>c.quotes.map(q=>q.supplier)))].sort();
+
+  const rows=items.map(c=>{
+    const prices=c.quotes.reduce((m,q)=>{m[q.supplier]=q.price;return m;},{});
+    const vals=Object.values(prices);
+    const minP=Math.min(...vals),maxP=Math.max(...vals);
+    const savings=((maxP-minP)/maxP*100).toFixed(1);
+
+    const cells=allSuppliers.map(s=>{
+      if(!prices[s])return '<td style="color:#ddd;text-align:right">—</td>';
+      const cls=prices[s]===minP?'best':prices[s]===maxP?'worst':'';
+      const badge=prices[s]===minP?'<span class="badge b-best">BEST</span>':prices[s]===maxP?'<span class="badge b-worst">HIGH</span>':'';
+      return `<td class="${cls}" style="text-align:right">रू ${prices[s]} ${badge}</td>`;
+    });
+    return `<tr><td style="font-weight:700">${c.item}</td><td style="color:var(--muted)">${c.unit}</td>${cells.join('')}<td style="text-align:right;font-weight:800;color:var(--green)">${savings}%</td><td><button onclick="removeItem('${c.item}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px">×</button></td></tr>`;
+  });
+
+  document.getElementById('compTable').innerHTML=`<table><thead><tr><th>Item</th><th>Unit</th>${allSuppliers.map(s=>`<th style="text-align:right">${s}</th>`).join('')}<th style="text-align:right">Savings</th><th></th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+}
+
+function removeItem(name){
+  comparisons=comparisons.filter(c=>c.item!==name);
+  renderTable();renderSavings();
+}
+
+function renderSavings(){
+  if(!comparisons.length){document.getElementById('savingsSummary').innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Add items to see savings</div>';return;}
+  const totalSavings=comparisons.map(c=>{
+    const prices=c.quotes.map(q=>q.price);
+    if(prices.length<2)return 0;
+    return Math.max(...prices)-Math.min(...prices);
+  });
+  const total=totalSavings.reduce((s,v)=>s+v,0);
+  const rows=comparisons.map((c,i)=>{
+    const prices=c.quotes.map(q=>q.price);
+    if(prices.length<2)return '';
+    const diff=Math.max(...prices)-Math.min(...prices);
+    const pct=Math.max(...prices)>0?(diff/Math.max(...prices)*100).toFixed(0):0;
+    return `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px"><span style="font-weight:700">${c.item}</span><span style="color:var(--green);font-weight:800">रू ${diff}/unit (${pct}%)</span></div><div class="savings-bar"><div class="savings-fill" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+  document.getElementById('savingsSummary').innerHTML=`<div style="font-size:16px;font-weight:900;color:var(--green);margin-bottom:12px">Max savings: रू ${total.toFixed(2)}/batch</div>${rows}`;
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+init().catch(()=>{addSupplierField();addSupplierField();addSupplierField();});
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Staff Time Clock</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:22px;font-weight:900}.stat .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}
+.clock-card{border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.clock-card .name{font-weight:800;font-size:14px}.clock-card .sub{font-size:11px;color:var(--muted)}
+.elapsed{font-size:13px;font-weight:900;color:var(--green)}
+.row{display:grid;grid-template-columns:120px 140px 100px 100px 80px 1fr;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #f5f5f5;font-size:13px}
+.row.hdr{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;padding-bottom:6px;border-bottom:2px solid var(--border)}
+.tab-bar{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px}
+.tab{padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--muted)}
+.tab.active{border-bottom-color:var(--blue);color:var(--blue)}
+.pane{display:none}.pane.active{display:block}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Staff Time Clock</span></span>
+  <div><a class="nav-btn" href="/payroll">💰 Payroll</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-active" style="color:var(--green)">—</div><div class="lbl">🟢 On Clock Now</div></div>
+    <div class="stat"><div class="num" id="s-today">—</div><div class="lbl">Shifts Today</div></div>
+    <div class="stat"><div class="num" id="s-hours">—</div><div class="lbl">Hours Today</div></div>
+    <div class="stat"><div class="num" id="s-week">—</div><div class="lbl">Hours This Week</div></div>
+  </div>
+
+  <div class="grid">
+    <!-- Left: Clock In Form + Active -->
+    <div>
+      <div class="card">
+        <div class="card-header">⏱️ Clock In / Out</div>
+        <div class="card-body">
+          <label>Staff Member</label>
+          <select id="ciStaff"><option value="">Select staff...</option></select>
+          <label>Shift Type</label>
+          <select id="ciShift">
+            <option value="REGULAR">Regular</option>
+            <option value="OVERTIME">Overtime</option>
+            <option value="HOLIDAY">Holiday</option>
+          </select>
+          <label>Notes (optional)</label>
+          <input id="ciNotes" placeholder="e.g. covering for John"/>
+          <button class="btn btn-green" style="width:100%;margin-top:14px" onclick="doClock()">🟢 Clock In</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">👥 Currently On Clock (<span id="activeCount">0</span>)</div>
+        <div class="card-body" id="activeList" style="padding:8px">
+          <div style="text-align:center;color:var(--muted);padding:20px">No one clocked in</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: History + Summary -->
+    <div>
+      <div class="tab-bar">
+        <div class="tab active" onclick="switchTab('history',this)">History</div>
+        <div class="tab" onclick="switchTab('summary',this)">Staff Summary</div>
+      </div>
+
+      <!-- History -->
+      <div id="pane-history" class="pane active">
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+          <input type="date" id="fDate" onchange="loadHistory()" style="width:150px"/>
+          <select id="fStaff" onchange="loadHistory()" style="width:160px"><option value="">All Staff</option></select>
+          <button class="btn btn-green" style="padding:7px 12px;font-size:12px" onclick="exportCSV()">⬇ CSV</button>
+        </div>
+        <div class="row hdr">
+          <div>Staff</div><div>Clock In</div><div>Clock Out</div><div>Hours</div><div>Break</div><div>Type</div>
+        </div>
+        <div id="historyList">Loading...</div>
+      </div>
+
+      <!-- Summary -->
+      <div id="pane-summary" class="pane">
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <input type="date" id="sumFrom" style="width:150px"/>
+          <span style="align-self:center;font-size:13px">to</span>
+          <input type="date" id="sumTo" style="width:150px"/>
+          <button class="btn" onclick="loadSummary()">Apply</button>
+        </div>
+        <div class="row hdr" style="grid-template-columns:1fr 120px 80px">
+          <div>Staff</div><div>Total Hours</div><div>Shifts</div>
+        </div>
+        <div id="summaryList">Load a date range above</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let activeEntries=[];
+
+async function init(){
+  const r=await fetch('/api/staff',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  const staff=d.data||d;
+  [document.getElementById('ciStaff'),document.getElementById('fStaff')].forEach(sel=>{
+    const isF=sel.id==='fStaff';
+    if(isF)sel.innerHTML='<option value="">All Staff</option>';
+    else sel.innerHTML='<option value="">Select staff...</option>';
+    staff.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.name;sel.appendChild(o);});
+  });
+  // default date filter to today
+  document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('sumFrom').value=today;document.getElementById('sumTo').value=today;
+  loadActive();loadHistory();loadStats();
+}
+
+async function loadActive(){
+  const r=await fetch('/api/clock/active',{headers:authH(),cache:'no-store'});
+  activeEntries=await r.json();
+  document.getElementById('activeCount').textContent=activeEntries.length;
+  document.getElementById('s-active').textContent=activeEntries.length;
+  if(!activeEntries.length){document.getElementById('activeList').innerHTML='<div style="text-align:center;color:var(--muted);padding:20px">No one clocked in</div>';return;}
+  document.getElementById('activeList').innerHTML=activeEntries.map(e=>{
+    const elapsed=Math.floor((Date.now()-new Date(e.clockIn))/60000);
+    const h=Math.floor(elapsed/60),m=elapsed%60;
+    return `<div class="clock-card">
+      <div><div class="name">👤 ${e.staffName}</div><div class="sub">In: ${new Date(e.clockIn).toLocaleTimeString()} · ${e.shiftType}</div></div>
+      <div style="text-align:right">
+        <div class="elapsed">${h}h ${m}m</div>
+        <button class="btn btn-red" style="font-size:11px;padding:4px 10px;margin-top:4px" onclick="clockOut(${e.id})">Clock Out</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadStats(){
+  const today=new Date().toISOString().split('T')[0];
+  const monday=getMonday();
+  const [rToday,rWeek]=await Promise.all([
+    fetch(`/api/clock/summary?from=${today}&to=${today}`,{headers:authH(),cache:'no-store'}),
+    fetch(`/api/clock/summary?from=${monday}&to=${today}`,{headers:authH(),cache:'no-store'}),
+  ]);
+  const dToday=await rToday.json();const dWeek=await rWeek.json();
+  const todayHours=dToday.reduce((s,x)=>s+x.totalHours,0);
+  const weekHours=dWeek.reduce((s,x)=>s+x.totalHours,0);
+  const todayShifts=dToday.reduce((s,x)=>s+x.shifts,0);
+  document.getElementById('s-today').textContent=todayShifts;
+  document.getElementById('s-hours').textContent=todayHours.toFixed(1)+'h';
+  document.getElementById('s-week').textContent=weekHours.toFixed(1)+'h';
+}
+
+function getMonday(){const d=new Date();const day=d.getDay();const diff=d.getDate()-day+(day===0?-6:1);return new Date(d.setDate(diff)).toISOString().split('T')[0];}
+
+async function loadHistory(){
+  const date=document.getElementById('fDate').value;
+  const staffId=document.getElementById('fStaff').value;
+  let url='/api/clock?limit=200';
+  if(date)url+=`&date=${date}`;if(staffId)url+=`&staffId=${staffId}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const entries=await r.json();
+  if(!entries.length){document.getElementById('historyList').innerHTML='<div style="padding:20px;text-align:center;color:var(--muted)">No entries</div>';return;}
+  document.getElementById('historyList').innerHTML=entries.map(e=>`
+    <div class="row">
+      <div style="font-weight:700">${e.staffName}</div>
+      <div>${new Date(e.clockIn).toLocaleTimeString([],'02')}</div>
+      <div>${e.clockOut?new Date(e.clockOut).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'<span style="color:var(--green);font-weight:800">Active</span>'}</div>
+      <div style="font-weight:700">${e.hoursWorked!=null?e.hoursWorked.toFixed(2)+'h':'—'}</div>
+      <div>${e.breakMinutes||0}m</div>
+      <div>${e.shiftType}</div>
+    </div>`).join('');
+}
+
+async function loadSummary(){
+  const from=document.getElementById('sumFrom').value;
+  const to=document.getElementById('sumTo').value;
+  if(!from||!to)return;
+  const r=await fetch(`/api/clock/summary?from=${from}&to=${to}`,{headers:authH(),cache:'no-store'});
+  const data=await r.json();
+  if(!data.length){document.getElementById('summaryList').innerHTML='<div style="padding:20px;text-align:center;color:var(--muted)">No data</div>';return;}
+  document.getElementById('summaryList').innerHTML=data.map(s=>`
+    <div class="row" style="grid-template-columns:1fr 120px 80px">
+      <div style="font-weight:700">👤 ${s.staffName}</div>
+      <div style="font-weight:900;color:var(--blue)">${s.totalHours.toFixed(2)}h</div>
+      <div>${s.shifts} shifts</div>
+    </div>`).join('');
+}
+
+async function doClock(){
+  const staffId=document.getElementById('ciStaff').value;
+  if(!staffId){showToast('Select a staff member','error');return;}
+  const body={staffId,shiftType:document.getElementById('ciShift').value,notes:document.getElementById('ciNotes').value};
+  const r=await fetch('/api/clock/in',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Clocked in!','success');document.getElementById('ciNotes').value='';loadActive();loadHistory();loadStats();}
+  else showToast(d.message||'Error','error');
+}
+
+async function clockOut(id){
+  const breakMin=prompt('Break minutes taken? (0 if none)','0');
+  if(breakMin===null)return;
+  const r=await fetch(`/api/clock/${id}/out`,{method:'PATCH',headers:authH(),body:JSON.stringify({breakMinutes:parseInt(breakMin)||0})});
+  const d=await r.json();
+  if(d.id){showToast('Clocked out — '+d.hoursWorked+'h worked','success');loadActive();loadHistory();loadStats();}
+  else showToast(d.message||'Error','error');
+}
+
+function exportCSV(){
+  const date=document.getElementById('fDate').value||new Date().toISOString().split('T')[0];
+  window.open(`/api/clock?date=${date}&limit=500`,`_blank`);
+}
+
+function switchTab(id,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');document.getElementById('pane-'+id).classList.add('active');
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+init();
+setInterval(loadActive,30000); // refresh active list every 30s
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

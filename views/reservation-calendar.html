@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Reservation Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.content{padding:20px;max-width:1300px;margin:0 auto}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:12px 16px}
+.toolbar h2{font-size:16px;font-weight:900;color:var(--navy);flex:1}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-ghost{background:transparent;color:var(--blue);border:1px solid var(--blue)}
+.grid-wrap{display:grid;grid-template-columns:1fr 320px;gap:16px}
+/* Calendar */
+.cal{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.cal-header{display:grid;grid-template-columns:repeat(7,1fr);background:#f8f9fa;border-bottom:1px solid var(--border)}
+.cal-day-name{text-align:center;padding:8px;font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-cell{border-right:1px solid #f0f0f0;border-bottom:1px solid #f0f0f0;min-height:110px;padding:6px;cursor:pointer;transition:background .15s}
+.cal-cell:hover{background:#f0f4ff}
+.cal-cell.today{background:#eff4ff}
+.cal-cell.other-month{background:#fafafa}
+.cal-cell.selected{background:#dce8ff;outline:2px solid var(--blue)}
+.date-num{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:4px}
+.cal-cell.other-month .date-num{color:#ccc}
+.cal-cell.today .date-num{background:var(--blue);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.res-chip{font-size:10px;font-weight:700;border-radius:4px;padding:2px 5px;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.res-chip.s-CONFIRMED{background:#e7f5ed;color:var(--green)}.res-chip.s-PENDING{background:#fff8e6;color:#856404}.res-chip.s-CANCELLED{background:#f5e6e6;color:var(--red)}.res-chip.s-SEATED{background:#e8efff;color:var(--blue)}.res-chip.s-COMPLETED{background:#f0f0f0;color:#888}
+/* Side panel */
+.side{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;position:sticky;top:16px;max-height:calc(100vh - 80px);display:flex;flex-direction:column}
+.side-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;flex-shrink:0}
+.side-body{overflow-y:auto;padding:14px;flex:1}
+.res-card{border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px}
+.res-card .name{font-weight:800;font-size:13px}.res-card .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.badge{display:inline-block;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:800}
+.b-CONFIRMED{background:#e7f5ed;color:var(--green)}.b-PENDING{background:#fff8e6;color:#856404}.b-CANCELLED{background:#f5e6e6;color:var(--red)}.b-SEATED{background:#e8efff;color:var(--blue)}.b-COMPLETED{background:#f0f0f0;color:#888}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.leg{font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px}
+.leg-dot{width:10px;height:10px;border-radius:2px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--white);border-radius:14px;width:100%;max-width:440px;overflow:hidden}
+.modal-head{background:var(--navy);color:#fff;padding:14px 18px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+.modal-body{padding:18px}
+.hidden{display:none}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Reservation Calendar</span></span>
+  <div><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="content">
+  <div class="toolbar">
+    <button class="btn btn-ghost" onclick="prevMonth()">◀ Prev</button>
+    <h2 id="monthTitle" style="text-align:center"></h2>
+    <button class="btn btn-ghost" onclick="nextMonth()">Next ▶</button>
+    <button class="btn btn-ghost" onclick="goToday()">Today</button>
+    <button class="btn" onclick="openNewModal()">+ New Reservation</button>
+  </div>
+  <div class="legend">
+    <span class="leg"><span class="leg-dot" style="background:#1a7a3a"></span>Confirmed</span>
+    <span class="leg"><span class="leg-dot" style="background:#c79b00"></span>Pending</span>
+    <span class="leg"><span class="leg-dot" style="background:#2653a0"></span>Seated</span>
+    <span class="leg"><span class="leg-dot" style="background:#c0392b"></span>Cancelled</span>
+    <span class="leg"><span class="leg-dot" style="background:#888"></span>Completed</span>
+  </div>
+  <div class="grid-wrap">
+    <div class="cal">
+      <div class="cal-header">
+        <div class="cal-day-name">Sun</div><div class="cal-day-name">Mon</div><div class="cal-day-name">Tue</div>
+        <div class="cal-day-name">Wed</div><div class="cal-day-name">Thu</div><div class="cal-day-name">Fri</div><div class="cal-day-name">Sat</div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+    <div class="side">
+      <div class="side-header" id="sideTitle">Select a date</div>
+      <div class="side-body" id="sideList"><div style="text-align:center;padding:40px;color:var(--muted)">Click a date to see reservations</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- New Reservation Modal -->
+<div id="newModal" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-head"><span>New Reservation</span><button onclick="closeModal()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer">✕</button></div>
+    <div class="modal-body">
+      <label>Guest Name</label><input id="rName" placeholder="Full name"/>
+      <label>Phone</label><input id="rPhone" type="tel" placeholder="Phone number"/>
+      <label>Date</label><input id="rDate" type="date"/>
+      <label>Time</label><input id="rTime" type="time"/>
+      <label>Guests</label><input id="rGuests" type="number" min="1" max="20" value="2"/>
+      <label>Table No.</label><input id="rTable" type="number" placeholder="Optional"/>
+      <label>Notes</label><input id="rNotes" placeholder="Special requests..."/>
+      <button class="btn" style="width:100%;margin-top:16px" onclick="createReservation()">Book Reservation</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+let currentYear=new Date().getFullYear();
+let currentMonth=new Date().getMonth();
+let allReservations=[];
+let selectedDate=null;
+
+async function loadMonth(){
+  const from=new Date(currentYear,currentMonth,1).toISOString().split('T')[0];
+  const to=new Date(currentYear,currentMonth+1,0).toISOString().split('T')[0];
+  const r=await fetch(`/api/reservations?from=${from}&to=${to}&limit=200`,{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  allReservations=d.data||d||[];
+  renderCal();
+}
+
+function renderCal(){
+  const title=new Date(currentYear,currentMonth,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  document.getElementById('monthTitle').textContent=title;
+  const firstDay=new Date(currentYear,currentMonth,1).getDay();
+  const daysInMonth=new Date(currentYear,currentMonth+1,0).getDate();
+  const daysInPrev=new Date(currentYear,currentMonth,0).getDate();
+  const today=new Date();
+  const todayStr=today.toISOString().split('T')[0];
+
+  // Group reservations by date
+  const byDate={};
+  allReservations.forEach(r=>{
+    const d=(r.date||r.reservationDate||'').split('T')[0];
+    if(!byDate[d])byDate[d]=[];
+    byDate[d].push(r);
+  });
+
+  let cells='';
+  // prev month cells
+  for(let i=firstDay-1;i>=0;i--){const d=daysInPrev-i;cells+=`<div class="cal-cell other-month"><div class="date-num">${d}</div></div>`;}
+  // current month cells
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=dateStr===todayStr;
+    const isSel=dateStr===selectedDate;
+    const res=byDate[dateStr]||[];
+    const chips=res.slice(0,3).map(r=>`<div class="res-chip s-${r.status}" title="${r.guestName||r.name} ${r.time||''}">${r.time||''} ${r.guestName||r.name||'Guest'}</div>`).join('');
+    const more=res.length>3?`<div style="font-size:10px;color:var(--muted)">+${res.length-3} more</div>`:'';
+    cells+=`<div class="cal-cell ${isToday?'today':''} ${isSel?'selected':''}" onclick="selectDate('${dateStr}')">
+      <div class="date-num">${isToday?`<span>${d}</span>`:d}</div>
+      ${chips}${more}
+      ${res.length?`<div style="font-size:10px;font-weight:700;color:var(--blue);margin-top:2px">${res.length} res</div>`:''}
+    </div>`;
+  }
+  // next month cells
+  const total=firstDay+daysInMonth;const remaining=(7-total%7)%7;
+  for(let d=1;d<=remaining;d++){cells+=`<div class="cal-cell other-month"><div class="date-num">${d}</div></div>`;}
+  document.getElementById('calGrid').innerHTML=cells;
+}
+
+function selectDate(dateStr){
+  selectedDate=dateStr;
+  renderCal();
+  const res=allReservations.filter(r=>(r.date||r.reservationDate||'').startsWith(dateStr));
+  const label=new Date(dateStr+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('sideTitle').textContent=`${label} (${res.length})`;
+  if(!res.length){document.getElementById('sideList').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No reservations this day</div>';return;}
+  res.sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  document.getElementById('sideList').innerHTML=res.map(r=>`
+    <div class="res-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="name">👤 ${r.guestName||r.name||'Guest'}</div>
+        <span class="badge b-${r.status}">${r.status}</span>
+      </div>
+      <div class="sub">📞 ${r.phone||r.guestPhone||'—'}</div>
+      <div class="sub" style="margin-top:4px;display:flex;gap:12px">
+        <span>🕐 ${r.time||r.reservationTime||'—'}</span>
+        <span>👥 ${r.guests||r.partySize||'—'} guests</span>
+        ${r.tableNo||r.tableNumber?`<span>🪑 Table ${r.tableNo||r.tableNumber}</span>`:''}
+      </div>
+      ${r.notes?`<div class="sub" style="margin-top:4px;font-style:italic">💬 ${r.notes}</div>`:''}
+      <div style="margin-top:8px;display:flex;gap:6px">
+        ${r.status==='PENDING'?`<button class="btn" style="font-size:11px;padding:4px 10px;background:var(--green)" onclick="updateStatus(${r.id},'CONFIRMED')">Confirm</button>`:''}
+        ${r.status==='CONFIRMED'?`<button class="btn" style="font-size:11px;padding:4px 10px;background:var(--blue)" onclick="updateStatus(${r.id},'SEATED')">Seat</button>`:''}
+        ${r.status!=='CANCELLED'&&r.status!=='COMPLETED'?`<button class="btn" style="font-size:11px;padding:4px 10px;background:var(--red)" onclick="updateStatus(${r.id},'CANCELLED')">Cancel</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+async function updateStatus(id,status){
+  const r=await fetch(`/api/reservations/${id}`,{method:'PATCH',headers:authH(),body:JSON.stringify({status})});
+  const d=await r.json();
+  if(d.id||d.status){showToast('Updated!','success');await loadMonth();if(selectedDate)selectDate(selectedDate);}
+  else showToast(d.message||'Error','error');
+}
+
+function openNewModal(){
+  if(selectedDate)document.getElementById('rDate').value=selectedDate;
+  document.getElementById('newModal').classList.remove('hidden');
+}
+function closeModal(){document.getElementById('newModal').classList.add('hidden');}
+
+async function createReservation(){
+  const body={guestName:document.getElementById('rName').value,phone:document.getElementById('rPhone').value,date:document.getElementById('rDate').value,time:document.getElementById('rTime').value,guests:parseInt(document.getElementById('rGuests').value)||2,tableNo:document.getElementById('rTable').value||null,notes:document.getElementById('rNotes').value};
+  if(!body.guestName||!body.date){showToast('Name and date required','error');return;}
+  const r=await fetch('/api/reservations',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Reservation created!','success');closeModal();await loadMonth();if(selectedDate)selectDate(selectedDate);}
+  else showToast(d.message||'Error','error');
+}
+
+function prevMonth(){currentMonth--;if(currentMonth<0){currentMonth=11;currentYear--;}loadMonth();}
+function nextMonth(){currentMonth++;if(currentMonth>11){currentMonth=0;currentYear++;}loadMonth();}
+function goToday(){currentYear=new Date().getFullYear();currentMonth=new Date().getMonth();loadMonth();}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadMonth();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

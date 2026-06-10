@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Event Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--purple:#6a1b9a;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.tabs{display:flex;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.pane{display:none}.pane.active{display:block}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select,textarea{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+textarea{resize:vertical;min-height:60px}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:20px;font-weight:900}.stat .lbl{font-size:10px;color:var(--muted);margin-top:2px}
+.event-card{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;background:var(--white)}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase}
+.s-INQUIRY{background:#e8efff;color:var(--blue)}.s-CONFIRMED{background:#e7f5ed;color:var(--green)}.s-DEPOSIT_PAID{background:#fff9e6;color:#b78800}.s-COMPLETED{background:#e7f5ed;color:var(--green)}.s-CANCELLED{background:#fce8e7;color:var(--red)}
+.type-badge{background:#f3e5f5;color:var(--purple);display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800}
+.grid{display:grid;grid-template-columns:400px 1fr;gap:20px}
+.items-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+.items-table th{padding:6px;text-align:left;border-bottom:2px solid var(--border);font-size:11px;text-transform:uppercase;color:var(--muted)}
+.items-table td{padding:6px;border-bottom:1px solid #f0f0f0}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Event Management</span></span>
+  <div><a class="nav-btn" href="/reservations">📅 Reservations</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('list',this)">📋 Events</div>
+  <div class="tab" onclick="switchTab('create',this)">➕ New Event</div>
+</div>
+<div class="content">
+
+  <!-- Events List -->
+  <div class="pane active" id="pane-list">
+    <div class="stats" id="statsRow">
+      <div class="stat"><div class="num" id="s-total">—</div><div class="lbl">Total Events</div></div>
+      <div class="stat"><div class="num" id="s-upcoming" style="color:var(--blue)">—</div><div class="lbl">Upcoming</div></div>
+      <div class="stat"><div class="num" id="s-confirmed" style="color:var(--green)">—</div><div class="lbl">Confirmed</div></div>
+      <div class="stat"><div class="num" id="s-month">—</div><div class="lbl">This Month</div></div>
+      <div class="stat"><div class="num" id="s-revenue" style="color:var(--green)">—</div><div class="lbl">Revenue (रू)</div></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <select id="filterStatus" style="width:160px" onchange="loadEvents()">
+        <option value="">All Statuses</option>
+        <option value="INQUIRY">Inquiry</option>
+        <option value="CONFIRMED">Confirmed</option>
+        <option value="DEPOSIT_PAID">Deposit Paid</option>
+        <option value="COMPLETED">Completed</option>
+        <option value="CANCELLED">Cancelled</option>
+      </select>
+      <input type="month" id="filterMonth" style="width:160px" onchange="loadEvents()"/>
+    </div>
+    <div id="eventList">Loading...</div>
+  </div>
+
+  <!-- Create Event -->
+  <div class="pane" id="pane-create">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="card-header">🎉 Event Details</div>
+          <div class="card-body">
+            <label>Event Name</label>
+            <input id="eName" placeholder="e.g. Kumar Wedding Reception"/>
+            <label>Event Type</label>
+            <select id="eType">
+              <option value="PRIVATE">🥂 Private Party</option>
+              <option value="WEDDING">💍 Wedding</option>
+              <option value="BANQUET">🍽️ Banquet</option>
+              <option value="CATERING">🚚 Catering</option>
+              <option value="CORPORATE">💼 Corporate</option>
+            </select>
+            <label>Client Name</label>
+            <input id="eClient" placeholder="Full name"/>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div><label>Phone</label><input id="ePhone" placeholder="98XXXXXXXX"/></div>
+              <div><label>Email</label><input id="eEmail" placeholder="email@..."/></div>
+            </div>
+            <label>Event Date</label>
+            <input type="date" id="eDate"/>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div><label>Start Time</label><input type="time" id="eStart"/></div>
+              <div><label>End Time</label><input type="time" id="eEnd"/></div>
+            </div>
+            <label>Venue / Hall</label>
+            <input id="eVenue" placeholder="e.g. Main Hall, Garden Area"/>
+            <label>Expected Guests</label>
+            <input type="number" id="eGuests" placeholder="0" min="0"/>
+            <label>Notes</label>
+            <textarea id="eNotes" placeholder="Special requirements, dietary restrictions..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header" style="background:var(--green)">💰 Package / Menu Items</div>
+          <div class="card-body">
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Add items/services and their prices</p>
+            <div id="itemsContainer">
+              <div class="item-line" style="display:grid;grid-template-columns:1fr 60px 80px 24px;gap:6px;margin-bottom:6px;align-items:center">
+                <input placeholder="Description (e.g. Buffet per head)"/>
+                <input type="number" placeholder="Qty" value="1" min="1"/>
+                <input type="number" placeholder="Unit Price" min="0"/>
+                <button onclick="removeItem(this)" style="background:var(--red);color:#fff;border:none;border-radius:4px;width:24px;height:24px;cursor:pointer;font-size:14px">×</button>
+              </div>
+            </div>
+            <button class="btn" style="width:100%;margin-top:8px;background:#e8efff;color:var(--blue)" onclick="addItemLine()">+ Add Item</button>
+            <div style="background:var(--navy);color:#fff;border-radius:8px;padding:12px;margin-top:14px;display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:14px;font-weight:700">Total</span>
+              <span style="font-size:20px;font-weight:900" id="eTotal">रू 0</span>
+            </div>
+            <button class="btn btn-green" style="width:100%;margin-top:14px" onclick="createEvent()">✅ Create Event Booking</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+async function loadStats(){
+  const r=await fetch('/api/events/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-total').textContent=d.total;
+  document.getElementById('s-upcoming').textContent=d.upcoming;
+  document.getElementById('s-confirmed').textContent=d.confirmed;
+  document.getElementById('s-month').textContent=d.thisMonthCount;
+  document.getElementById('s-revenue').textContent='रू '+(d.totalRevenue||0).toLocaleString();
+}
+
+async function loadEvents(){
+  const status=document.getElementById('filterStatus').value;
+  const month=document.getElementById('filterMonth').value;
+  let url='/api/events?a=1';
+  if(status)url+=`&status=${status}`;if(month)url+=`&month=${month}`;
+  const r=await fetch(url,{headers:authH(),cache:'no-store'});
+  const events=await r.json();
+  const typeEmoji={PRIVATE:'🥂',WEDDING:'💍',BANQUET:'🍽️',CATERING:'🚚',CORPORATE:'💼'};
+  if(!events.length){document.getElementById('eventList').innerHTML='<div style="text-align:center;padding:60px;color:var(--muted);background:var(--white);border-radius:12px"><div style="font-size:48px">🎉</div><div style="margin-top:10px">No events found</div></div>';return;}
+  document.getElementById('eventList').innerHTML=events.map(e=>`
+    <div class="event-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:16px;font-weight:900">${e.name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">👤 ${e.clientName} · ${e.clientPhone}</div>
+          <div style="margin-top:6px"><span class="type-badge">${typeEmoji[e.type]||''} ${e.type}</span></div>
+        </div>
+        <div style="text-align:right">
+          <span class="badge s-${e.status}">${e.status.replace('_',' ')}</span>
+          <div style="font-size:13px;font-weight:700;color:var(--navy);margin-top:6px">📅 ${new Date(e.eventDate).toLocaleDateString()}</div>
+          ${e.startTime?`<div style="font-size:11px;color:var(--muted)">${e.startTime} — ${e.endTime}</div>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;font-size:12px;color:var(--muted)">
+        ${e.venue?`<span>📍 ${e.venue}</span>`:''}
+        ${e.guestCount?`<span>👥 ${e.guestCount} guests</span>`:''}
+        <span>💰 Total: <strong style="color:var(--green)">रू ${(e.totalAmount||0).toLocaleString()}</strong></span>
+        <span>💵 Deposit: <strong style="color:var(--blue)">रू ${(e.depositPaid||0).toLocaleString()}</strong></span>
+      </div>
+      ${e.items&&e.items.length?`<details style="margin-top:10px"><summary style="font-size:12px;font-weight:700;cursor:pointer;color:var(--blue)">View ${e.items.length} items</summary>
+        <table class="items-table"><thead><tr><th>Description</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead><tbody>
+        ${e.items.map(i=>`<tr><td>${i.description}</td><td>${i.quantity}</td><td>रू ${(i.unitPrice||0).toLocaleString()}</td><td>रू ${(i.total||0).toLocaleString()}</td></tr>`).join('')}
+        </tbody></table></details>`:''}
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+        <select onchange="updateStatus(${e.id},this.value)" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:11px">
+          ${['INQUIRY','CONFIRMED','DEPOSIT_PAID','COMPLETED','CANCELLED'].map(s=>`<option value="${s}"${s===e.status?' selected':''}>${s.replace('_',' ')}</option>`).join('')}
+        </select>
+        <button class="btn" style="font-size:11px;padding:5px 10px;background:var(--green)" onclick="recordDeposit(${e.id})">💵 Record Deposit</button>
+        <button class="btn" style="font-size:11px;padding:5px 10px;background:var(--red)" onclick="deleteEvent(${e.id})">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+async function updateStatus(id,status){
+  const r=await fetch(`/api/events/${id}`,{method:'PATCH',headers:authH(),body:JSON.stringify({status})});
+  const d=await r.json();
+  if(d.id){showToast('Status updated','success');loadStats();}
+  else showToast(d.message||'Error','error');
+}
+
+async function recordDeposit(id){
+  const amt=prompt('Enter deposit amount (रू):');
+  if(!amt)return;
+  const r=await fetch(`/api/events/${id}`,{method:'PATCH',headers:authH(),body:JSON.stringify({depositPaid:amt,status:'DEPOSIT_PAID'})});
+  const d=await r.json();
+  if(d.id){showToast('Deposit recorded!','success');loadEvents();}
+  else showToast(d.message||'Error','error');
+}
+
+async function deleteEvent(id){
+  if(!confirm('Delete this event?'))return;
+  await fetch(`/api/events/${id}`,{method:'DELETE',headers:authH()});
+  showToast('Deleted','success');loadEvents();loadStats();
+}
+
+function addItemLine(){
+  const c=document.getElementById('itemsContainer');
+  const d=document.createElement('div');
+  d.className='item-line';
+  d.style.cssText='display:grid;grid-template-columns:1fr 60px 80px 24px;gap:6px;margin-bottom:6px;align-items:center';
+  d.innerHTML=`<input placeholder="Description"/><input type="number" placeholder="Qty" value="1" min="1"/><input type="number" placeholder="Unit Price" min="0"/><button onclick="removeItem(this)" style="background:var(--red);color:#fff;border:none;border-radius:4px;width:24px;height:24px;cursor:pointer;font-size:14px">×</button>`;
+  c.appendChild(d);
+  c.querySelectorAll('input[type=number]').forEach(inp=>inp.addEventListener('input',calcTotal));
+}
+
+function removeItem(btn){btn.closest('.item-line').remove();calcTotal();}
+
+function calcTotal(){
+  let total=0;
+  document.querySelectorAll('.item-line').forEach(row=>{
+    const inputs=row.querySelectorAll('input');
+    const qty=parseFloat(inputs[1]?.value||0);
+    const price=parseFloat(inputs[2]?.value||0);
+    total+=qty*price;
+  });
+  document.getElementById('eTotal').textContent='रू '+total.toLocaleString();
+}
+
+document.getElementById('itemsContainer').addEventListener('input',calcTotal);
+
+async function createEvent(){
+  const items=[...document.querySelectorAll('.item-line')].map(row=>{
+    const inputs=row.querySelectorAll('input');
+    return{description:inputs[0]?.value,quantity:inputs[1]?.value||1,unitPrice:inputs[2]?.value||0};
+  }).filter(i=>i.description);
+  const body={name:document.getElementById('eName').value,type:document.getElementById('eType').value,clientName:document.getElementById('eClient').value,clientPhone:document.getElementById('ePhone').value,clientEmail:document.getElementById('eEmail').value,eventDate:document.getElementById('eDate').value,startTime:document.getElementById('eStart').value,endTime:document.getElementById('eEnd').value,venue:document.getElementById('eVenue').value,guestCount:document.getElementById('eGuests').value,notes:document.getElementById('eNotes').value,items};
+  if(!body.name||!body.clientName||!body.eventDate){showToast('Name, client, and date required','error');return;}
+  const r=await fetch('/api/events',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Event created!','success');switchTab('list',document.querySelector('.tab'));loadEvents();loadStats();}
+  else showToast(d.message||'Error','error');
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadStats();loadEvents();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

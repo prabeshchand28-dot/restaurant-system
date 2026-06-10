@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Coupons & Gift Cards</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e05a1a;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;font-family:var(--font);text-decoration:none;display:inline-block}
+.tabs{display:flex;gap:0;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted);transition:all .2s}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.grid2{display:grid;grid-template-columns:1fr 360px;gap:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f0f2f5;padding:8px 12px;text-align:left;font-weight:700;color:var(--navy);border-bottom:2px solid var(--border)}
+td{padding:9px 12px;border-bottom:1px solid #f0f0f0}
+tr:hover td{background:#fafbfc}
+.badge-active{background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-inactive{background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+input,select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;margin-bottom:10px}
+input:focus,select:focus{border-color:var(--blue)}
+label{font-size:12px;font-weight:600;color:var(--navy);display:block;margin-bottom:3px}
+.btn{padding:9px 18px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-primary{background:var(--blue);color:#fff}.btn-success{background:var(--green);color:#fff}.btn-danger{background:var(--red);color:#fff}
+.btn-sm{padding:4px 10px;font-size:11px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+.pane{display:none}.pane.active{display:block}
+.gc-card{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;border-radius:12px;padding:20px;margin-bottom:10px}
+.gc-code{font-size:20px;font-weight:900;letter-spacing:2px;margin-bottom:4px}
+.gc-bal{font-size:28px;font-weight:900}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Coupons & Gift Cards</span></span>
+  <a class="nav-btn" href="/dashboard">📊 Dashboard</a>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('coupons',this)">🏷️ Coupons</div>
+  <div class="tab" onclick="switchTab('giftcards',this)">🎁 Gift Cards</div>
+  <div class="tab" onclick="switchTab('validate',this)">✅ Validate</div>
+</div>
+
+<div class="content">
+
+  <!-- COUPONS -->
+  <div class="pane active" id="pane-coupons">
+    <div class="grid2">
+      <div class="card">
+        <div class="card-header">🏷️ All Coupons</div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Code</th><th>Type</th><th>Value</th><th>Used</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="couponsTable"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">➕ Create Coupon</div>
+        <div class="card-body">
+          <label>Code *</label><input id="c-code" placeholder="SAVE10" style="text-transform:uppercase"/>
+          <label>Type *</label>
+          <select id="c-type"><option value="percent">Percent (%)</option><option value="fixed">Fixed Amount (रू)</option></select>
+          <label>Value *</label><input id="c-value" type="number" placeholder="10"/>
+          <label>Min Order (रू)</label><input id="c-min" type="number" placeholder="0"/>
+          <label>Max Uses (0 = unlimited)</label><input id="c-max" type="number" placeholder="0"/>
+          <label>Expires At</label><input id="c-exp" type="date"/>
+          <label>Description</label><input id="c-desc" placeholder="Optional description"/>
+          <button class="btn btn-primary" style="width:100%" onclick="createCoupon()">Create Coupon</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GIFT CARDS -->
+  <div class="pane" id="pane-giftcards">
+    <div class="grid2">
+      <div class="card">
+        <div class="card-header">🎁 All Gift Cards</div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Code</th><th>Balance</th><th>Initial</th><th>Recipient</th><th>Status</th></tr></thead>
+            <tbody id="gcTable"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">➕ Issue Gift Card</div>
+        <div class="card-body">
+          <label>Amount (रू) *</label><input id="gc-amt" type="number" placeholder="500"/>
+          <label>Purchased By</label><input id="gc-by" placeholder="Customer name"/>
+          <label>Recipient Name</label><input id="gc-rec" placeholder="Gift recipient"/>
+          <label>Expires At</label><input id="gc-exp" type="date"/>
+          <button class="btn btn-success" style="width:100%;margin-top:4px" onclick="createGiftCard()">Issue Gift Card</button>
+          <div id="newGCResult" style="margin-top:14px;display:none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VALIDATE -->
+  <div class="pane" id="pane-validate">
+    <div style="max-width:500px;margin:0 auto">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">✅ Validate Coupon</div>
+        <div class="card-body">
+          <label>Coupon Code</label>
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <input id="val-code" placeholder="SAVE10" style="margin:0;text-transform:uppercase"/>
+            <button class="btn btn-primary btn-sm" onclick="validateCoupon()">Check</button>
+          </div>
+          <label>Order Amount (रू)</label><input id="val-amt" type="number" placeholder="1000"/>
+          <div id="valResult" style="margin-top:10px"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">🎁 Validate Gift Card</div>
+        <div class="card-body">
+          <label>Gift Card Code</label>
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <input id="gc-val-code" placeholder="GC-XXXXXXXX" style="margin:0;text-transform:uppercase"/>
+            <button class="btn btn-success btn-sm" onclick="validateGC()">Check</button>
+          </div>
+          <div id="gcValResult" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const token = localStorage.getItem('token');
+const authH = (extra={}) => ({ Authorization:'Bearer '+token, 'Content-Type':'application/json', ...extra });
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+  if (name==='coupons') loadCoupons();
+  if (name==='giftcards') loadGiftCards();
+}
+
+async function loadCoupons() {
+  const r = await fetch('/api/coupons', { headers: authH(), cache:'no-store' });
+  const list = await r.json();
+  const tbody = document.getElementById('couponsTable');
+  if (!list.length) { tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">No coupons yet</td></tr>'; return; }
+  tbody.innerHTML = list.map(c=>`
+    <tr>
+      <td><strong>${c.code}</strong></td>
+      <td>${c.type==='percent'?'%':'Fixed'}</td>
+      <td>${c.type==='percent'?c.value+'%':'रू '+c.value}</td>
+      <td>${c.usedCount}${c.maxUses>0?'/'+c.maxUses:''}</td>
+      <td><span class="${c.active?'badge-active':'badge-inactive'}">${c.active?'Active':'Inactive'}</span></td>
+      <td style="display:flex;gap:4px">
+        <button class="btn btn-sm ${c.active?'btn-danger':'btn-success'}" onclick="toggleCoupon(${c.id})">${c.active?'Disable':'Enable'}</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteCoupon(${c.id})">Del</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function createCoupon() {
+  const code=document.getElementById('c-code').value.trim();
+  const type=document.getElementById('c-type').value;
+  const value=document.getElementById('c-value').value;
+  const minOrder=document.getElementById('c-min').value;
+  const maxUses=document.getElementById('c-max').value;
+  const expiresAt=document.getElementById('c-exp').value;
+  const description=document.getElementById('c-desc').value;
+  if (!code||!value) { showToast('Code and value required','error'); return; }
+  const r=await fetch('/api/coupons',{method:'POST',headers:authH(),body:JSON.stringify({code,type,value,minOrder,maxUses,expiresAt,description})});
+  const d=await r.json();
+  if (d.success) { showToast('Coupon created!','success'); loadCoupons(); ['c-code','c-value','c-min','c-max','c-exp','c-desc'].forEach(id=>document.getElementById(id).value=''); }
+  else showToast(d.message,'error');
+}
+
+async function toggleCoupon(id) {
+  const r=await fetch(`/api/coupons/${id}/toggle`,{method:'PATCH',headers:authH()});
+  const d=await r.json();
+  if (d.success) loadCoupons();
+  else showToast(d.message,'error');
+}
+
+async function deleteCoupon(id) {
+  if (!confirm('Delete this coupon?')) return;
+  await fetch(`/api/coupons/${id}`,{method:'DELETE',headers:authH()});
+  loadCoupons();
+}
+
+async function loadGiftCards() {
+  const r=await fetch('/api/coupons/gift-cards',{headers:authH(),cache:'no-store'});
+  const list=await r.json();
+  const tbody=document.getElementById('gcTable');
+  if (!list.length) { tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">No gift cards yet</td></tr>'; return; }
+  tbody.innerHTML=list.map(c=>`
+    <tr>
+      <td><strong>${c.code}</strong></td>
+      <td><strong style="color:var(--green)">रू ${c.balance.toLocaleString()}</strong></td>
+      <td style="color:var(--muted)">रू ${c.initialAmt.toLocaleString()}</td>
+      <td>${c.recipientName||'—'}</td>
+      <td><span class="${c.active?'badge-active':'badge-inactive'}">${c.active?'Active':'Used/Expired'}</span></td>
+    </tr>`).join('');
+}
+
+async function createGiftCard() {
+  const amount=document.getElementById('gc-amt').value;
+  const purchasedBy=document.getElementById('gc-by').value;
+  const recipientName=document.getElementById('gc-rec').value;
+  const expiresAt=document.getElementById('gc-exp').value;
+  if (!amount) { showToast('Amount required','error'); return; }
+  const r=await fetch('/api/coupons/gift-cards',{method:'POST',headers:authH(),body:JSON.stringify({amount,purchasedBy,recipientName,expiresAt})});
+  const d=await r.json();
+  if (d.success) {
+    showToast('Gift card issued!','success');
+    document.getElementById('newGCResult').style.display='block';
+    document.getElementById('newGCResult').innerHTML=`<div class="gc-card"><div class="gc-code">${d.card.code}</div><div class="gc-bal">रू ${d.card.balance.toLocaleString()}</div><div style="font-size:12px;opacity:.7;margin-top:4px">For: ${d.card.recipientName||'—'}</div></div>`;
+    loadGiftCards();
+  } else showToast(d.message,'error');
+}
+
+async function validateCoupon() {
+  const code=document.getElementById('val-code').value.trim();
+  const amt=document.getElementById('val-amt').value;
+  const r=await fetch('/api/coupons/validate',{method:'POST',headers:authH(),body:JSON.stringify({code,orderAmount:amt})});
+  const d=await r.json();
+  const el=document.getElementById('valResult');
+  if (d.success) {
+    el.innerHTML=`<div style="background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:12px">
+      <div style="font-weight:700;color:var(--green)">✅ Valid Coupon!</div>
+      <div style="font-size:13px;margin-top:4px">Discount: <strong>रू ${d.discount.toLocaleString()}</strong></div>
+      <div style="font-size:12px;color:var(--muted)">${d.coupon.description||''}</div>
+    </div>`;
+  } else {
+    el.innerHTML=`<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:12px;color:var(--red);font-weight:600">❌ ${d.message}</div>`;
+  }
+}
+
+async function validateGC() {
+  const code=document.getElementById('gc-val-code').value.trim();
+  const r=await fetch('/api/coupons/gift-cards/validate',{method:'POST',headers:authH(),body:JSON.stringify({code})});
+  const d=await r.json();
+  const el=document.getElementById('gcValResult');
+  if (d.success) {
+    el.innerHTML=`<div style="background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:12px">
+      <div style="font-weight:700;color:var(--green)">✅ Valid Gift Card!</div>
+      <div style="font-size:13px;margin-top:4px">Balance: <strong>रू ${d.card.balance.toLocaleString()}</strong></div>
+    </div>`;
+  } else {
+    el.innerHTML=`<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:12px;color:var(--red);font-weight:600">❌ ${d.message}</div>`;
+  }
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadCoupons();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

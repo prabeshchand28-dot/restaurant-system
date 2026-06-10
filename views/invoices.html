@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Vendor Invoices</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--blue:#2653a0;--green:#1a7a3a;--red:#c0392b;--orange:#e65100;--bg:#f0f2f5;--white:#fff;--border:#d0d5e0;--muted:#666;--font:'Plus Jakarta Sans',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:#1a1a1a}
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:17px;font-weight:800}.brand span{font-size:12px;font-weight:400;opacity:.7;margin-left:8px}
+.nav-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-left:6px}
+.tabs{display:flex;background:var(--white);border-bottom:2px solid var(--border)}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;color:var(--muted)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.pane{display:none}.pane.active{display:block}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{background:var(--blue);color:#fff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);outline:none;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--blue);color:#fff}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .num{font-size:20px;font-weight:900}.stat .lbl{font-size:10px;color:var(--muted);margin-top:2px}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800;text-transform:uppercase}
+.s-UNPAID{background:#fff3e0;color:var(--orange)}.s-PARTIAL{background:#e8efff;color:var(--blue)}.s-PAID{background:#e7f5ed;color:var(--green)}.s-OVERDUE{background:#fce8e7;color:var(--red)}
+.inv-row{border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;background:var(--white)}
+.items-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.items-table th{padding:5px;text-align:left;border-bottom:2px solid var(--border);font-size:11px;text-transform:uppercase;color:var(--muted)}
+.items-table td{padding:5px;border-bottom:1px solid #f0f0f0}
+.grid{display:grid;grid-template-columns:380px 1fr;gap:20px}
+.toast{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:3000;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}.toast.success{background:var(--green)}.toast.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand">🍽️ Restaurant System <span>Vendor Invoices</span></span>
+  <div><a class="nav-btn" href="/suppliers">🏭 Suppliers</a><a class="nav-btn" href="/dashboard">📊 Dashboard</a></div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('list',this)">📋 Invoices</div>
+  <div class="tab" onclick="switchTab('create',this)">➕ New Invoice</div>
+</div>
+<div class="content">
+
+  <!-- List -->
+  <div class="pane active" id="pane-list">
+    <div class="stats">
+      <div class="stat"><div class="num" id="s-total">—</div><div class="lbl">Total Invoices</div></div>
+      <div class="stat"><div class="num" id="s-unpaid" style="color:var(--orange)">—</div><div class="lbl">Unpaid</div></div>
+      <div class="stat"><div class="num" id="s-partial" style="color:var(--blue)">—</div><div class="lbl">Partial</div></div>
+      <div class="stat"><div class="num" id="s-overdue" style="color:var(--red)">—</div><div class="lbl">Overdue</div></div>
+      <div class="stat"><div class="num" id="s-owed" style="color:var(--red)">—</div><div class="lbl">Total Owed (रू)</div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <select id="filterStatus" style="width:150px" onchange="loadInvoices()">
+        <option value="">All</option>
+        <option value="UNPAID">Unpaid</option>
+        <option value="PARTIAL">Partial</option>
+        <option value="PAID">Paid</option>
+        <option value="OVERDUE">Overdue</option>
+      </select>
+    </div>
+    <div id="invoiceList">Loading...</div>
+  </div>
+
+  <!-- Create -->
+  <div class="pane" id="pane-create">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="card-header">🧾 Invoice Details</div>
+          <div class="card-body">
+            <label>Supplier Name</label>
+            <input id="iSupplier" placeholder="Supplier company name"/>
+            <label>Invoice Number</label>
+            <input id="iInvNo" placeholder="INV-2024-001"/>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div><label>Invoice Date</label><input type="date" id="iDate"/></div>
+              <div><label>Due Date</label><input type="date" id="iDue"/></div>
+            </div>
+            <label>Tax Rate (%)</label>
+            <input type="number" id="iTax" value="13" min="0" max="100"/>
+            <label>Notes</label>
+            <input id="iNotes" placeholder="Reference, payment terms..."/>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header" style="background:var(--green)">📦 Line Items</div>
+          <div class="card-body">
+            <div id="lineItems">
+              <div class="line-item" style="display:grid;grid-template-columns:1fr 60px 80px 24px;gap:6px;margin-bottom:6px;align-items:center">
+                <input placeholder="Item description"/>
+                <input type="number" placeholder="Qty" value="1" min="0" step="0.01"/>
+                <input type="number" placeholder="Unit Price" min="0" step="0.01"/>
+                <button onclick="removeLine(this)" style="background:var(--red);color:#fff;border:none;border-radius:4px;width:24px;height:24px;cursor:pointer;font-size:14px">×</button>
+              </div>
+            </div>
+            <button class="btn" style="width:100%;background:#e8efff;color:var(--blue)" onclick="addLine()">+ Add Line</button>
+            <div style="margin-top:14px;background:#f8f9fb;border-radius:8px;padding:12px;font-size:13px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Subtotal</span><span id="iSubtotal">रू 0</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:var(--muted)"><span>Tax (<span id="taxPct">13</span>%)</span><span id="iTaxAmt">रू 0</span></div>
+              <div style="display:flex;justify-content:space-between;font-weight:900;font-size:15px;border-top:1px solid var(--border);padding-top:6px;margin-top:6px"><span>Total</span><span id="iTotal" style="color:var(--navy)">रू 0</span></div>
+            </div>
+            <button class="btn btn-green" style="width:100%;margin-top:14px" onclick="createInvoice()">💾 Create Invoice</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const token=localStorage.getItem('token');
+const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
+
+document.getElementById('iDate').value=new Date().toISOString().slice(0,10);
+
+async function loadStats(){
+  const r=await fetch('/api/invoices/stats',{headers:authH(),cache:'no-store'});
+  const d=await r.json();
+  document.getElementById('s-total').textContent=d.total;
+  document.getElementById('s-unpaid').textContent=d.unpaid;
+  document.getElementById('s-partial').textContent=d.partial;
+  document.getElementById('s-overdue').textContent=d.overdueCount;
+  document.getElementById('s-owed').textContent='रू '+(d.totalOwed||0).toLocaleString();
+}
+
+async function loadInvoices(){
+  const status=document.getElementById('filterStatus').value;
+  const r=await fetch('/api/invoices'+(status?`?status=${status}`:''),{headers:authH(),cache:'no-store'});
+  const invoices=await r.json();
+  if(!invoices.length){document.getElementById('invoiceList').innerHTML='<div style="text-align:center;padding:60px;color:var(--muted);background:var(--white);border-radius:12px">No invoices found</div>';return;}
+  document.getElementById('invoiceList').innerHTML=invoices.map(inv=>`
+    <div class="inv-row">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-weight:900;font-size:14px">${inv.supplierName}</div>
+          <div style="font-size:12px;color:var(--muted)">#${inv.invoiceNo} · Issued: ${new Date(inv.invoiceDate).toLocaleDateString()}</div>
+          ${inv.dueDate?`<div style="font-size:11px;${new Date(inv.dueDate)<new Date()&&inv.status!=='PAID'?'color:var(--red);font-weight:700':'color:var(--muted)'}">Due: ${new Date(inv.dueDate).toLocaleDateString()}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <span class="badge s-${inv.status}">${inv.status}</span>
+          <div style="font-size:15px;font-weight:900;margin-top:4px">रू ${(inv.total||0).toLocaleString()}</div>
+          ${inv.amountPaid?`<div style="font-size:11px;color:var(--green)">Paid: रू ${(inv.amountPaid||0).toLocaleString()}</div>`:''}
+        </div>
+      </div>
+      ${inv.items&&inv.items.length?`
+        <details style="margin-top:8px"><summary style="font-size:12px;font-weight:700;color:var(--blue);cursor:pointer">View ${inv.items.length} items</summary>
+          <table class="items-table"><thead><tr><th>Description</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
+          <tbody>${inv.items.map(i=>`<tr><td>${i.description}</td><td>${i.quantity}</td><td>रू ${(i.unitPrice||0).toLocaleString()}</td><td>रू ${(i.total||0).toLocaleString()}</td></tr>`).join('')}</tbody></table>
+        </details>`:''}
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+        ${inv.status!=='PAID'?`<button class="btn btn-green" style="font-size:11px;padding:5px 10px" onclick="recordPayment(${inv.id})">💵 Record Payment</button>`:''}
+        <select onchange="updateStatus(${inv.id},this.value)" style="padding:5px;border:1px solid var(--border);border-radius:6px;font-size:11px">
+          ${['UNPAID','PARTIAL','PAID','OVERDUE'].map(s=>`<option value="${s}"${s===inv.status?' selected':''}>${s}</option>`).join('')}
+        </select>
+        <button class="btn btn-red" style="font-size:11px;padding:5px 10px" onclick="deleteInvoice(${inv.id})">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+async function recordPayment(id){
+  const amt=prompt('Enter payment amount (रू):');
+  if(!amt)return;
+  const r=await fetch(`/api/invoices/${id}`,{method:'PATCH',headers:authH(),body:JSON.stringify({amountPaid:amt})});
+  const d=await r.json();
+  if(d.id){showToast('Payment recorded!','success');loadInvoices();loadStats();}
+  else showToast(d.message||'Error','error');
+}
+
+async function updateStatus(id,status){
+  await fetch(`/api/invoices/${id}`,{method:'PATCH',headers:authH(),body:JSON.stringify({status})});
+  loadInvoices();loadStats();
+}
+
+async function deleteInvoice(id){
+  if(!confirm('Delete invoice?'))return;
+  await fetch(`/api/invoices/${id}`,{method:'DELETE',headers:authH()});
+  showToast('Deleted','success');loadInvoices();loadStats();
+}
+
+function addLine(){
+  const c=document.getElementById('lineItems');
+  const d=document.createElement('div');
+  d.className='line-item';d.style.cssText='display:grid;grid-template-columns:1fr 60px 80px 24px;gap:6px;margin-bottom:6px;align-items:center';
+  d.innerHTML=`<input placeholder="Item description"/><input type="number" placeholder="Qty" value="1" min="0" step="0.01"/><input type="number" placeholder="Unit Price" min="0" step="0.01"/><button onclick="removeLine(this)" style="background:var(--red);color:#fff;border:none;border-radius:4px;width:24px;height:24px;cursor:pointer;font-size:14px">×</button>`;
+  c.appendChild(d);
+  c.querySelectorAll('input[type=number]').forEach(i=>i.addEventListener('input',calcTotals));
+}
+function removeLine(btn){btn.closest('.line-item').remove();calcTotals();}
+
+function calcTotals(){
+  let sub=0;
+  document.querySelectorAll('.line-item').forEach(row=>{
+    const inputs=row.querySelectorAll('input');
+    sub+=(parseFloat(inputs[1]?.value||0))*(parseFloat(inputs[2]?.value||0));
+  });
+  const taxRate=parseFloat(document.getElementById('iTax').value||0);
+  const tax=sub*taxRate/100;
+  document.getElementById('iSubtotal').textContent='रू '+sub.toLocaleString();
+  document.getElementById('taxPct').textContent=taxRate;
+  document.getElementById('iTaxAmt').textContent='रू '+tax.toFixed(2);
+  document.getElementById('iTotal').textContent='रू '+(sub+tax).toFixed(2);
+}
+
+document.getElementById('lineItems').addEventListener('input',calcTotals);
+document.getElementById('iTax').addEventListener('input',calcTotals);
+
+async function createInvoice(){
+  const items=[...document.querySelectorAll('.line-item')].map(row=>{
+    const inputs=row.querySelectorAll('input');
+    return{description:inputs[0]?.value,quantity:inputs[1]?.value||1,unitPrice:inputs[2]?.value||0};
+  }).filter(i=>i.description);
+  const body={supplierName:document.getElementById('iSupplier').value,invoiceNo:document.getElementById('iInvNo').value,invoiceDate:document.getElementById('iDate').value,dueDate:document.getElementById('iDue').value,taxRate:document.getElementById('iTax').value,notes:document.getElementById('iNotes').value,items};
+  if(!body.supplierName||!body.invoiceNo){showToast('Supplier name and invoice number required','error');return;}
+  const r=await fetch('/api/invoices',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.id){showToast('Invoice created!','success');switchTab('list',document.querySelector('.tab'));loadInvoices();loadStats();}
+  else showToast(d.message||'Error','error');
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+name).classList.add('active');
+}
+
+let toastT;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3500)}
+
+loadStats();loadInvoices();
+</script>
+<script src="/js/autoupdate.js"></script>
+</body></html>

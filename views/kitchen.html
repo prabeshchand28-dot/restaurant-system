@@ -203,6 +203,13 @@ main { padding:20px 24px; }
     </div>
     <button class="sound-btn" id="soundBtn" onclick="toggleSound()" title="Toggle sound">🔔</button>
     <div class="live-dot"></div>
+    <button id="paymentBtn" onclick="goToPayment()"
+      style="background:#2653a0;color:#fff;border:none;padding:7px 16px;border-radius:8px;
+      font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;
+      font-family:'DM Sans',sans-serif;transition:background .15s">
+      💳 Payment
+    </button>
+    <a href="/order-manage" style="color:var(--accent);font-size:13px;text-decoration:none;font-weight:600">📋 Orders</a>
     <a href="/dashboard" style="color:var(--muted);font-size:13px;text-decoration:none">← Dashboard</a>
   </div>
 </header>
@@ -229,11 +236,75 @@ main { padding:20px 24px; }
 <!-- Print Ticket Template -->
 <div class="print-ticket" id="printTicket"></div>
 
+<script src="/js/offline.js"></script>
 <script>
 let orders      = [];
 let soundOn     = true;
 let currentFilter = 'all';
 let timerInterval = null;
+
+function getToken() { return localStorage.getItem('token') || ''; }
+function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }; }
+
+// ── Payment access (admin login required) ──
+let _paymentRedirect = '/payment';
+
+function goToPayment(orderId) {
+  _paymentRedirect = orderId ? `/payment?orderId=${orderId}` : '/payment';
+  const u = JSON.parse(localStorage.getItem('user') || '{}');
+  if (u.role === 'admin') {
+    window.location.href = _paymentRedirect;
+  } else {
+    openAdminLoginModal();
+  }
+}
+
+function openAdminLoginModal() {
+  document.getElementById('adminLoginModal').style.display = 'flex';
+  document.getElementById('adminLoginUser').value = '';
+  document.getElementById('adminLoginPass').value = '';
+  document.getElementById('adminLoginErr').textContent = '';
+  setTimeout(() => document.getElementById('adminLoginUser').focus(), 100);
+}
+
+function closeAdminLoginModal() {
+  document.getElementById('adminLoginModal').style.display = 'none';
+}
+
+async function submitAdminLogin() {
+  const username = document.getElementById('adminLoginUser').value.trim();
+  const password = document.getElementById('adminLoginPass').value;
+  const errEl    = document.getElementById('adminLoginErr');
+  const btn      = document.getElementById('adminLoginBtn');
+
+  if (!username || !password) { errEl.textContent = 'Username ra password haln'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+  errEl.textContent = '';
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (data.token && data.user?.role === 'admin') {
+      closeAdminLoginModal();
+      window.location.href = _paymentRedirect;
+    } else if (data.token && data.user?.role !== 'admin') {
+      errEl.textContent = '⚠ Yo account admin hoina';
+    } else {
+      errEl.textContent = '⚠ Username/password milena';
+    }
+  } catch(e) {
+    errEl.textContent = '⚠ Network error';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Login & Open Payment';
+}
+
 
 // ── Audio Context for bell sound ──
 function playBell() {
@@ -267,11 +338,17 @@ function toggleSound() {
 }
 
 // ── Toast ──
-function showToast(msg) {
+function showToast(msg, type) {
   const t = document.getElementById('toast');
   t.textContent = msg;
+  // Tint based on type
+  if (type === 'error')   t.style.background = '#e05252';
+  else if (type === 'warning') t.style.background = '#f59e0b';
+  else if (type === 'success') t.style.background = '#4caf7d';
+  else                    t.style.background = '';  // default accent
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3500);
 }
 
 // ── Timer helpers ──
@@ -429,28 +506,64 @@ function startTimers() {
 // ── API ──
 async function loadOrders() {
   try {
-    const res = await fetch('/api/orders');
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const res = await fetch('/api/orders', {
+      headers: authHeaders(),
+      cache: 'no-store',
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const all = await res.json();
+    if (!Array.isArray(all)) throw new Error('Bad response');
+    // Cache for offline use
+    localStorage.setItem('cached_kitchen_orders', JSON.stringify(all));
     const prev = orders.filter(o => o.status === 'Pending' || o.status === 'Preparing').length;
     orders = all;
     const curr = orders.filter(o => o.status === 'Pending' || o.status === 'Preparing').length;
-    if (curr > prev && prev >= 0 && document.visibilityState !== undefined) {
-      // New order detected via poll
-    }
+    if (curr > prev && prev > 0) playBell();
     render();
-  } catch(e) { console.error(e); }
+  } catch(e) {
+    if (!navigator.onLine || e.name === 'AbortError') {
+      // Load from cache
+      const cached = localStorage.getItem('cached_kitchen_orders');
+      if (cached) {
+        try {
+          orders = JSON.parse(cached);
+          render();
+          showToast('📴 Offline — Cached orders dekhauxe', 'warning');
+        } catch {}
+      }
+    } else {
+      console.error('loadOrders error:', e);
+    }
+  }
 }
 
 async function updateStatus(id, status) {
-  await fetch(`/api/orders/${id}/status`, {
-    method:'PATCH', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ status })
-  });
+  try {
+    await fetch(`/api/orders/${id}/status`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({ status }),
+      cache: 'no-store',
+    });
+    // Update local cache immediately for responsive UI
+    const cached = localStorage.getItem('cached_kitchen_orders');
+    if (cached) {
+      try {
+        const arr = JSON.parse(cached);
+        const idx = arr.findIndex(o => o.id === id);
+        if (idx !== -1) { arr[idx].status = status; localStorage.setItem('cached_kitchen_orders', JSON.stringify(arr)); }
+      } catch {}
+    }
+  } catch(e) {
+    if (!navigator.onLine) {
+      showToast('📴 Offline — Status sync garna internet chahincha', 'error');
+    }
+  }
   await loadOrders();
-}
-
-function goToPayment(orderId) {
-  window.location.href = `/payment?orderId=${orderId}`;
 }
 
 // ── Print Ticket ──
@@ -526,7 +639,12 @@ function connectSSE() {
 
   es.onerror = () => {
     es.close();
-    setTimeout(connectSSE, 5000); // reconnect after 5s
+    // Don't reconnect when offline; wait for online event
+    if (navigator.onLine) {
+      setTimeout(connectSSE, 5000);
+    } else {
+      window.addEventListener('online', () => setTimeout(connectSSE, 1000), { once: true });
+    }
   };
 }
 
@@ -563,5 +681,54 @@ connectSSE();
 // Fallback poll every 30s
 setInterval(loadOrders, 30000);
 </script>
+<script src="/js/autoupdate.js"></script>
+
+<!-- Admin Login Modal -->
+<div id="adminLoginModal" style="
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);
+  z-index:999;align-items:center;justify-content:center;
+" onclick="if(event.target===this)closeAdminLoginModal()">
+  <div style="
+    background:#1a1a1a;border:1px solid #2a2a2a;border-radius:16px;
+    padding:32px 28px;width:360px;max-width:94vw;
+    box-shadow:0 20px 60px rgba(0,0,0,.6);
+    font-family:'Plus Jakarta Sans',sans-serif;
+  ">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:36px;margin-bottom:8px">🔒</div>
+      <div style="font-size:17px;font-weight:800;color:#e5e5e5">Admin Login Required</div>
+      <div style="font-size:12px;color:#666;margin-top:4px">Payment access ko lagi admin credentials haln</div>
+    </div>
+    <div style="margin-bottom:12px">
+      <input id="adminLoginUser" type="text" placeholder="Admin username"
+        onkeydown="if(event.key==='Enter')document.getElementById('adminLoginPass').focus()"
+        style="width:100%;padding:10px 14px;border:1.5px solid #2a2a2a;border-radius:8px;
+        background:#111;color:#e5e5e5;font-size:13px;font-family:inherit;outline:none;
+        transition:border-color .15s"
+        onfocus="this.style.borderColor='#f97316'" onblur="this.style.borderColor='#2a2a2a'"/>
+    </div>
+    <div style="margin-bottom:16px">
+      <input id="adminLoginPass" type="password" placeholder="Password"
+        onkeydown="if(event.key==='Enter')submitAdminLogin()"
+        style="width:100%;padding:10px 14px;border:1.5px solid #2a2a2a;border-radius:8px;
+        background:#111;color:#e5e5e5;font-size:13px;font-family:inherit;outline:none;
+        transition:border-color .15s"
+        onfocus="this.style.borderColor='#f97316'" onblur="this.style.borderColor='#2a2a2a'"/>
+    </div>
+    <div id="adminLoginErr" style="color:#ef4444;font-size:12px;margin-bottom:12px;min-height:16px;text-align:center"></div>
+    <button id="adminLoginBtn" onclick="submitAdminLogin()" style="
+      width:100%;padding:11px;background:#f97316;color:#fff;border:none;
+      border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;
+      font-family:inherit;transition:background .15s;margin-bottom:8px;
+    " onmouseover="this.style.background='#ea6c0a'" onmouseout="this.style.background='#f97316'">
+      Login &amp; Open Payment
+    </button>
+    <button onclick="closeAdminLoginModal()" style="
+      width:100%;padding:9px;background:transparent;color:#666;
+      border:1px solid #2a2a2a;border-radius:8px;font-size:13px;
+      font-weight:600;cursor:pointer;font-family:inherit;
+    ">Cancel</button>
+  </div>
+</div>
 </body>
 </html>
