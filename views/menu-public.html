@@ -269,8 +269,9 @@ async function placeOrder() {
   if (orderType==='DELIVERY' && !address) { alert('Delivery address is required'); return; }
   const body = {
     customerName: name, customerPhone: phone, customerEmail: document.getElementById('cEmail').value.trim(),
-    orderType, address, paymentMethod: document.getElementById('cPayment').value,
+    orderType: table ? 'DINE_IN' : orderType, address, paymentMethod: document.getElementById('cPayment').value,
     notes: document.getElementById('cNotes').value.trim(),
+    tableNumber: table ? +table : null,
     items: cart.map(c => ({ menuItemId: c.id, name: c.name, price: c.price, quantity: c.qty }))
   };
   const r = await fetch('/api/online-orders/public/order', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });

@@ -21,19 +21,19 @@ exports.getPublicMenu = async (req, res) => {
 
 exports.placeOrder = async (req, res) => {
   try {
-    const { customerName, customerPhone, customerEmail, orderType, address, items, notes, paymentMethod } = req.body;
+    const { customerName, customerPhone, customerEmail, orderType, address, items, notes, paymentMethod, tableNumber } = req.body;
     if (!customerName || !customerPhone || !items?.length) {
       return res.status(400).json({ message: 'Name, phone, and items are required' });
     }
 
     // Calculate totals
     const subtotal = items.reduce((s, i) => s + (i.price * i.quantity), 0);
-    const deliveryFee = orderType === 'DELIVERY' ? 100 : 0; // flat fee, can be zone-based
-    const taxRate = 0.13; // 13% VAT
+    const deliveryFee = orderType === 'DELIVERY' ? 100 : 0;
+    const taxRate = 0.13;
     const tax = Math.round(subtotal * taxRate * 100) / 100;
     const total = subtotal + deliveryFee + tax;
 
-    const order = await prisma.onlineOrder.create({
+    const onlineOrder = await prisma.onlineOrder.create({
       data: {
         customerName, customerPhone, customerEmail: customerEmail || '',
         orderType: orderType || 'DELIVERY',
@@ -50,7 +50,30 @@ exports.placeOrder = async (req, res) => {
       },
       include: { items: true }
     });
-    res.json({ success: true, order, message: `Order #${order.id} placed! Estimated ${order.estimatedMins} minutes.` });
+
+    // If table QR order → also create a kitchen Order so staff can see it
+    let kitchenOrder = null;
+    if (tableNumber) {
+      kitchenOrder = await prisma.order.create({
+        data: {
+          tableNumber: +tableNumber,
+          status: 'Pending',
+          notes: `QR Order — ${customerName} (${customerPhone})${notes ? ' | ' + notes : ''}`,
+          guestCount: 1,
+          items: {
+            create: items.map(i => ({
+              name: i.name,
+              price: i.price,
+              qty: i.quantity,
+              menuId: i.menuItemId || null,
+            }))
+          }
+        },
+        include: { items: true }
+      });
+    }
+
+    res.json({ success: true, order: onlineOrder, kitchenOrderId: kitchenOrder?.id, message: `Order #${onlineOrder.id} placed! Estimated ${onlineOrder.estimatedMins} minutes.` });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 };
 
