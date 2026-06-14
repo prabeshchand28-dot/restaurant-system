@@ -114,7 +114,18 @@ input:focus,select:focus{border-color:var(--blue)}
 <script>
 const token=localStorage.getItem('token');
 const authH=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});
-document.getElementById('baseUrl').value=window.location.origin;
+
+// Auto-detect ngrok URL from server
+(async()=>{
+  try{
+    const r=await fetch('/api/qr/ngrok-url',{headers:authH()});
+    const d=await r.json();
+    if(d.url) document.getElementById('baseUrl').value=d.url;
+    else document.getElementById('baseUrl').value=window.location.origin;
+  }catch{
+    document.getElementById('baseUrl').value=window.location.origin;
+  }
+})();
 
 function switchTab(name,el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
