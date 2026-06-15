@@ -163,6 +163,12 @@ exports.resetPassword = async (req, res) => {
 // ══════════════════════════════════════════════
 exports.signupRestaurant = async (req, res) => {
   try {
+    // Only superadmin can create new restaurants
+    const superKey = req.headers['x-super-key'] || req.body.superKey;
+    const SUPER_KEY = process.env.SUPER_ADMIN_KEY || 'qrsystem_super2026';
+    if (superKey !== SUPER_KEY)
+      return res.status(403).json({ success: false, message: 'Superadmin key chaiyo. Public signup banda chha.' });
+
     const { restaurantName, ownerName, username, password, email } = req.body;
 
     if (!restaurantName || !ownerName || !username || !password)

@@ -7,11 +7,11 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#0d0d0d;color:#fff;min-height:100vh;padding:32px 20px}
-.header{display:flex;align-items:center;gap:16px;margin-bottom:32px}
-.logo{width:44px;height:44px;background:#f97316;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900}
+.header{display:flex;align-items:center;gap:16px;margin-bottom:32px;flex-wrap:wrap}
+.logo{width:44px;height:44px;background:#f97316;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;flex-shrink:0}
 h1{font-size:22px;font-weight:800}
 .sub{color:#666;font-size:13px;margin-top:2px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:32px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:28px}
 .stat{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:20px}
 .stat-num{font-size:28px;font-weight:800;color:#f97316}
 .stat-label{font-size:12px;color:#888;margin-top:4px}
@@ -24,66 +24,236 @@ td{padding:14px 16px;border-top:1px solid #222;font-size:14px}
 .badge.active{background:#22c55e20;color:#22c55e}
 .badge.inactive{background:#ff444420;color:#ff4444}
 .err{color:#f97316;padding:20px;text-align:center}
-input{background:#111;border:1px solid #333;border-radius:8px;padding:8px 12px;color:#fff;font-size:14px;outline:none;margin-right:8px}
-input:focus{border-color:#f97316}
-.btn-sm{background:#f97316;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer}
+.msg-ok{color:#22c55e;padding:20px;text-align:center;background:#22c55e10;border-radius:10px;margin-top:10px}
+.msg-err{color:#ff4444;padding:12px;text-align:center;background:#ff444410;border-radius:10px;margin-top:10px}
+input,select{background:#111;border:1px solid #333;border-radius:8px;padding:8px 12px;color:#fff;font-size:14px;outline:none;font-family:inherit}
+input:focus,select:focus{border-color:#f97316}
+.btn{background:#f97316;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:14px;cursor:pointer;font-weight:700;font-family:inherit}
+.btn:hover{background:#e06010}
+.btn-outline{background:none;color:#f97316;border:2px solid #f97316;border-radius:8px;padding:7px 16px;font-size:13px;cursor:pointer;font-weight:700;font-family:inherit}
+.btn-outline:hover{background:#f9731615}
+
+/* Tab nav */
+.tabs{display:flex;gap:8px;margin-bottom:24px}
+.tab{padding:10px 20px;border-radius:8px;border:2px solid #2a2a2a;background:none;color:#666;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+.tab.active{border-color:#f97316;color:#f97316;background:#f9731615}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* New Restaurant Form */
+.form-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:16px;padding:28px;max-width:520px}
+.form-card h2{font-size:18px;font-weight:800;margin-bottom:20px;color:#fff}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.form-group input{width:100%}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.divider{border:none;border-top:1px solid #2a2a2a;margin:20px 0}
+.section-label{font-size:11px;color:#666;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+
+/* Lock screen */
+#lockScreen{max-width:360px;margin:80px auto;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:20px;padding:36px;text-align:center}
+#lockScreen .lock-icon{font-size:48px;margin-bottom:16px}
+#lockScreen h2{font-size:20px;font-weight:800;margin-bottom:6px}
+#lockScreen p{color:#666;font-size:13px;margin-bottom:24px}
+#lockScreen input{width:100%;margin-bottom:12px;text-align:center;letter-spacing:2px}
 </style>
 </head>
 <body>
-<div class="header">
-  <div class="logo">Q</div>
-  <div>
-    <h1>Super Admin Panel</h1>
-    <div class="sub">All restaurants on this platform</div>
-  </div>
-  <div style="margin-left:auto">
-    <input id="pass" type="password" placeholder="Super admin password"/>
-    <button class="btn-sm" onclick="load()">Load</button>
-  </div>
+
+<!-- Lock Screen -->
+<div id="lockScreen">
+  <div class="lock-icon">🔐</div>
+  <h2>Super Admin</h2>
+  <p>QR System Platform Panel<br>Authorized access only</p>
+  <input id="passInput" type="password" placeholder="Enter super admin key" autofocus/>
+  <button class="btn" style="width:100%" onclick="unlock()">Unlock →</button>
+  <div id="lockErr"></div>
 </div>
 
-<div class="stats">
-  <div class="stat"><div class="stat-num" id="totalR">—</div><div class="stat-label">Total Restaurants</div></div>
-  <div class="stat"><div class="stat-num" id="totalU">—</div><div class="stat-label">Total Users</div></div>
-  <div class="stat"><div class="stat-num" id="totalO">—</div><div class="stat-label">Total Orders</div></div>
-  <div class="stat"><div class="stat-num" id="freeR">—</div><div class="stat-label">Free Plan</div></div>
-</div>
+<!-- Main Panel (hidden until unlocked) -->
+<div id="mainPanel" style="display:none">
+  <div class="header">
+    <div class="logo">Q</div>
+    <div>
+      <h1>Super Admin Panel</h1>
+      <div class="sub">QR System Platform — All Restaurants</div>
+    </div>
+    <button class="btn-outline" style="margin-left:auto" onclick="lockOut()">🔒 Lock</button>
+  </div>
 
-<div id="content"><p class="err">Password halhnus ani "Load" click garnuhos</p></div>
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="totalR">—</div><div class="stat-label">Total Restaurants</div></div>
+    <div class="stat"><div class="stat-num" id="totalU">—</div><div class="stat-label">Total Users</div></div>
+    <div class="stat"><div class="stat-num" id="totalO">—</div><div class="stat-label">Total Orders</div></div>
+    <div class="stat"><div class="stat-num" id="freeR">—</div><div class="stat-label">Free Plan</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('tabRestaurants',this)">🏪 All Restaurants</button>
+    <button class="tab" onclick="showTab('tabNewRest',this)">➕ New Restaurant</button>
+  </div>
+
+  <!-- Tab 1: Restaurants list -->
+  <div class="tab-pane active" id="tabRestaurants">
+    <div id="content"><p class="err">Loading...</p></div>
+  </div>
+
+  <!-- Tab 2: New Restaurant Form -->
+  <div class="tab-pane" id="tabNewRest">
+    <div class="form-card">
+      <h2>➕ Create New Restaurant</h2>
+
+      <div class="section-label">Restaurant Details</div>
+      <div class="form-group">
+        <label>Restaurant Name *</label>
+        <input id="nr-name" type="text" placeholder="e.g. Momo Palace"/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Phone</label>
+          <input id="nr-phone" type="text" placeholder="98XXXXXXXX"/>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input id="nr-email" type="email" placeholder="owner@email.com"/>
+        </div>
+      </div>
+
+      <hr class="divider"/>
+      <div class="section-label">Owner / Admin Account</div>
+
+      <div class="form-group">
+        <label>Owner Name *</label>
+        <input id="nr-owner" type="text" placeholder="Full name"/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Username *</label>
+          <input id="nr-username" type="text" placeholder="login username"/>
+        </div>
+        <div class="form-group">
+          <label>Password *</label>
+          <input id="nr-password" type="password" placeholder="min 6 chars"/>
+        </div>
+      </div>
+
+      <button class="btn" style="width:100%;margin-top:8px" onclick="createRestaurant()">
+        Create Restaurant →
+      </button>
+      <div id="nr-msg"></div>
+    </div>
+  </div>
+</div>
 
 <script>
-async function load() {
-  const pass = document.getElementById('pass').value;
+let superKey = '';
+
+function unlock() {
+  const pass = document.getElementById('passInput').value.trim();
+  if(!pass) return;
+  superKey = pass;
+  loadRestaurants(pass);
+}
+
+async function loadRestaurants(key) {
   const res = await fetch('/api/superadmin/restaurants', {
-    headers: { 'x-super-key': pass }
+    headers: { 'x-super-key': key }
   });
-  if (!res.ok) { document.getElementById('content').innerHTML = '<p class="err">❌ Access denied — galat password</p>'; return; }
+  if(!res.ok) {
+    document.getElementById('lockErr').innerHTML = '<div class="msg-err" style="margin-top:12px">❌ Galat key — access denied</div>';
+    superKey = '';
+    return;
+  }
+  // Unlock
+  document.getElementById('lockScreen').style.display = 'none';
+  document.getElementById('mainPanel').style.display = 'block';
   const data = await res.json();
-  
+  renderStats(data);
+  renderTable(data.restaurants);
+}
+
+function renderStats(data) {
   document.getElementById('totalR').textContent = data.restaurants.length;
   document.getElementById('totalU').textContent = data.totalUsers;
   document.getElementById('totalO').textContent = data.totalOrders;
-  document.getElementById('freeR').textContent  = data.restaurants.filter(r => r.plan === 'free').length;
+  document.getElementById('freeR').textContent  = data.restaurants.filter(r=>r.plan==='free').length;
+}
 
-  const rows = data.restaurants.map(r => `
+function renderTable(list) {
+  if(!list.length) { document.getElementById('content').innerHTML='<p class="err">Koi restaurant chaina abhi.</p>'; return; }
+  const rows = list.map(r=>`
     <tr>
-      <td><strong>${r.name}</strong><br><span style="color:#666;font-size:12px">${r.slug}</span></td>
+      <td><strong>${r.name}</strong><br><span style="color:#555;font-size:12px">${r.slug}</span></td>
       <td><span class="badge ${r.plan}">${r.plan.toUpperCase()}</span></td>
-      <td><span class="badge ${r.active ? 'active' : 'inactive'}">${r.active ? 'Active' : 'Inactive'}</span></td>
-      <td>${r._count?.users || 0} users</td>
-      <td>${r._count?.orders || 0} orders</td>
-      <td style="color:#888;font-size:12px">${new Date(r.createdAt).toLocaleDateString()}</td>
-    </tr>
-  `).join('');
-
-  document.getElementById('content').innerHTML = `
+      <td><span class="badge ${r.active?'active':'inactive'}">${r.active?'Active':'Inactive'}</span></td>
+      <td>${r._count?.users||0} users</td>
+      <td>${r._count?.orders||0} orders</td>
+      <td style="color:#555;font-size:12px">${new Date(r.createdAt).toLocaleDateString()}</td>
+    </tr>`).join('');
+  document.getElementById('content').innerHTML=`
     <table>
       <thead><tr><th>Restaurant</th><th>Plan</th><th>Status</th><th>Staff</th><th>Orders</th><th>Created</th></tr></thead>
       <tbody>${rows}</tbody>
-    </table>
-  `;
+    </table>`;
 }
-document.getElementById('pass').addEventListener('keydown', e => { if(e.key==='Enter') load(); });
+
+async function createRestaurant() {
+  const msg = document.getElementById('nr-msg');
+  const body = {
+    restaurantName : document.getElementById('nr-name').value.trim(),
+    ownerName      : document.getElementById('nr-owner').value.trim(),
+    username       : document.getElementById('nr-username').value.trim(),
+    password       : document.getElementById('nr-password').value,
+    email          : document.getElementById('nr-email').value.trim(),
+    superKey       : superKey,
+  };
+  if(!body.restaurantName||!body.ownerName||!body.username||!body.password)
+    { msg.innerHTML='<div class="msg-err">* Sabai required fields bharnus</div>'; return; }
+  if(body.password.length<6)
+    { msg.innerHTML='<div class="msg-err">Password 6+ characters hunu parcha</div>'; return; }
+
+  msg.innerHTML='<div style="color:#888;margin-top:10px">Creating...</div>';
+  try {
+    const res = await fetch('/api/auth/signup', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-super-key':superKey},
+      body:JSON.stringify(body)
+    });
+    const d = await res.json();
+    if(d.success) {
+      msg.innerHTML=`<div class="msg-ok">✅ Restaurant created! ID: ${d.restaurantId}<br>Login: <strong>${body.username}</strong></div>`;
+      // Clear form
+      ['nr-name','nr-owner','nr-username','nr-password','nr-email','nr-phone'].forEach(id=>{
+        document.getElementById(id).value='';
+      });
+      // Refresh list
+      const listRes = await fetch('/api/superadmin/restaurants',{headers:{'x-super-key':superKey}});
+      if(listRes.ok){ const data=await listRes.json(); renderStats(data); renderTable(data.restaurants); }
+    } else {
+      msg.innerHTML=`<div class="msg-err">❌ ${d.message}</div>`;
+    }
+  } catch(e) {
+    msg.innerHTML='<div class="msg-err">Network error. Try again.</div>';
+  }
+}
+
+function showTab(id, el) {
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+
+function lockOut() {
+  superKey='';
+  document.getElementById('mainPanel').style.display='none';
+  document.getElementById('lockScreen').style.display='block';
+  document.getElementById('passInput').value='';
+  document.getElementById('lockErr').innerHTML='';
+}
+
+document.getElementById('passInput').addEventListener('keydown',e=>{ if(e.key==='Enter') unlock(); });
 </script>
 </body>
 </html>
