@@ -244,25 +244,19 @@ app.get('/api/superadmin/restaurants', async (req, res) => {
   console.log('[superadmin] key received:', key, '| expected:', SUPER_KEY);
   if (key !== SUPER_KEY) return res.status(403).json({ success: false, message: 'Access denied' });
   try {
-    const { PrismaClient } = require('@prisma/client');
-    const p = new PrismaClient();
-    const restaurants = await p.restaurant.findMany({
-      include: { _count: { select: { } } },
-      orderBy: { createdAt: 'desc' }
-    });
-    // Get counts separately
-    const [users, orders] = await Promise.all([
-      p.user.count(),
-      p.order.count(),
+    const restaurants = await prisma.restaurant.findMany({ orderBy: { createdAt: 'desc' } });
+    const [totalUsers, totalOrders] = await Promise.all([
+      prisma.user.count(),
+      prisma.order.count(),
     ]);
     const rWithCounts = await Promise.all(restaurants.map(async r => {
       const [uCount, oCount] = await Promise.all([
-        p.user.count({ where: { restaurantId: r.id } }),
-        p.order.count({ where: { restaurantId: r.id } }),
+        prisma.user.count({ where: { restaurantId: r.id } }),
+        prisma.order.count({ where: { restaurantId: r.id } }),
       ]);
       return { ...r, _count: { users: uCount, orders: oCount } };
     }));
-    res.json({ restaurants: rWithCounts, totalUsers: users, totalOrders: orders });
+    res.json({ restaurants: rWithCounts, totalUsers, totalOrders });
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
