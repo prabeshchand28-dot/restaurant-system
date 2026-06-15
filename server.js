@@ -14,6 +14,7 @@ const {
 
 const app      = express();
 const PORT     = process.env.PORT || 3000;
+app.set('trust proxy', 1); // Fix for Render/reverse proxy rate-limit warning
 const BUILD_ID = Date.now().toString(); // Changes every server restart
 
 // ── Core middleware ─────────────────────────────────────
