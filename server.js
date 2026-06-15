@@ -2,6 +2,7 @@ require('dotenv').config();
 const express      = require('express');
 const path         = require('path');
 const cors         = require('cors');
+const prisma       = require('./config/prisma');
 const logger       = require('./middleware/logger');
 const errorHandler = require('./middleware/errorHandler');
 const {
