@@ -209,7 +209,7 @@
     </div>
     <button class="btn btn-primary" id="btn-login" onclick="handleLogin()">🔐 Login</button>
     <div class="or-row"><span>or</span></div>
-    <button class="btn btn-demo" onclick="tryDemo()">🚀 Try Demo &nbsp;—&nbsp; admin / restaurant123</button>
+    <button class="btn btn-demo" onclick="tryDemo()">🚀 Try Demo &nbsp;—&nbsp; demoowner / demo2026</button>
   </div>
 
   <!-- PAGE 2: CHANGE PASSWORD -->
@@ -668,8 +668,8 @@ async function handleResetPass() {
 
 // ── DEMO LOGIN ──
 function tryDemo() {
-  document.getElementById('login-user').value = 'admin';
-  document.getElementById('login-pass').value = 'restaurant123';
+  document.getElementById('login-user').value = 'demoowner';
+  document.getElementById('login-pass').value = 'demo2026';
   showToast('Demo credentials filled! Logging in...', 'info');
   setTimeout(handleLogin, 400);
 }
