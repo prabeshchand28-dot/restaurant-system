@@ -188,9 +188,9 @@
       <h1>Restaurant System</h1>
       <p>Afno account ma login garus</p>
     </div>
-    <label>Email vaa Username</label>
+    <label>Username</label>
     <div class="input-wrap">
-      <input type="text" id="login-user" placeholder="admin@restaurant.com" />
+      <input type="text" id="login-user" placeholder="Enter your username" />
       <div class="field-error" id="err-login-user"></div>
     </div>
     <label>Password</label>
@@ -205,8 +205,8 @@
           style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer"/>
         Remember me (30 days)
       </label>
-      <button class="link-btn" onclick="goTo('page-forgot')">Password birse?</button>
-      <button class="link-btn" onclick="window.location.href='/signup'" style="color:#f97316">🏠 Naya Restaurant? Sign Up</button>
+      <button class="link-btn" onclick="goTo('page-forgot')">Forgot Password?</button>
+      <button class="link-btn" onclick="window.location.href='/signup'" style="color:#f97316">🏠 New Restaurant? Sign Up</button>
     </div>
     <button class="btn btn-primary" id="btn-login" onclick="handleLogin()">🔐 Login</button>
     <div class="or-row"><span>or</span></div>
@@ -220,15 +220,15 @@
       <h1>Password Change</h1>
       <p>Purano password halera naya set garus</p>
     </div>
-    <label>Purano Password</label>
+    <label>Current Password</label>
     <div class="input-wrap">
-      <input type="password" id="cp-old" placeholder="Purano password" style="padding-right:44px" />
+      <input type="password" id="cp-old" placeholder="Current password" style="padding-right:44px" />
       <button class="toggle-pass" onclick="togglePass('cp-old',this)">👁</button>
       <div class="field-error" id="err-cp-old"></div>
     </div>
-    <label>Naya Password</label>
+    <label>New Password</label>
     <div class="input-wrap">
-      <input type="password" id="cp-new" placeholder="Naya password (min 8)" style="padding-right:44px"
+      <input type="password" id="cp-new" placeholder="New password (min 8)" style="padding-right:44px"
         oninput="checkStrength(this.value,'cp-bars','cp-slbl')" />
       <button class="toggle-pass" onclick="togglePass('cp-new',this)">👁</button>
       <div class="field-error" id="err-cp-new"></div>
@@ -240,13 +240,13 @@
       </div>
       <div class="strength-label" id="cp-slbl"></div>
     </div>
-    <label>Confirm Naya Password</label>
+    <label>Confirm New Password</label>
     <div class="input-wrap">
-      <input type="password" id="cp-confirm" placeholder="Password dubaro halnus" style="padding-right:44px" />
+      <input type="password" id="cp-confirm" placeholder="Re-enter new password" style="padding-right:44px" />
       <button class="toggle-pass" onclick="togglePass('cp-confirm',this)">👁</button>
       <div class="field-error" id="err-cp-confirm"></div>
     </div>
-    <button class="btn btn-primary" id="btn-cp" onclick="handleChangePass()" style="margin-bottom:10px">✓ Password Update Garus</button>
+    <button class="btn btn-primary" id="btn-cp" onclick="handleChangePass()" style="margin-bottom:10px">✓ Update Password</button>
     <button class="btn btn-ghost" onclick="window.location.href='/dashboard'">← Dashboard Farknu</button>
   </div>
 
@@ -254,7 +254,7 @@
   <div class="page" id="page-forgot">
     <div class="header">
       <span class="header-icon">📧</span>
-      <h1>Password Reset</h1>
+      <h1>Reset Password</h1>
       <p>OTP pathauney method choose garus</p>
     </div>
     <div class="method-tabs">
@@ -270,8 +270,8 @@
     <div class="info-box" style="background:rgba(232,160,32,0.08);border-color:rgba(232,160,32,0.3);color:#c8901a;margin-top:-10px">
       ⚠️ Email vaa phone set xena bhane आफ्नो <strong>username</strong> (e.g. <code style="background:rgba(0,0,0,.2);padding:1px 5px;border-radius:4px">admin</code>) halnus — OTP server console ma dekhincha
     </div>
-    <button class="btn btn-primary" id="btn-forgot" onclick="handleForgot()" style="margin-bottom:10px">📤 OTP Pathaunus</button>
-    <button class="btn btn-ghost" onclick="goTo('page-login')">← Login ma Farknu</button>
+    <button class="btn btn-primary" id="btn-forgot" onclick="handleForgot()" style="margin-bottom:10px">📤 Send OTP</button>
+    <button class="btn btn-ghost" onclick="goTo('page-login')">← Back to Login</button>
   </div>
 
   <!-- PAGE 4: OTP -->
@@ -302,12 +302,12 @@
   <div class="page" id="page-reset">
     <div class="header">
       <span class="header-icon">🔐</span>
-      <h1>Naya Password</h1>
+      <h1>New Password</h1>
       <p>Secure password set garus</p>
     </div>
-    <label>Naya Password</label>
+    <label>New Password</label>
     <div class="input-wrap">
-      <input type="password" id="rp-new" placeholder="Naya password (min 8)" style="padding-right:44px"
+      <input type="password" id="rp-new" placeholder="New password (min 8)" style="padding-right:44px"
         oninput="checkStrength(this.value,'rp-bars','rp-slbl')" />
       <button class="toggle-pass" onclick="togglePass('rp-new',this)">👁</button>
       <div class="field-error" id="err-rp-new"></div>
@@ -321,11 +321,11 @@
     </div>
     <label>Confirm Password</label>
     <div class="input-wrap">
-      <input type="password" id="rp-confirm" placeholder="Password dubaro halnus" style="padding-right:44px" />
+      <input type="password" id="rp-confirm" placeholder="Re-enter new password" style="padding-right:44px" />
       <button class="toggle-pass" onclick="togglePass('rp-confirm',this)">👁</button>
       <div class="field-error" id="err-rp-confirm"></div>
     </div>
-    <button class="btn btn-primary" id="btn-rp" onclick="handleResetPass()" style="margin-bottom:10px">🔐 Password Reset Garus</button>
+    <button class="btn btn-primary" id="btn-rp" onclick="handleResetPass()" style="margin-bottom:10px">🔐 Reset Password Garus</button>
   </div>
 
 </div>
@@ -506,7 +506,7 @@ async function handleChangePass() {
   const token = S.token || localStorage.getItem('token') || '';
   if (!token) { showToast('Login garna parcha pahile', 'error'); return; }
 
-  setBtn('btn-cp', true, '✓ Password Update Garus');
+  setBtn('btn-cp', true, '✓ Update Password');
   try {
     const { ok, data } = await api('/change-password', { currentPassword, newPassword }, token);
     if (ok && data.success) {
@@ -519,7 +519,7 @@ async function handleChangePass() {
   } catch (e) {
     showToast('Server sanga connect huna sakiyena', 'error');
   }
-  setBtn('btn-cp', false, '✓ Password Update Garus');
+  setBtn('btn-cp', false, '✓ Update Password');
 }
 
 // ── METHOD SWITCH ──
@@ -540,7 +540,7 @@ async function handleForgot() {
   const contact = document.getElementById('forgot-contact').value.trim();
   if (!contact) { showError('err-forgot', 'Contact halnus'); return; }
 
-  setBtn('btn-forgot', true, '📤 OTP Pathaunus');
+  setBtn('btn-forgot', true, '📤 Send OTP');
   try {
     const { ok, data } = await api('/forgot-password', { contact, method: S.resetMethod });
     if (ok && data.success) {
@@ -563,7 +563,7 @@ async function handleForgot() {
   } catch (e) {
     showToast('Server sanga connect huna sakiyena', 'error');
   }
-  setBtn('btn-forgot', false, '📤 OTP Pathaunus');
+  setBtn('btn-forgot', false, '📤 Send OTP');
 }
 
 // ── OTP INPUTS ──
@@ -647,7 +647,7 @@ async function handleResetPass() {
   if (newPassword !== confirm) { showError('err-rp-confirm', 'Password match gardaina'); valid = false; }
   if (!valid) return;
 
-  setBtn('btn-rp', true, '🔐 Password Reset Garus');
+  setBtn('btn-rp', true, '🔐 Reset Password Garus');
   try {
     const { ok, data } = await api('/reset-password', { resetToken: S.resetToken, newPassword });
     if (ok && data.success) {
@@ -658,7 +658,7 @@ async function handleResetPass() {
       showToast(data.message || 'Error bhayo', 'error');
     }
   } catch (e) { showToast('Server sanga connect huna sakiyena', 'error'); }
-  setBtn('btn-rp', false, '🔐 Password Reset Garus');
+  setBtn('btn-rp', false, '🔐 Reset Password Garus');
 }
 
 // ── Restore Remember Me checkbox state ──

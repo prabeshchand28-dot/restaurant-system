@@ -617,50 +617,50 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <!-- Operations -->
     <div class="nav-group">
       <div class="nav-parent" onclick="toggleGroup('nc-ops',this)">
-        <span class="left"><span class="nav-emoji">🍽️</span><span class="label">Operations</span></span>
+        <span class="left"><span class="nav-emoji">🍽️</span><span class="label" data-i18n="nav-operations">Operations</span></span>
         <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div class="nav-children" id="nc-ops">
-        <div class="nav-child" onclick="location.href='/order-manage'">Orders</div>
-        <div class="nav-child" onclick="showSection('tables',null)">Tables & QR Ordering</div>
-        <div class="nav-child" onclick="location.href='/kitchen'">Kitchen</div>
-        <div class="nav-child" onclick="showSection('reservations',null)">Reservations</div>
-        <div class="nav-child" onclick="location.href='/delivery'">Delivery</div>
-        <div class="nav-child" onclick="location.href='/waitlist'">Waitlist</div>
+        <div class="nav-child" onclick="location.href='/order-manage'" data-i18n="nav-orders">Orders</div>
+        <div class="nav-child" onclick="showSection('tables',null)" data-i18n="nav-tables">Tables & QR Ordering</div>
+        <div class="nav-child" onclick="location.href='/kitchen'" data-i18n="nav-kitchen">Kitchen</div>
+        <div class="nav-child" onclick="showSection('reservations',null)" data-i18n="nav-reservations">Reservations</div>
+        <div class="nav-child" onclick="location.href='/delivery'" data-i18n="nav-delivery">Delivery</div>
+        <div class="nav-child" onclick="location.href='/waitlist'" data-i18n="nav-waitlist">Waitlist</div>
       </div>
     </div>
 
     <!-- Inventory -->
     <div class="nav-group">
       <div class="nav-parent" onclick="toggleGroup('nc-inv',this)">
-        <span class="left"><span class="nav-emoji">📦</span><span class="label">Inventory</span></span>
+        <span class="left"><span class="nav-emoji">📦</span><span class="label" data-i18n="nav-inventory">Inventory</span></span>
         <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div class="nav-children" id="nc-inv">
-        <div class="nav-child" onclick="showSection('inventory',null)">Inventory</div>
+        <div class="nav-child" onclick="showSection('inventory',null)" data-i18n="nav-inventory-main">Inventory</div>
         <div class="nav-child" onclick="location.href='/stock-history'">Stock History</div>
-        <div class="nav-child" onclick="location.href='/suppliers'">Suppliers</div>
-        <div class="nav-child" onclick="location.href='/purchase-orders'">Purchase Orders</div>
-        <div class="nav-child" onclick="location.href='/recipes'">Recipes</div>
+        <div class="nav-child" onclick="location.href='/suppliers'" data-i18n="nav-suppliers">Suppliers</div>
+        <div class="nav-child" onclick="location.href='/purchase-orders'" data-i18n="nav-purchase-orders">Purchase Orders</div>
+        <div class="nav-child" onclick="location.href='/recipes'" data-i18n="nav-recipes">Recipes</div>
         <div class="nav-child" onclick="location.href='/inventory-batches'">Inventory Batches</div>
-        <div class="nav-child" onclick="location.href='/waste'">Waste</div>
+        <div class="nav-child" onclick="location.href='/waste'" data-i18n="nav-waste">Waste</div>
       </div>
     </div>
 
     <!-- Staff -->
     <div class="nav-group">
       <div class="nav-parent" onclick="toggleGroup('nc-staff',this)">
-        <span class="left"><span class="nav-emoji">👥</span><span class="label">Staff</span></span>
+        <span class="left"><span class="nav-emoji">👥</span><span class="label" data-i18n="nav-staff">Staff</span></span>
         <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div class="nav-children" id="nc-staff">
-        <div class="nav-child" onclick="showSection('staff',null)">Staff</div>
-        <div class="nav-child" onclick="showSection('attendance',null)">Attendance</div>
-        <div class="nav-child" onclick="location.href='/clock'">Clock In/Out</div>
-        <div class="nav-child" onclick="location.href='/shifts'">Shifts</div>
-        <div class="nav-child" onclick="location.href='/roster'">Roster</div>
-        <div class="nav-child" onclick="location.href='/payroll'">Payroll</div>
-        <div class="nav-child" onclick="location.href='/training'">Training</div>
+        <div class="nav-child" onclick="showSection('staff',null)" data-i18n="nav-staff-main">Staff</div>
+        <div class="nav-child" onclick="showSection('attendance',null)" data-i18n="nav-attendance">Attendance</div>
+        <div class="nav-child" onclick="location.href='/clock'" data-i18n="nav-clock">Clock In/Out</div>
+        <div class="nav-child" onclick="location.href='/shifts'" data-i18n="nav-shifts">Shifts</div>
+        <div class="nav-child" onclick="location.href='/roster'" data-i18n="nav-roster">Roster</div>
+        <div class="nav-child" onclick="location.href='/payroll'" data-i18n="nav-payroll">Payroll</div>
+        <div class="nav-child" onclick="location.href='/training'" data-i18n="nav-training">Training</div>
         <div class="nav-child" onclick="location.href='/staff-performance'">Performance</div>
         <div class="nav-child" onclick="location.href='/recognition'">Recognition</div>
       </div>
@@ -669,16 +669,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <!-- Finance -->
     <div class="nav-group">
       <div class="nav-parent" onclick="toggleGroup('nc-fin',this)">
-        <span class="left"><span class="nav-emoji">💰</span><span class="label">Finance</span></span>
+        <span class="left"><span class="nav-emoji">💰</span><span class="label" data-i18n="nav-finance">Finance</span></span>
         <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div class="nav-children" id="nc-fin">
-        <div class="nav-child" onclick="showSection('payments',null)">Payments</div>
+        <div class="nav-child" onclick="showSection('payments',null)" data-i18n="nav-payments">Payments</div>
         <div class="nav-child" onclick="location.href='/wallet'">Wallet</div>
         <div class="nav-child" onclick="location.href='/gift-cards'">Gift Cards</div>
-        <div class="nav-child" onclick="location.href='/expenses'">Expenses</div>
-        <div class="nav-child" onclick="location.href='/tax'">Tax</div>
-        <div class="nav-child" onclick="location.href='/tips'">Tips</div>
+        <div class="nav-child" onclick="location.href='/expenses'" data-i18n="nav-expenses">Expenses</div>
+        <div class="nav-child" onclick="location.href='/tax'" data-i18n="nav-tax">Tax</div>
+        <div class="nav-child" onclick="location.href='/tips'" data-i18n="nav-tips">Tips</div>
         <div class="nav-child" onclick="location.href='/tip-pool'">Tip Pool</div>
         <div class="nav-child" onclick="location.href='/invoices'">Invoices</div>
         <div class="nav-child" onclick="location.href='/finance'">Finance Dashboard</div>
@@ -688,7 +688,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <!-- Marketing -->
     <div class="nav-group">
       <div class="nav-parent" onclick="toggleGroup('nc-mkt',this)">
-        <span class="left"><span class="nav-emoji">🎯</span><span class="label">Marketing</span></span>
+        <span class="left"><span class="nav-emoji">🎯</span><span class="label" data-i18n="nav-marketing">Marketing</span></span>
         <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div class="nav-children" id="nc-mkt">
@@ -705,7 +705,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <!-- Analytics -->
     <div class="nav-group">
       <div class="nav-parent" onclick="toggleGroup('nc-anal',this)">
-        <span class="left"><span class="nav-emoji">📊</span><span class="label">Analytics</span></span>
+        <span class="left"><span class="nav-emoji">📊</span><span class="label" data-i18n="nav-analytics">Analytics</span></span>
         <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div class="nav-children" id="nc-anal">
@@ -721,7 +721,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <!-- Administration -->
     <div class="nav-group">
       <div class="nav-parent" onclick="toggleGroup('nc-admin',this)">
-        <span class="left"><span class="nav-emoji">⚙️</span><span class="label">Administration</span></span>
+        <span class="left"><span class="nav-emoji">⚙️</span><span class="label" data-i18n="nav-admin">Administration</span></span>
         <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div class="nav-children" id="nc-admin">
@@ -739,7 +739,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <!-- Favorites -->
     <div class="nav-group">
       <div class="nav-parent" onclick="toggleGroup('nc-favs',this)">
-        <span class="left"><span class="nav-emoji">⭐</span><span class="label">Favorites</span></span>
+        <span class="left"><span class="nav-emoji">⭐</span><span class="label" data-i18n="nav-favorites">Favorites</span></span>
         <svg class="nav-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div class="nav-children" id="nc-favs">
@@ -1101,8 +1101,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <!-- ══════════ SECTION: TABLES ══════════ -->
     <div class="section" id="sec-tables">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-        <h3 style="color:#fff;font-size:15px">Restaurant Tables</h3>
-        <button onclick="openModal('addTableModal')" style="background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font)">+ Add Table</button>
+        <h3 style="color:#fff;font-size:15px" data-i18n="sec-title-tables">Restaurant Tables</h3>
+        <button onclick="openModal('addTableModal')" style="background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font)" data-i18n="btn-add-table">+ Add Table</button>
       </div>
       <div class="table-grid" id="tablesGrid"></div>
     </div>
@@ -1110,8 +1110,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <!-- ══════════ SECTION: STAFF ══════════ -->
     <div class="section" id="sec-staff">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-        <h3 style="color:#fff;font-size:15px">Staff Members</h3>
-        <button onclick="openModal('addStaffModal')" style="background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font)">+ Add Staff</button>
+        <h3 style="color:#fff;font-size:15px" data-i18n="sec-title-staff">Staff Members</h3>
+        <button onclick="openModal('addStaffModal')" style="background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font)" data-i18n="btn-add-staff">+ Add Staff</button>
       </div>
       <div class="staff-grid" id="staffGrid">
         <div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Loading...</div>
@@ -1383,12 +1383,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <div class="section" id="sec-settings">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <h3 style="color:#fff;font-size:15px">⚙️ Settings</h3>
-        <button onclick="saveAllSettings()" style="background:var(--accent);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;font-family:var(--font)">💾 Save All</button>
+        <button onclick="saveAllSettings()" style="background:var(--accent);color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;font-family:var(--font)" data-i18n="btn-save-all">💾 Save All</button>
       </div>
       <div class="settings-grid">
         <!-- Restaurant Info -->
         <div class="settings-card" style="grid-column:1/-1">
-          <h4>🏠 Restaurant Info</h4>
+          <h4 data-i18n="set-restaurant-info">🏠 Restaurant Info</h4>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">
             <div class="settings-row"><label>Restaurant Name</label><input class="settings-input" id="set-name" placeholder="My Restaurant"></div>
             <div class="settings-row"><label>Phone</label><input class="settings-input" id="set-phone" placeholder="01-XXXXXXX"></div>
@@ -1398,13 +1398,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
             <div class="settings-row"><label>Logo URL</label><input class="settings-input" id="set-logo" placeholder="https://... or /icons/logo.png"></div>
             <div class="settings-row"><label>Website</label><input class="settings-input" id="set-website" placeholder="https://yourrestaurant.com"></div>
           </div>
-          <h4 style="margin-top:18px">🕐 Opening Hours</h4>
+          <h4 style="margin-top:18px" data-i18n="set-hours-title">🕐 Opening Hours</h4>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 24px">
             <div class="settings-row"><label>Open Time</label><input class="settings-input" type="time" id="set-open-time" value="10:00"></div>
             <div class="settings-row"><label>Close Time</label><input class="settings-input" type="time" id="set-close-time" value="22:00"></div>
             <div class="settings-row"><label>Open Days</label><input class="settings-input" id="set-open-days" placeholder="Sun-Fri" value="Sun-Fri"></div>
           </div>
-          <h4 style="margin-top:18px">📱 Social Media & Location</h4>
+          <h4 style="margin-top:18px" data-i18n="set-social-title">📱 Social Media & Location</h4>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">
             <div class="settings-row"><label>📘 Facebook</label><input class="settings-input" id="set-facebook" placeholder="https://facebook.com/yourpage"></div>
             <div class="settings-row"><label>📸 Instagram</label><input class="settings-input" id="set-instagram" placeholder="https://instagram.com/yourpage"></div>
@@ -1415,7 +1415,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
         </div>
         <!-- Tax & Charges -->
         <div class="settings-card">
-          <h4>💰 Tax & Service Charge</h4>
+          <h4 data-i18n="set-tax-title">💰 Tax & Service Charge</h4>
           <div class="settings-row"><label>VAT / Tax Rate (%)</label><input class="settings-input" id="set-tax" type="number" placeholder="13" min="0" max="100"></div>
           <div class="settings-row"><label>Service Charge (%)</label><input class="settings-input" id="set-service-charge" type="number" placeholder="0" min="0" max="50"></div>
           <div class="settings-row"><label>Currency Symbol</label><input class="settings-input" id="set-currency" placeholder="रू"></div>
@@ -1430,7 +1430,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           <div class="settings-row"><label>Auto-refresh (seconds)</label><input class="settings-input" id="set-refresh" type="number" placeholder="30" min="10"></div>
           <div class="settings-row">
             <label>Language</label>
-            <select class="settings-input" id="set-language">
+            <select class="settings-input" id="set-language" onchange="applyLanguage(this.value)">
               <option value="en">English</option>
               <option value="ne">नेपाली</option>
             </select>
@@ -3645,6 +3645,7 @@ async function loadSettings() {
   set('set-low-stock',      s.low_stock_alert||'5');
   set('set-refresh',        s.refresh||'30');
   set('set-language',       s.language||'en');
+  applyLanguage(s.language||localStorage.getItem('lang')||'en');
   set('set-printer-name',   s.printer_name||'');
   set('set-printer-width',  s.printer_width||'80');
   set('set-auto-print',     s.auto_print||'0');
@@ -3998,11 +3999,180 @@ function printPaymentReceipt(payId) {
   setTimeout(()=>w.print(), 500);
 }
 
+
+/* ══════════════════════════════════════════════
+   LANGUAGE / i18n SYSTEM
+══════════════════════════════════════════════ */
+const TRANSLATIONS = {
+  en: {
+    // Nav groups
+    'nav-operations':    'Operations',
+    'nav-inventory':     'Inventory',
+    'nav-staff':         'Staff',
+    'nav-finance':       'Finance',
+    'nav-marketing':     'Marketing',
+    'nav-analytics':     'Analytics',
+    'nav-admin':         'Administration',
+    'nav-favorites':     'Favorites',
+    // Nav children - ops
+    'nav-orders':        'Orders',
+    'nav-tables':        'Tables & QR Ordering',
+    'nav-kitchen':       'Kitchen',
+    'nav-reservations':  'Reservations',
+    'nav-delivery':      'Delivery',
+    'nav-waitlist':      'Waitlist',
+    // Nav children - inv
+    'nav-inventory-main': 'Inventory',
+    'nav-stock-history':  'Stock History',
+    'nav-suppliers':      'Suppliers',
+    'nav-purchase-orders':'Purchase Orders',
+    'nav-recipes':        'Recipes',
+    'nav-waste':          'Waste',
+    // Nav children - staff
+    'nav-staff-main':    'Staff',
+    'nav-attendance':    'Attendance',
+    'nav-clock':         'Clock In/Out',
+    'nav-shifts':        'Shifts',
+    'nav-roster':        'Roster',
+    'nav-payroll':       'Payroll',
+    'nav-training':      'Training',
+    // Nav children - fin
+    'nav-payments':      'Payments',
+    'nav-expenses':      'Expenses',
+    'nav-tax':           'Tax',
+    'nav-tips':          'Tips',
+    // Dashboard section
+    'sec-title-dashboard':    'Dashboard',
+    'sec-title-orders':       'Orders',
+    'sec-title-tables':       'Tables & QR Ordering',
+    'sec-title-staff':        'Staff Members',
+    'sec-title-inventory':    'Inventory',
+    'sec-title-reservations': 'Reservations',
+    'sec-title-payments':     'Payments',
+    'sec-title-settings':     '⚙ Settings',
+    // Buttons
+    'btn-add-table':     '+ Add Table',
+    'btn-add-staff':     '+ Add Staff',
+    'btn-add-item':      '+ Add Item',
+    'btn-save-all':      '💾 Save All',
+    // Settings labels
+    'set-restaurant-info': '🏠 Restaurant Info',
+    'set-tax-title':       '💰 Tax & Service Charge',
+    'set-system-title':    '⚙ System Config',
+    'set-printer-title':   '🖨️ Printer Settings',
+    'set-hours-title':     '🕐 Opening Hours',
+    'set-social-title':    '📱 Social Media & Location',
+    // Quick actions
+    'qa-new-order':      '+ New Order',
+    'qa-reservation':    'Reservation',
+    'qa-tables-qr':      'Tables & QR',
+    'qa-inventory':      'Inventory',
+  },
+  ne: {
+    // Nav groups
+    'nav-operations':    'सञ्चालन',
+    'nav-inventory':     'स्टक/भण्डार',
+    'nav-staff':         'कर्मचारी',
+    'nav-finance':       'वित्त',
+    'nav-marketing':     'मार्केटिङ',
+    'nav-analytics':     'विश्लेषण',
+    'nav-admin':         'प्रशासन',
+    'nav-favorites':     'मनपर्ने',
+    // Nav children - ops
+    'nav-orders':        'अर्डर',
+    'nav-tables':        'टेबल र QR अर्डर',
+    'nav-kitchen':       'भान्छा',
+    'nav-reservations':  'बुकिङ',
+    'nav-delivery':      'डेलिभरी',
+    'nav-waitlist':      'प्रतीक्षा सूची',
+    // Nav children - inv
+    'nav-inventory-main': 'भण्डार',
+    'nav-stock-history':  'स्टक इतिहास',
+    'nav-suppliers':      'आपूर्तिकर्ता',
+    'nav-purchase-orders':'खरिद अर्डर',
+    'nav-recipes':        'रेसिपी',
+    'nav-waste':          'फोहोर',
+    // Nav children - staff
+    'nav-staff-main':    'कर्मचारी',
+    'nav-attendance':    'हाजिरी',
+    'nav-clock':         'समय ट्र्याक',
+    'nav-shifts':        'सिफ्ट',
+    'nav-roster':        'रोस्टर',
+    'nav-payroll':       'तलब',
+    'nav-training':      'तालिम',
+    // Nav children - fin
+    'nav-payments':      'भुक्तानी',
+    'nav-expenses':      'खर्च',
+    'nav-tax':           'कर',
+    'nav-tips':          'टिप्स',
+    // Dashboard section
+    'sec-title-dashboard':    'ड्यासबोर्ड',
+    'sec-title-orders':       'अर्डरहरू',
+    'sec-title-tables':       'टेबल र QR अर्डर',
+    'sec-title-staff':        'कर्मचारीहरू',
+    'sec-title-inventory':    'भण्डार',
+    'sec-title-reservations': 'बुकिङहरू',
+    'sec-title-payments':     'भुक्तानीहरू',
+    'sec-title-settings':     '⚙ सेटिङ',
+    // Buttons
+    'btn-add-table':     '+ टेबल थप्नुस्',
+    'btn-add-staff':     '+ कर्मचारी थप्नुस्',
+    'btn-add-item':      '+ वस्तु थप्नुस्',
+    'btn-save-all':      '💾 सबै सेभ',
+    // Settings labels
+    'set-restaurant-info': '🏠 रेस्टुरेन्ट जानकारी',
+    'set-tax-title':       '💰 कर र सेवा शुल्क',
+    'set-system-title':    '⚙ प्रणाली कन्फिग',
+    'set-printer-title':   '🖨️ प्रिन्टर सेटिङ',
+    'set-hours-title':     '🕐 खुल्ने समय',
+    'set-social-title':    '📱 सामाजिक मिडिया',
+    // Quick actions
+    'qa-new-order':      '+ नयाँ अर्डर',
+    'qa-reservation':    'बुकिङ',
+    'qa-tables-qr':      'टेबल र QR',
+    'qa-inventory':      'भण्डार',
+  }
+};
+
+let currentLang = localStorage.getItem('lang') || 'en';
+
+function applyLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('lang', lang);
+  const T = TRANSLATIONS[lang] || TRANSLATIONS.en;
+
+  // Apply to all elements with data-i18n attribute
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (T[key]) el.textContent = T[key];
+  });
+
+  // Update html lang attribute
+  document.documentElement.lang = lang === 'ne' ? 'ne' : 'en';
+
+  // Update page title for current section
+  const titleMap = {
+    dashboard: T['sec-title-dashboard'],
+    orders:    T['sec-title-orders'],
+    tables:    T['sec-title-tables'],
+    staff:     T['sec-title-staff'],
+    inventory: T['sec-title-inventory'],
+    reservations: T['sec-title-reservations'],
+    payments:  T['sec-title-payments'],
+    settings:  T['sec-title-settings'],
+  };
+  const titleEl = document.getElementById('pageTitle');
+  if (titleEl && titleMap[currentSection]) titleEl.textContent = titleMap[currentSection];
+}
+
 /* ══════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════ */
 // Set today's date as default for reservation
 document.getElementById('res-date').valueAsDate = new Date();
+
+// Apply saved language on load
+applyLanguage(localStorage.getItem('lang') || 'en');
 
 // Load brand name on start
 (async () => {
