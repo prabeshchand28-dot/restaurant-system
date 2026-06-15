@@ -32,6 +32,18 @@ input:focus,select:focus{border-color:#f97316}
 .btn:hover{background:#e06010}
 .btn-outline{background:none;color:#f97316;border:2px solid #f97316;border-radius:8px;padding:7px 16px;font-size:13px;cursor:pointer;font-weight:700;font-family:inherit}
 .btn-outline:hover{background:#f9731615}
+.btn-sm{border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-sm.edit{background:#f9731620;color:#f97316}
+.btn-sm.edit:hover{background:#f9731640}
+.btn-sm.del{background:#ff444420;color:#ff4444}
+.btn-sm.del:hover{background:#ff444440}
+
+/* Edit Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:16px;padding:28px;width:100%;max-width:420px}
+.modal-box h3{font-size:18px;font-weight:800;margin-bottom:20px}
+.modal-footer{display:flex;gap:10px;margin-top:20px}
 
 /* Tab nav */
 .tabs{display:flex;gap:8px;margin-bottom:24px}
@@ -146,6 +158,38 @@ input:focus,select:focus{border-color:#f97316}
   </div>
 </div>
 
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal" onclick="if(event.target===this)closeEdit()">
+  <div class="modal-box">
+    <h3>✏️ Edit Restaurant</h3>
+    <input type="hidden" id="edit-id"/>
+    <div class="form-group">
+      <label>Restaurant Name</label>
+      <input id="edit-name" type="text"/>
+    </div>
+    <div class="form-group">
+      <label>Plan</label>
+      <select id="edit-plan" style="width:100%">
+        <option value="free">Free</option>
+        <option value="pro">Pro</option>
+        <option value="enterprise">Enterprise</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Status</label>
+      <select id="edit-active" style="width:100%">
+        <option value="1">Active</option>
+        <option value="0">Inactive</option>
+      </select>
+    </div>
+    <div id="editMsg"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="saveEdit()">Save Changes</button>
+      <button class="btn-outline" onclick="closeEdit()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let superKey = '';
 
@@ -190,12 +234,58 @@ function renderTable(list) {
       <td>${r._count?.users||0} users</td>
       <td>${r._count?.orders||0} orders</td>
       <td style="color:#555;font-size:12px">${new Date(r.createdAt).toLocaleDateString()}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn-sm edit" onclick='openEdit(${JSON.stringify(r)})'>✏️ Edit</button>
+        <button class="btn-sm del" onclick="deleteRestaurant(${r.id},'${r.name.replace(/'/g,"\\'")}')">🗑️</button>
+      </td>
     </tr>`).join('');
   document.getElementById('content').innerHTML=`
     <table>
-      <thead><tr><th>Restaurant</th><th>Plan</th><th>Status</th><th>Staff</th><th>Orders</th><th>Created</th></tr></thead>
+      <thead><tr><th>Restaurant</th><th>Plan</th><th>Status</th><th>Staff</th><th>Orders</th><th>Created</th><th>Actions</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
+}
+
+function openEdit(r) {
+  document.getElementById('edit-id').value = r.id;
+  document.getElementById('edit-name').value = r.name;
+  document.getElementById('edit-plan').value = r.plan;
+  document.getElementById('edit-active').value = r.active ? '1' : '0';
+  document.getElementById('editMsg').innerHTML = '';
+  document.getElementById('editModal').style.display = 'flex';
+}
+function closeEdit() { document.getElementById('editModal').style.display = 'none'; }
+
+async function saveEdit() {
+  const id   = document.getElementById('edit-id').value;
+  const name = document.getElementById('edit-name').value.trim();
+  const plan = document.getElementById('edit-plan').value;
+  const active = document.getElementById('edit-active').value === '1';
+  if(!name) { document.getElementById('editMsg').innerHTML='<div class="msg-err">Name required</div>'; return; }
+  const res = await fetch('/api/superadmin/restaurants/' + id, {
+    method: 'PUT',
+    headers: { 'Content-Type':'application/json', 'x-super-key': superKey },
+    body: JSON.stringify({ name, plan, active })
+  });
+  const d = await res.json();
+  if(d.success) { closeEdit(); refreshList(); }
+  else document.getElementById('editMsg').innerHTML=`<div class="msg-err">${d.message}</div>`;
+}
+
+async function deleteRestaurant(id, name) {
+  if(!confirm(`"${name}" DELETE garnu sure xa?\n\nYo action undo hudaina!`)) return;
+  const res = await fetch('/api/superadmin/restaurants/' + id, {
+    method: 'DELETE',
+    headers: { 'x-super-key': superKey }
+  });
+  const d = await res.json();
+  if(d.success) refreshList();
+  else alert('Error: ' + d.message);
+}
+
+async function refreshList() {
+  const res = await fetch('/api/superadmin/restaurants?key=' + encodeURIComponent(superKey), { headers: {'x-super-key': superKey} });
+  if(res.ok) { const data = await res.json(); renderStats(data); renderTable(data.restaurants); }
 }
 
 async function createRestaurant() {

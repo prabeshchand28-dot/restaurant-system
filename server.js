@@ -262,6 +262,34 @@ app.get('/api/superadmin/restaurants', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
+// ── Superadmin: Edit Restaurant ───────────────────────────────────────────────
+app.put('/api/superadmin/restaurants/:id', async (req, res) => {
+  const key = req.headers['x-super-key'];
+  if (key !== 'qrsystem_super2026') return res.status(403).json({ success: false, message: 'Access denied' });
+  try {
+    const { name, plan, active } = req.body;
+    const updated = await prisma.restaurant.update({
+      where: { id: parseInt(req.params.id) },
+      data: { name, plan, active }
+    });
+    res.json({ success: true, restaurant: updated });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// ── Superadmin: Delete Restaurant ─────────────────────────────────────────────
+app.delete('/api/superadmin/restaurants/:id', async (req, res) => {
+  const key = req.headers['x-super-key'];
+  if (key !== 'qrsystem_super2026') return res.status(403).json({ success: false, message: 'Access denied' });
+  try {
+    const id = parseInt(req.params.id);
+    // Delete related data first
+    await prisma.setting.deleteMany({ where: { restaurantId: id } });
+    await prisma.user.deleteMany({ where: { restaurantId: id } });
+    await prisma.restaurant.delete({ where: { id } });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   // Get local network IP for sharing
   const os = require('os');
