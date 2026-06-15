@@ -40,7 +40,7 @@ exports.getQR = async (req, res) => {
     const no  = parseInt(req.params.no);
     const baseUrl = process.env.PUBLIC_URL || process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const rid = req.restaurantId || 1;
-    const url = `${baseUrl}/menu?table=${no}&r=${rid}`;
+    const url = `${baseUrl}/order?table=${no}`;
     const dataUrl = await generateQRDataUrl(url);
     res.json({ success: true, dataUrl, url });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }

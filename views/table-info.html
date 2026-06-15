@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Table Info</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0d0d0d;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center}
+.card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:24px;padding:48px 36px;max-width:340px;width:100%}
+.restaurant-name{font-size:13px;color:#888;letter-spacing:1px;text-transform:uppercase;margin-bottom:24px}
+.table-icon{font-size:64px;margin-bottom:16px}
+.table-label{font-size:15px;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:2px}
+.table-number{font-size:80px;font-weight:900;color:#f97316;line-height:1;margin-bottom:32px}
+.message{background:#111;border-radius:12px;padding:16px;margin-bottom:28px;font-size:14px;color:#ccc;line-height:1.6}
+.message strong{color:#fff}
+.badge{display:inline-block;background:#f9731620;border:1px solid #f9731640;color:#f97316;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.5px;margin-bottom:24px}
+.footer{font-size:11px;color:#555;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="restaurant-name" id="restName">Restaurant</div>
+  <div class="table-icon">🪑</div>
+  <div class="table-label">Table</div>
+  <div class="table-number" id="tableNum">—</div>
+  <div class="badge">✓ Seat Confirmed</div>
+  <div class="message">
+    <strong>Please wait</strong> — our staff will come to take your order shortly.<br><br>
+    <strong>पर्खनुहोस्</strong> — हाम्रो staff तपाईंको अर्डर लिन आउँछ।
+  </div>
+  <div class="footer">Powered by QR System</div>
+</div>
+<script>
+const params = new URLSearchParams(location.search);
+const tableNo = params.get('table') || params.get('t') || '?';
+document.getElementById('tableNum').textContent = tableNo;
+
+// Try to load restaurant name
+fetch('/api/settings/restaurant_name')
+  .then(r => r.json())
+  .then(d => { if(d.value) document.getElementById('restName').textContent = d.value; })
+  .catch(()=>{});
+</script>
+</body>
+</html>

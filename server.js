@@ -135,6 +135,7 @@ app.get('/',          (req, res) => res.redirect('/login'));
 app.get('/app',       (req, res) => res.sendFile(path.join(__dirname, 'public/install.html')));
 app.get('/install',   (req, res) => res.sendFile(path.join(__dirname, 'public/install.html')));
 app.get('/login',        (req, res) => res.sendFile(path.join(__dirname, 'views/login.html')));
+app.get('/table',        (req, res) => res.sendFile(path.join(__dirname, 'views/table-info.html')));
 app.get('/signup',       (req, res) => res.sendFile(path.join(__dirname, 'views/signup.html')));
 app.get('/superadmin',   (req, res) => res.sendFile(path.join(__dirname, 'views/superadmin.html')));
 app.get('/dashboard',    (req, res) => res.sendFile(path.join(__dirname, 'views/dashboard.html')));
