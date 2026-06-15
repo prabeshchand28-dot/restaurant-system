@@ -132,6 +132,7 @@ app.get('/api/ping', (req, res) => {
 
 // ── Page Routes ─────────────────────────────────────────
 app.get('/',          (req, res) => res.redirect('/login'));
+app.get('/app',       (req, res) => res.redirect('/install'));
 app.get('/login',        (req, res) => res.sendFile(path.join(__dirname, 'views/login.html')));
 app.get('/dashboard',    (req, res) => res.sendFile(path.join(__dirname, 'views/dashboard.html')));
 app.get('/order-manage', (req, res) => res.sendFile(path.join(__dirname, 'views/order-manage.html')));
