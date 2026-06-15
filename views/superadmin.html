@@ -157,7 +157,7 @@ function unlock() {
 }
 
 async function loadRestaurants(key) {
-  const res = await fetch('/api/superadmin/restaurants', {
+  const res = await fetch('/api/superadmin/restaurants?key=' + encodeURIComponent(key), {
     headers: { 'x-super-key': key }
   });
   if(!res.ok) {

@@ -239,8 +239,9 @@ app.use(errorHandler);
 
 // ── Super Admin API ──────────────────────────────────────────────────────────
 app.get('/api/superadmin/restaurants', async (req, res) => {
-  const key = req.headers['x-super-key'];
+  const key = req.headers['x-super-key'] || req.query.key;
   const SUPER_KEY = 'qrsystem_super2026';
+  console.log('[superadmin] key received:', key, '| expected:', SUPER_KEY);
   if (key !== SUPER_KEY) return res.status(403).json({ success: false, message: 'Access denied' });
   try {
     const { PrismaClient } = require('@prisma/client');
