@@ -135,6 +135,8 @@ app.get('/',          (req, res) => res.redirect('/login'));
 app.get('/app',       (req, res) => res.sendFile(path.join(__dirname, 'public/install.html')));
 app.get('/install',   (req, res) => res.sendFile(path.join(__dirname, 'public/install.html')));
 app.get('/login',        (req, res) => res.sendFile(path.join(__dirname, 'views/login.html')));
+app.get('/signup',       (req, res) => res.sendFile(path.join(__dirname, 'views/signup.html')));
+app.get('/superadmin',   (req, res) => res.sendFile(path.join(__dirname, 'views/superadmin.html')));
 app.get('/dashboard',    (req, res) => res.sendFile(path.join(__dirname, 'views/dashboard.html')));
 app.get('/order-manage', (req, res) => res.sendFile(path.join(__dirname, 'views/order-manage.html')));
 app.get('/kitchen',      (req, res) => res.sendFile(path.join(__dirname, 'views/kitchen.html')));
@@ -231,6 +233,35 @@ app.get('/kitchen-timer',      (req, res) => res.sendFile(path.join(__dirname, '
 
 // ── Error handler ────────────────────────────────────────
 app.use(errorHandler);
+
+
+// ── Super Admin API ──────────────────────────────────────────────────────────
+app.get('/api/superadmin/restaurants', async (req, res) => {
+  const key = req.headers['x-super-key'];
+  const SUPER_KEY = process.env.SUPER_ADMIN_KEY || 'qrsystem_super2026';
+  if (key !== SUPER_KEY) return res.status(403).json({ success: false, message: 'Access denied' });
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const p = new PrismaClient();
+    const restaurants = await p.restaurant.findMany({
+      include: { _count: { select: { } } },
+      orderBy: { createdAt: 'desc' }
+    });
+    // Get counts separately
+    const [users, orders] = await Promise.all([
+      p.user.count(),
+      p.order.count(),
+    ]);
+    const rWithCounts = await Promise.all(restaurants.map(async r => {
+      const [uCount, oCount] = await Promise.all([
+        p.user.count({ where: { restaurantId: r.id } }),
+        p.order.count({ where: { restaurantId: r.id } }),
+      ]);
+      return { ...r, _count: { users: uCount, orders: oCount } };
+    }));
+    res.json({ restaurants: rWithCounts, totalUsers: users, totalOrders: orders });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   // Get local network IP for sharing

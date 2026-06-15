@@ -21,19 +21,21 @@ exports.shapeOrder = shapeOrder;
 
 exports.getAll = async (req, res) => {
   try {
-    const orders = await prisma.order.findMany({ include: { items: true }, orderBy: { createdAt: 'asc' } });
+    const rid = req.restaurantId || 1;
+    const orders = await prisma.order.findMany({ where: { restaurantId: rid }, include: { items: true }, orderBy: { createdAt: 'asc' } });
     res.json(orders.map(shapeOrder));
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 };
 
 exports.getStats = async (req, res) => {
-  const orders = await prisma.order.findMany({ include: { items: true } });
+  const rid = req.restaurantId || 1;
+  const orders = await prisma.order.findMany({ where: { restaurantId: rid }, include: { items: true } });
   res.json({ totalOrders: orders.length });
 };
 
 exports.getByTable = async (req, res) => {
   const orders = await prisma.order.findMany({
-    where: { tableNumber: parseInt(req.params.t) },
+    where: { tableNumber: parseInt(req.params.t), restaurantId: req.restaurantId || 1 },
     include: { items: true }, orderBy: { createdAt: 'desc' },
   });
   res.json(orders.map(shapeOrder));
@@ -57,9 +59,11 @@ exports.create = async (req, res) => {
       return Math.max(max, m?.waitMins || 10);
     }, 0);
 
-    const tableRec = await prisma.restaurantTable.findUnique({ where: { number: parseInt(table) } });
+    const rid = req.restaurantId || 1;
+    const tableRec = await prisma.restaurantTable.findFirst({ where: { number: parseInt(table), restaurantId: rid } });
     const order = await prisma.order.create({
       data: {
+        restaurantId:  rid,
         tableNumber:   parseInt(table),
         tableId:       tableRec?.id || null,
         guestCount:    parseInt(guests) || 1,

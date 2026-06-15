@@ -19,10 +19,10 @@ exports.login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Galat username vaa password' });
 
     const token = jwt.sign(
-      { id: user.id, username: user.username, role: user.role, name: user.name },
+      { id: user.id, username: user.username, role: user.role, name: user.name, restaurantId: user.restaurantId || 1 },
       JWT_SECRET, { expiresIn: '24h' }
     );
-    res.json({ success: true, token, user: { id: user.id, username: user.username, role: user.role, name: user.name } });
+    res.json({ success: true, token, user: { id: user.id, username: user.username, role: user.role, name: user.name, restaurantId: user.restaurantId || 1 } });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 };
 
@@ -154,5 +154,76 @@ exports.resetPassword = async (req, res) => {
   } catch (e) {
     console.error('resetPassword error:', e);
     res.status(500).json({ success: false, message: 'Server error: ' + e.message });
+  }
+};
+
+// ══════════════════════════════════════════════
+// SIGNUP — New Restaurant Owner
+// POST /api/auth/signup
+// ══════════════════════════════════════════════
+exports.signupRestaurant = async (req, res) => {
+  try {
+    const { restaurantName, ownerName, username, password, email } = req.body;
+
+    if (!restaurantName || !ownerName || !username || !password)
+      return res.status(400).json({ success: false, message: 'Sabai fields bharnus' });
+    if (password.length < 6)
+      return res.status(400).json({ success: false, message: 'Password 6+ characters hunu parcha' });
+
+    // Check username unique
+    const existing = await prisma.user.findFirst({ where: { username } });
+    if (existing)
+      return res.status(400).json({ success: false, message: 'Username already liyeko xa, अर्को choose garus' });
+
+    // Create slug from restaurant name
+    const slug = restaurantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now();
+
+    // Create restaurant
+    const restaurant = await prisma.restaurant.create({
+      data: { name: restaurantName, slug }
+    });
+
+    // Create owner user
+    const user = await prisma.user.create({
+      data: {
+        username,
+        password,  // plain text (same as existing system)
+        name: ownerName,
+        role: 'admin',
+        email: email || '',
+        restaurantId: restaurant.id,
+      }
+    });
+
+    // Create default settings for this restaurant
+    await prisma.setting.createMany({
+      data: [
+        { restaurantId: restaurant.id, key: 'restaurant_name', value: restaurantName },
+        { restaurantId: restaurant.id, key: 'restaurant_address', value: '' },
+        { restaurantId: restaurant.id, key: 'restaurant_phone', value: '' },
+        { restaurantId: restaurant.id, key: 'restaurant_email', value: email || '' },
+        { restaurantId: restaurant.id, key: 'tax_rate', value: '13' },
+        { restaurantId: restaurant.id, key: 'service_charge', value: '0' },
+        { restaurantId: restaurant.id, key: 'currency', value: 'रू' },
+        { restaurantId: restaurant.id, key: 'daily_goal', value: '5000' },
+      ]
+    });
+
+    const token = jwt.sign(
+      { id: user.id, username: user.username, role: user.role, name: user.name, restaurantId: restaurant.id },
+      JWT_SECRET, { expiresIn: '24h' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: { id: user.id, username: user.username, role: user.role, name: user.name, restaurantId: restaurant.id },
+      restaurantId: restaurant.id,
+      message: 'Restaurant create bhayo!'
+    });
+
+  } catch (e) {
+    console.error('signupRestaurant error:', e);
+    res.status(500).json({ success: false, message: e.message });
   }
 };

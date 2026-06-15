@@ -4,7 +4,7 @@ const prisma = require('../config/prisma');
 const safeUser = u => ({ id: u.id, username: u.username, name: u.name, role: u.role, email: u.email, phone: u.phone, active: u.active, createdAt: u.createdAt });
 
 exports.getAll = async (req, res) => {
-  const users = await prisma.user.findMany({ orderBy: { id: 'asc' } });
+  const users = await prisma.user.findMany({ where: { restaurantId: req.restaurantId || 1 }, orderBy: { id: 'asc' } });
   res.json(users.map(safeUser));
 };
 
@@ -17,7 +17,7 @@ exports.create = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
     if (!['admin','manager','waiter','kitchen'].includes(role))
       return res.status(400).json({ success: false, message: 'Invalid role' });
-    const user = await prisma.user.create({ data: { username, password, name, role, email: email || '', phone: phone || '' } });
+    const user = await prisma.user.create({ data: { restaurantId: req.restaurantId || 1, username, password, name, role, email: email || '', phone: phone || '' } });
     res.json({ success: true, user: safeUser(user) });
   } catch (e) {
     if (e.code === 'P2002') return res.status(400).json({ success: false, message: 'Username already exists' });

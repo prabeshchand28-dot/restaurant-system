@@ -6,6 +6,7 @@ const { generateReceiptHTML } = require('../utils/receiptGenerator');
 
 exports.getAll = async (req, res) => {
   const payments = await prisma.payment.findMany({
+    where: { restaurantId: req.restaurantId || 1 },
     include: { order: { include: { items: true } } },
     orderBy: { createdAt: 'desc' },
   });
@@ -38,6 +39,7 @@ exports.process = async (req, res) => {
 
     const payment = await prisma.payment.create({
       data: {
+        restaurantId: req.restaurantId || 1,
         orderId:    parseInt(orderId),
         method,
         amount,

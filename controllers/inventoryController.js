@@ -2,7 +2,7 @@
 const prisma = require('../config/prisma');
 
 exports.getAll = async (req, res) => {
-  const items = await prisma.inventoryItem.findMany({ orderBy: { id: 'asc' } });
+  const items = await prisma.inventoryItem.findMany({ where: { restaurantId: req.restaurantId || 1 }, orderBy: { id: 'asc' } });
   res.json(items);
 };
 
@@ -12,7 +12,7 @@ exports.create = async (req, res) => {
     if (!name || quantity === undefined || !unit)
       return res.status(400).json({ success: false, message: 'name, quantity, unit required' });
     const item = await prisma.inventoryItem.create({
-      data: { name, quantity: parseFloat(quantity), unit, minStock: parseFloat(minStock) || 0, category: category || 'General' },
+      data: { restaurantId: req.restaurantId || 1, name, quantity: parseFloat(quantity), unit, minStock: parseFloat(minStock) || 0, category: category || 'General' },
     });
     res.json({ success: true, item });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }

@@ -17,7 +17,8 @@ function authMiddleware(req, res, next) {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'restaurant_secret_key');
-    req.user = decoded;   // { id, username, role }
+    req.user = decoded;   // { id, username, role, restaurantId }
+    req.restaurantId = decoded.restaurantId || 1;
     next();
 
   } catch (err) {

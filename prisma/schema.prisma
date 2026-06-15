@@ -8,19 +8,36 @@ datasource db {
 }
 
 // ─────────────────────────────────────
-// USERS
+// RESTAURANT (Multi-tenant)
 // ─────────────────────────────────────
-model User {
+model Restaurant {
   id        Int      @id @default(autoincrement())
-  username  String   @unique
-  password  String
   name      String
-  role      String   // admin | manager | waiter | kitchen
-  email     String   @default("")
-  phone     String   @default("")
+  slug      String   @unique
+  plan      String   @default("free")
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("restaurants")
+}
+
+
+// ─────────────────────────────────────
+// USERS
+// ─────────────────────────────────────
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  password     String
+  name         String
+  role         String   // admin | manager | waiter | kitchen
+  email        String   @default("")
+  phone        String   @default("")
+  active       Boolean  @default(true)
+  restaurantId Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@map("users")
 }
@@ -30,13 +47,15 @@ model User {
 // ─────────────────────────────────────
 model RestaurantTable {
   id           Int           @id @default(autoincrement())
-  number       Int           @unique
+  number       Int
   capacity     Int           @default(4)
   active       Boolean       @default(true)
+  restaurantId Int           @default(1)
   orders       Order[]
   guests       Guest[]
   reservations Reservation[]
 
+  @@unique([restaurantId, number])
   @@map("restaurant_tables")
 }
 
@@ -44,10 +63,11 @@ model RestaurantTable {
 // MENU ITEMS
 // ─────────────────────────────────────
 model MenuItem {
-  id         Int         @id @default(autoincrement())
-  name       String
-  price      Int
-  category   String
+  id           Int         @id @default(autoincrement())
+  name         String
+  price        Int
+  category     String
+  restaurantId Int         @default(1)
   image      String?
   available  Boolean     @default(true)
   featured   Boolean     @default(false)
@@ -66,6 +86,7 @@ model MenuItem {
 // ─────────────────────────────────────
 model Order {
   id            Int              @id @default(autoincrement())
+  restaurantId  Int              @default(1)
   tableNumber   Int
   tableId       Int?
   status        String           @default("Pending")
@@ -101,8 +122,9 @@ model OrderItem {
 // PAYMENTS
 // ─────────────────────────────────────
 model Payment {
-  id         Int      @id @default(autoincrement())
-  orderId    Int      @unique
+  id           Int      @id @default(autoincrement())
+  restaurantId Int      @default(1)
+  orderId      Int      @unique
   method     String
   amount     Int
   amountPaid Int
@@ -119,8 +141,9 @@ model Payment {
 // GUESTS
 // ─────────────────────────────────────
 model Guest {
-  id        Int              @id @default(autoincrement())
-  tableNum  Int
+  id           Int              @id @default(autoincrement())
+  restaurantId Int              @default(1)
+  tableNum     Int
   tableId   Int?
   count     Int
   gender    String           @default("Mixed")
@@ -134,8 +157,9 @@ model Guest {
 // RESERVATIONS
 // ─────────────────────────────────────
 model Reservation {
-  id        Int              @id @default(autoincrement())
-  name      String
+  id           Int              @id @default(autoincrement())
+  restaurantId Int              @default(1)
+  name         String
   phone     String
   guests    Int
   date      String
@@ -154,8 +178,9 @@ model Reservation {
 // INVENTORY
 // ─────────────────────────────────────
 model InventoryItem {
-  id        Int      @id @default(autoincrement())
-  name      String
+  id           Int      @id @default(autoincrement())
+  restaurantId Int      @default(1)
+  name         String
   quantity  Float
   unit      String
   minStock  Float    @default(0)
@@ -185,8 +210,9 @@ model Rating {
 // ATTENDANCE
 // ─────────────────────────────────────
 model Attendance {
-  id         Int       @id @default(autoincrement())
-  userId     Int
+  id           Int       @id @default(autoincrement())
+  restaurantId Int       @default(1)
+  userId       Int
   userName   String
   userRole   String
   date       String    // YYYY-MM-DD
@@ -205,11 +231,13 @@ model Attendance {
 // SETTINGS (key-value store)
 // ─────────────────────────────────────
 model Setting {
-  id        Int      @id @default(autoincrement())
-  key       String   @unique
-  value     String
-  updatedAt DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  restaurantId Int      @default(1)
+  key          String
+  value        String
+  updatedAt    DateTime @updatedAt
 
+  @@unique([restaurantId, key])
   @@map("settings")
 }
 
@@ -248,8 +276,9 @@ model LoyaltyTx {
 // COUPONS & DISCOUNTS
 // ─────────────────────────────────────
 model Coupon {
-  id          Int      @id @default(autoincrement())
-  code        String   @unique
+  id           Int      @id @default(autoincrement())
+  restaurantId Int      @default(1)
+  code         String
   type        String   // percent | fixed
   value       Float
   minOrder    Int      @default(0)
@@ -260,6 +289,7 @@ model Coupon {
   description String   @default("")
   createdAt   DateTime @default(now())
 
+  @@unique([restaurantId, code])
   @@map("coupons")
 }
 
@@ -290,6 +320,7 @@ model CustomerProfile {
 // ─────────────────────────────────────
 model Supplier {
   id             Int             @id @default(autoincrement())
+  restaurantId   Int             @default(1)
   name           String
   contact        String          @default("")
   phone          String          @default("")
@@ -324,8 +355,9 @@ model Shift {
 // EXPENSE TRACKING
 // ─────────────────────────────────────
 model Expense {
-  id          Int      @id @default(autoincrement())
-  category    String   // Rent | Utilities | Supplies | Staff | Marketing | Other
+  id           Int      @id @default(autoincrement())
+  restaurantId Int      @default(1)
+  category     String   // Rent | Utilities | Supplies | Staff | Marketing | Other
   description String
   amount      Int
   date        String   // YYYY-MM-DD

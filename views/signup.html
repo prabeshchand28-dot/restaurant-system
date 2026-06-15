@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Create Your Restaurant — QR System</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0d0d0d;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:20px;padding:40px 36px;max-width:460px;width:100%}
+.logo{display:flex;align-items:center;gap:12px;margin-bottom:32px}
+.logo-icon{width:48px;height:48px;background:#f97316;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900}
+.logo-text{font-size:20px;font-weight:800;color:#fff}
+.logo-sub{font-size:12px;color:#888}
+h2{font-size:24px;font-weight:800;margin-bottom:6px}
+.sub{color:#888;font-size:14px;margin-bottom:28px}
+.section-label{font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:1px;margin:20px 0 12px}
+.field{margin-bottom:14px}
+label{display:block;font-size:13px;color:#aaa;margin-bottom:5px}
+input{width:100%;background:#111;border:1px solid #333;border-radius:10px;padding:12px 14px;color:#fff;font-size:14px;outline:none;transition:.2s}
+input:focus{border-color:#f97316}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{width:100%;background:#f97316;color:#fff;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:20px;transition:.2s}
+.btn:hover{background:#ea6c0a}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.login-link{text-align:center;margin-top:18px;font-size:13px;color:#888}
+.login-link a{color:#f97316;text-decoration:none}
+.error{background:#ff444420;border:1px solid #ff4444;border-radius:8px;padding:10px 14px;font-size:13px;color:#ff8888;margin-bottom:16px;display:none}
+.step-dots{display:flex;gap:6px;justify-content:center;margin-bottom:28px}
+.dot{width:8px;height:8px;border-radius:50%;background:#333;transition:.3s}
+.dot.active{background:#f97316;width:24px;border-radius:4px}
+.check{color:#22c55e;font-size:18px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">Q</div>
+    <div>
+      <div class="logo-text">QR System</div>
+      <div class="logo-sub">Restaurant Management</div>
+    </div>
+  </div>
+
+  <div class="step-dots">
+    <div class="dot active" id="d1"></div>
+    <div class="dot" id="d2"></div>
+    <div class="dot" id="d3"></div>
+  </div>
+
+  <!-- Step 1: Restaurant Info -->
+  <div id="step1">
+    <h2>🏠 आफ्नो Restaurant बनाउनुस्</h2>
+    <p class="sub">एक पटक setup गरे पछि सुरू हुन्छ</p>
+    <div id="err1" class="error"></div>
+    <div class="section-label">Restaurant Details</div>
+    <div class="field">
+      <label>Restaurant को नाम *</label>
+      <input id="restName" placeholder="Himalayan Momo, Everest Cafe..." autofocus/>
+    </div>
+    <div class="field">
+      <label>ठेगाना</label>
+      <input id="restAddress" placeholder="Kathmandu, Nepal"/>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Phone</label>
+        <input id="restPhone" placeholder="01-XXXXXXX"/>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input id="restEmail" type="email" placeholder="info@restaurant.com"/>
+      </div>
+    </div>
+    <button class="btn" onclick="goStep2()">अगाडि जाने →</button>
+  </div>
+
+  <!-- Step 2: Owner Account -->
+  <div id="step2" style="display:none">
+    <h2>👤 Owner Account</h2>
+    <p class="sub">Login को लागि username र password बनाउनुस्</p>
+    <div id="err2" class="error"></div>
+    <div class="section-label">Account Details</div>
+    <div class="field">
+      <label>Owner को पूरा नाम *</label>
+      <input id="ownerName" placeholder="Ram Bahadur Thapa"/>
+    </div>
+    <div class="field">
+      <label>Username * (login को लागि)</label>
+      <input id="username" placeholder="rambahadur" autocomplete="username"/>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Password *</label>
+        <input id="password" type="password" placeholder="6+ characters" autocomplete="new-password"/>
+      </div>
+      <div class="field">
+        <label>Confirm Password *</label>
+        <input id="confirm" type="password" placeholder="फेरि टाइप गर्नुस्" autocomplete="new-password"/>
+      </div>
+    </div>
+    <button class="btn" onclick="submitSignup()">🚀 Restaurant सुरू गर्नुस्!</button>
+    <div style="margin-top:12px;text-align:center">
+      <button onclick="goStep1()" style="background:none;border:none;color:#888;cursor:pointer;font-size:13px">← पछाडि</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Success -->
+  <div id="step3" style="display:none;text-align:center">
+    <div style="font-size:60px;margin-bottom:16px">🎉</div>
+    <h2 style="margin-bottom:8px">तयार भयो!</h2>
+    <p class="sub" id="successMsg" style="margin-bottom:24px"></p>
+    <div style="background:#111;border-radius:12px;padding:16px;margin-bottom:20px;text-align:left;font-size:13px;color:#aaa">
+      <div style="margin-bottom:8px"><span class="check">✓</span> Restaurant create भयो</div>
+      <div style="margin-bottom:8px"><span class="check">✓</span> Owner account बन्यो</div>
+      <div><span class="check">✓</span> Default settings set भयो</div>
+    </div>
+    <button class="btn" onclick="goToDashboard()">Dashboard खोल्नुस् →</button>
+  </div>
+
+  <div class="login-link" id="loginLink">
+    पहिले नै account छ? <a href="/login">Login गर्नुस्</a>
+  </div>
+</div>
+
+<script>
+let signupToken = null;
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideErr(id) { document.getElementById(id).style.display = 'none'; }
+
+function goStep1() {
+  document.getElementById('step1').style.display = '';
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('d1').classList.add('active');
+  document.getElementById('d2').classList.remove('active');
+}
+
+function goStep2() {
+  const name = document.getElementById('restName').value.trim();
+  if (!name) { showErr('err1', 'Restaurant को नाम चाहिन्छ'); return; }
+  hideErr('err1');
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = '';
+  document.getElementById('d1').classList.remove('active');
+  document.getElementById('d2').classList.add('active');
+  document.getElementById('ownerName').focus();
+}
+
+async function submitSignup() {
+  const ownerName    = document.getElementById('ownerName').value.trim();
+  const username     = document.getElementById('username').value.trim();
+  const password     = document.getElementById('password').value;
+  const confirm      = document.getElementById('confirm').value;
+  const restaurantName = document.getElementById('restName').value.trim();
+
+  if (!ownerName || !username || !password) { showErr('err2', 'सबै * fields भर्नुस्'); return; }
+  if (password.length < 6) { showErr('err2', 'Password कम्तिमा 6 characters हुनुपर्छ'); return; }
+  if (password !== confirm) { showErr('err2', 'Password match भएन'); return; }
+  hideErr('err2');
+
+  const btn = document.querySelector('#step2 .btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Creating...';
+
+  try {
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        restaurantName,
+        ownerName,
+        username,
+        password,
+        email: document.getElementById('restEmail').value.trim(),
+      })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      showErr('err2', data.message || 'Error bhayo');
+      btn.disabled = false;
+      btn.textContent = '🚀 Restaurant सुरू गर्नुस्!';
+      return;
+    }
+
+    // Save token
+    signupToken = data.token;
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+
+    // Also save address/phone to settings
+    const extraFields = {
+      restaurant_address: document.getElementById('restAddress').value.trim(),
+      restaurant_phone:   document.getElementById('restPhone').value.trim(),
+    };
+    if (extraFields.restaurant_address || extraFields.restaurant_phone) {
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + data.token },
+        body: JSON.stringify(extraFields)
+      });
+    }
+
+    // Show success
+    document.getElementById('step2').style.display = 'none';
+    document.getElementById('step3').style.display = '';
+    document.getElementById('d2').classList.remove('active');
+    document.getElementById('d3').classList.add('active');
+    document.getElementById('loginLink').style.display = 'none';
+    document.getElementById('successMsg').textContent = `"${restaurantName}" को dashboard तयार छ!`;
+
+  } catch (e) {
+    showErr('err2', 'Network error: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '🚀 Restaurant सुरू गर्नुस्!';
+  }
+}
+
+function goToDashboard() {
+  window.location.href = '/dashboard';
+}
+</script>
+</body>
+</html>

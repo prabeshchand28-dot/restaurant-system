@@ -2,7 +2,8 @@
 const prisma  = require('../config/prisma');
 
 exports.getAll = async (req, res) => {
-  const items = await prisma.menuItem.findMany({ orderBy: { id: 'asc' } });
+  const rid = req.restaurantId || 1;
+  const items = await prisma.menuItem.findMany({ where: { restaurantId: rid }, orderBy: { id: 'asc' } });
   res.json(items);
 };
 
@@ -19,6 +20,7 @@ exports.create = async (req, res) => {
       return res.status(400).json({ success: false, message: 'name, price, category required' });
     const item = await prisma.menuItem.create({
       data: {
+        restaurantId: req.restaurantId || 1,
         name, price: parseInt(price), category,
         image:     req.file ? `/uploads/menu/${req.file.filename}` : null,
         available: true,

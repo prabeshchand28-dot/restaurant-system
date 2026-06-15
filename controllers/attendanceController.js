@@ -8,8 +8,8 @@ exports.getAll = async (req, res) => {
   try {
     const date = req.query.date || todayStr();
     const [records, staff] = await Promise.all([
-      prisma.attendance.findMany({ where: { date }, orderBy: { checkIn: 'asc' } }),
-      prisma.user.findMany({ where: { active: true }, orderBy: { id: 'asc' } }),
+      prisma.attendance.findMany({ where: { date, restaurantId: req.restaurantId || 1 }, orderBy: { checkIn: 'asc' } }),
+      prisma.user.findMany({ where: { active: true, restaurantId: req.restaurantId || 1 }, orderBy: { id: 'asc' } }),
     ]);
     // Merge staff with attendance records
     const result = staff.map(u => {

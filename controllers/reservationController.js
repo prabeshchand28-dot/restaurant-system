@@ -2,7 +2,7 @@
 const prisma = require('../config/prisma');
 
 exports.getAll = async (req, res) => {
-  const rows = await prisma.reservation.findMany({ orderBy: { createdAt: 'desc' } });
+  const rows = await prisma.reservation.findMany({ where: { restaurantId: req.restaurantId || 1 }, orderBy: { createdAt: 'desc' } });
   res.json(rows);
 };
 
@@ -11,9 +11,9 @@ exports.create = async (req, res) => {
     const { name, phone, guests, date, time, tableNo, note } = req.body;
     if (!name || !phone || !guests || !date || !time)
       return res.status(400).json({ success: false, message: 'All fields required' });
-    const tableRec = tableNo ? await prisma.restaurantTable.findUnique({ where: { number: parseInt(tableNo) } }) : null;
+    const tableRec = tableNo ? await prisma.restaurantTable.findFirst({ where: { number: parseInt(tableNo), restaurantId: req.restaurantId || 1 } }) : null;
     const reservation = await prisma.reservation.create({
-      data: { name, phone, guests: parseInt(guests), date, time, tableNo: tableNo ? parseInt(tableNo) : null, tableId: tableRec?.id || null, note: note || '', status: 'Confirmed' },
+      data: { restaurantId: req.restaurantId || 1, name, phone, guests: parseInt(guests), date, time, tableNo: tableNo ? parseInt(tableNo) : null, tableId: tableRec?.id || null, note: note || '', status: 'Confirmed' },
     });
     res.json({ success: true, reservation });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }

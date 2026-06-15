@@ -3,11 +3,21 @@ const prisma = require('../config/prisma');
 
 // Default settings
 const DEFAULTS = {
-  restaurant_name:    'My Restaurant',
-  restaurant_address: 'Kathmandu, Nepal',
-  restaurant_phone:   '01-XXXXXXX',
-  restaurant_email:   '',
-  tax_rate:           '13',
+  restaurant_name:        'My Restaurant',
+  restaurant_address:     'Kathmandu, Nepal',
+  restaurant_phone:       '01-XXXXXXX',
+  restaurant_email:       '',
+  restaurant_description: '',
+  restaurant_logo:        '',
+  restaurant_website:     '',
+  open_time:              '10:00',
+  close_time:             '22:00',
+  open_days:              'Sun-Fri',
+  facebook:               '',
+  instagram:              '',
+  tiktok:                 '',
+  maps_url:               '',
+  tax_rate:               '13',
   service_charge:     '0',
   currency:           'रू',
   language:           'en',
@@ -21,7 +31,8 @@ const DEFAULTS = {
 
 exports.getAll = async (req, res) => {
   try {
-    const rows = await prisma.setting.findMany();
+    const rid = req.restaurantId || 1;
+    const rows = await prisma.setting.findMany({ where: { restaurantId: rid } });
     const settings = { ...DEFAULTS };
     rows.forEach(r => { settings[r.key] = r.value; });
     res.json(settings);
@@ -31,11 +42,12 @@ exports.getAll = async (req, res) => {
 exports.set = async (req, res) => {
   try {
     const updates = req.body; // { key: value, ... }
+    const rid = req.restaurantId || 1;
     const ops = Object.entries(updates).map(([key, value]) =>
       prisma.setting.upsert({
-        where:  { key },
+        where:  { restaurantId_key: { restaurantId: rid, key } },
         update: { value: String(value) },
-        create: { key, value: String(value) },
+        create: { restaurantId: rid, key, value: String(value) },
       })
     );
     await Promise.all(ops);

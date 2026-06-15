@@ -1387,13 +1387,31 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       </div>
       <div class="settings-grid">
         <!-- Restaurant Info -->
-        <div class="settings-card">
+        <div class="settings-card" style="grid-column:1/-1">
           <h4>🏠 Restaurant Info</h4>
-          <div class="settings-row"><label>Restaurant Name</label><input class="settings-input" id="set-name" placeholder="My Restaurant"></div>
-          <div class="settings-row"><label>Address</label><input class="settings-input" id="set-address" placeholder="Kathmandu, Nepal"></div>
-          <div class="settings-row"><label>Phone</label><input class="settings-input" id="set-phone" placeholder="01-XXXXXXX"></div>
-          <div class="settings-row"><label>Email</label><input class="settings-input" id="set-email" placeholder="info@restaurant.com"></div>
-          <button class="settings-save" onclick="saveRestaurantInfo()">Save Info</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">
+            <div class="settings-row"><label>Restaurant Name</label><input class="settings-input" id="set-name" placeholder="My Restaurant"></div>
+            <div class="settings-row"><label>Phone</label><input class="settings-input" id="set-phone" placeholder="01-XXXXXXX"></div>
+            <div class="settings-row"><label>Address</label><input class="settings-input" id="set-address" placeholder="Kathmandu, Nepal"></div>
+            <div class="settings-row"><label>Email</label><input class="settings-input" id="set-email" placeholder="info@restaurant.com"></div>
+            <div class="settings-row" style="grid-column:1/-1"><label>Description / Tagline</label><textarea class="settings-input" id="set-description" placeholder="Best restaurant in town..." rows="2" style="resize:vertical"></textarea></div>
+            <div class="settings-row"><label>Logo URL</label><input class="settings-input" id="set-logo" placeholder="https://... or /icons/logo.png"></div>
+            <div class="settings-row"><label>Website</label><input class="settings-input" id="set-website" placeholder="https://yourrestaurant.com"></div>
+          </div>
+          <h4 style="margin-top:18px">🕐 Opening Hours</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 24px">
+            <div class="settings-row"><label>Open Time</label><input class="settings-input" type="time" id="set-open-time" value="10:00"></div>
+            <div class="settings-row"><label>Close Time</label><input class="settings-input" type="time" id="set-close-time" value="22:00"></div>
+            <div class="settings-row"><label>Open Days</label><input class="settings-input" id="set-open-days" placeholder="Sun-Fri" value="Sun-Fri"></div>
+          </div>
+          <h4 style="margin-top:18px">📱 Social Media & Location</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">
+            <div class="settings-row"><label>📘 Facebook</label><input class="settings-input" id="set-facebook" placeholder="https://facebook.com/yourpage"></div>
+            <div class="settings-row"><label>📸 Instagram</label><input class="settings-input" id="set-instagram" placeholder="https://instagram.com/yourpage"></div>
+            <div class="settings-row"><label>🎵 TikTok</label><input class="settings-input" id="set-tiktok" placeholder="https://tiktok.com/@yourpage"></div>
+            <div class="settings-row"><label>📍 Google Maps Link</label><input class="settings-input" id="set-maps" placeholder="https://maps.google.com/?q=..."></div>
+          </div>
+          <button class="settings-save" onclick="saveRestaurantInfo()">💾 Save Info</button>
         </div>
         <!-- Tax & Charges -->
         <div class="settings-card">
@@ -3609,6 +3627,16 @@ async function loadSettings() {
   set('set-address',        s.restaurant_address);
   set('set-phone',          s.restaurant_phone);
   set('set-email',          s.restaurant_email);
+  set('set-description',    s.restaurant_description);
+  set('set-logo',           s.restaurant_logo);
+  set('set-website',        s.restaurant_website);
+  set('set-open-time',      s.open_time||'10:00');
+  set('set-close-time',     s.close_time||'22:00');
+  set('set-open-days',      s.open_days||'Sun-Fri');
+  set('set-facebook',       s.facebook);
+  set('set-instagram',      s.instagram);
+  set('set-tiktok',         s.tiktok);
+  set('set-maps',           s.maps_url);
   set('set-tax',            s.tax_rate||'13');
   set('set-service-charge', s.service_charge||'0');
   set('set-currency',       s.currency||'रू');
@@ -3632,10 +3660,20 @@ async function loadSettings() {
 
 async function saveRestaurantInfo() {
   const r = await api('POST', '/api/settings', {
-    restaurant_name:    document.getElementById('set-name').value,
-    restaurant_address: document.getElementById('set-address').value,
-    restaurant_phone:   document.getElementById('set-phone').value,
-    restaurant_email:   document.getElementById('set-email').value,
+    restaurant_name:        document.getElementById('set-name').value,
+    restaurant_address:     document.getElementById('set-address').value,
+    restaurant_phone:       document.getElementById('set-phone').value,
+    restaurant_email:       document.getElementById('set-email').value,
+    restaurant_description: document.getElementById('set-description').value,
+    restaurant_logo:        document.getElementById('set-logo').value,
+    restaurant_website:     document.getElementById('set-website').value,
+    open_time:              document.getElementById('set-open-time').value,
+    close_time:             document.getElementById('set-close-time').value,
+    open_days:              document.getElementById('set-open-days').value,
+    facebook:               document.getElementById('set-facebook').value,
+    instagram:              document.getElementById('set-instagram').value,
+    tiktok:                 document.getElementById('set-tiktok').value,
+    maps_url:               document.getElementById('set-maps').value,
   });
   if (r.success) showToast('✅ Restaurant info saved', 'success');
   else showToast(r.message||'Error', 'error');
@@ -3965,6 +4003,18 @@ function printPaymentReceipt(payId) {
 ══════════════════════════════════════════════ */
 // Set today's date as default for reservation
 document.getElementById('res-date').valueAsDate = new Date();
+
+// Load brand name on start
+(async () => {
+  try {
+    const r = await fetch('/api/settings', { headers: authHeaders() });
+    const d = await r.json();
+    if (d.restaurant_name) {
+      const b = document.getElementById('brandName');
+      if (b) b.textContent = d.restaurant_name;
+    }
+  } catch(e) {}
+})();
 
 // Load dashboard on start
 loadDashboard();

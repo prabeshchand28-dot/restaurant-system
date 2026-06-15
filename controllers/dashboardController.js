@@ -8,19 +8,20 @@ exports.getEvents = (req, res) => {
 
 exports.getSummary = async (req, res) => {
   try {
+    const rid = req.restaurantId || 1;
     const now        = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekStart  = new Date(now - 7  * 86400000);
     const monthStart = new Date(now - 30 * 86400000);
 
     const [orders, payments, guests, ratings, inventory, reservations, recentOrders] = await Promise.all([
-      prisma.order.findMany({ include: { items: true } }),
-      prisma.payment.findMany(),
+      prisma.order.findMany({ where: { restaurantId: rid }, include: { items: true } }),
+      prisma.payment.findMany({ where: { restaurantId: rid } }),
       prisma.guest.findMany(),
       prisma.rating.findMany(),
-      prisma.inventoryItem.findMany(),
+      prisma.inventoryItem.findMany({ where: { restaurantId: rid } }),
       prisma.reservation.findMany({ where: { date: todayStart.toISOString().split('T')[0] } }),
-      prisma.order.findMany({ include: { items: true }, orderBy: { createdAt: 'desc' }, take: 10 }),
+      prisma.order.findMany({ where: { restaurantId: rid }, include: { items: true }, orderBy: { createdAt: 'desc' }, take: 10 }),
     ]);
 
     const revenueInRange = (from) =>
