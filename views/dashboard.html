@@ -622,12 +622,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       </div>
       <div class="nav-children" id="nc-ops">
         <div class="nav-child" onclick="location.href='/order-manage'">Orders</div>
-        <div class="nav-child" onclick="showSection('tables',null)">Tables</div>
+        <div class="nav-child" onclick="showSection('tables',null)">Tables & QR Ordering</div>
         <div class="nav-child" onclick="location.href='/kitchen'">Kitchen</div>
         <div class="nav-child" onclick="showSection('reservations',null)">Reservations</div>
         <div class="nav-child" onclick="location.href='/delivery'">Delivery</div>
         <div class="nav-child" onclick="location.href='/waitlist'">Waitlist</div>
-        <div class="nav-child" onclick="location.href='/qr-codes'">QR Ordering</div>
       </div>
     </div>
 
@@ -2921,7 +2920,7 @@ const FAV_PAGES = [
   {label:'Kitchen',          fn:"location.href='/kitchen'"},
   {label:'Delivery',         fn:"location.href='/delivery'"},
   {label:'Waitlist',         fn:"location.href='/waitlist'"},
-  {label:'QR Ordering',      fn:"location.href='/qr-codes'"},
+  {label:'Tables & QR',      fn:"showSection('tables',null)"},
   {label:'Inventory',        fn:"showSection('inventory',null)"},
   {label:'Suppliers',        fn:"location.href='/suppliers'"},
   {label:'Purchase Orders',  fn:"location.href='/purchase-orders'"},
