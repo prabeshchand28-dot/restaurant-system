@@ -600,7 +600,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 <div class="sidebar" id="sidebar">
   <div class="brand">
     <div class="brand-logo">U</div>
-    <span class="brand-name">Uena</span>
+    <span class="brand-name" id="brandName">Uena</span>
   </div>
 
   <nav class="nav" id="mainNav">
@@ -3605,6 +3605,7 @@ async function loadSettings() {
   // Populate fields
   const set = (id, val) => { const el=document.getElementById(id); if(el) el.value=val||''; };
   set('set-name',           s.restaurant_name);
+  if(s.restaurant_name){ const b=document.getElementById('brandName'); if(b) b.textContent=s.restaurant_name; }
   set('set-address',        s.restaurant_address);
   set('set-phone',          s.restaurant_phone);
   set('set-email',          s.restaurant_email);
