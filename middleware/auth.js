@@ -19,6 +19,17 @@ function authMiddleware(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'restaurant_secret_key');
     req.user = decoded;   // { id, username, role, restaurantId }
     req.restaurantId = decoded.restaurantId || 1;
+
+    // Demo mode: POST/PUT/PATCH/DELETE block
+    const WRITE = ['POST','PUT','PATCH','DELETE'];
+    if (decoded.role === 'demo' && WRITE.includes(req.method)) {
+      return res.status(403).json({
+        success: false,
+        demo: true,
+        message: 'Demo mode ma data save hundaina. Real account banaunus.'
+      });
+    }
+
     next();
 
   } catch (err) {

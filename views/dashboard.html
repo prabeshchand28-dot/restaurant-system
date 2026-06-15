@@ -1849,7 +1849,14 @@ function authHeaders() {
   return { 'Content-Type':'application/json', 'Authorization':'Bearer '+token };
 }
 
+const IS_DEMO = user.role === 'demo';
+
 async function api(method, url, body) {
+  // Demo mode: block all write operations client-side
+  if (IS_DEMO && ['POST','PUT','PATCH','DELETE'].includes(method.toUpperCase())) {
+    showToast('⚠️ Demo mode: Changes save hudainan. Real account banaunus!', 'error');
+    return { success: false, demo: true };
+  }
   const opts = { method, headers: authHeaders() };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(url, opts);
