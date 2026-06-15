@@ -197,6 +197,7 @@ exports.signupRestaurant = async (req, res) => {
 
     // Create default settings for this restaurant
     await prisma.setting.createMany({
+      skipDuplicates: true,
       data: [
         { restaurantId: restaurant.id, key: 'restaurant_name', value: restaurantName },
         { restaurantId: restaurant.id, key: 'restaurant_address', value: '' },
