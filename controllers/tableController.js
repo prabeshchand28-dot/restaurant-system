@@ -1,8 +1,6 @@
 // controllers/tableController.js
 const prisma  = require('../config/prisma');
 const { generateQRDataUrl } = require('../utils/qrGenerator');
-const BASE_URL = process.env.PUBLIC_URL || process.env.BASE_URL || 'http://localhost:3000';
-
 exports.getAll = async (req, res) => {
   try {
     const tables = await prisma.restaurantTable.findMany({ where: { active: true }, orderBy: { number: 'asc' } });
@@ -34,7 +32,8 @@ exports.remove = async (req, res) => {
 exports.getQR = async (req, res) => {
   try {
     const no  = parseInt(req.params.no);
-    const url = `${BASE_URL}/menu?table=${no}`;
+    const baseUrl = process.env.PUBLIC_URL || process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const url = `${baseUrl}/menu?table=${no}`;
     const dataUrl = await generateQRDataUrl(url);
     res.json({ success: true, dataUrl, url });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
