@@ -1,6 +1,6 @@
 {
-  "name": "Uena Restaurant System",
-  "short_name": "Uena",
+  "name": "Restaurant System",
+  "short_name": "RestaurantQR",
   "description": "Restaurant Management System",
   "start_url": "/dashboard",
   "display": "standalone",

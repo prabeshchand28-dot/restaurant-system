@@ -3,12 +3,15 @@
 //           API calls always network-first with offline fallback,
 //           True static assets (css/js/fonts) cache-first.
 
-const CACHE_NAME  = 'restaurant-v4';  // bumped — HTML now network-only
+const CACHE_NAME  = 'restaurant-v6';  // bumped for multi-tenant + offline fixes
 
-// Only cache actual static files, NOT html pages
+// Static files to pre-cache
 const STATIC_URLS = [
   '/css/style.css',
   '/css/dashboard.css',
+  '/js/offline.js',
+  '/js/autoupdate.js',
+  '/manifest.json',
 ];
 
 // ── Install ──────────────────────────────────────────────

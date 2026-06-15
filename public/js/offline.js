@@ -191,6 +191,13 @@ const OfflineManager = (() => {
     return token ? { Authorization: 'Bearer ' + token } : {};
   }
 
+  function isDemo() {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      return user.role === 'demo';
+    } catch { return false; }
+  }
+
   // ── Online / Offline Events ───────────────────────────
   window.addEventListener('online', () => {
     showToast('🌐 Internet आयो! Sync गर्दैछ...', 'success');
@@ -240,6 +247,11 @@ const OfflineManager = (() => {
 
   // ── Offline-aware fetch wrapper ───────────────────────
   async function apiFetch(method, url, body) {
+    // Demo users: never queue — their writes are blocked server-side anyway
+    if (isDemo() && ['POST','PATCH','PUT','DELETE'].includes(method)) {
+      showToast('⚠️ Demo mode: Changes save hudainan!', 'error');
+      return { success: false, demo: true };
+    }
     if (!navigator.onLine && ['POST','PATCH','PUT','DELETE'].includes(method)) {
       await queueRequest(method, url, body);
       if (method === 'POST' && url.includes('/api/orders')) {

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<link rel="manifest" href="/manifest.json"/><meta name="theme-color" content="#f97316"/><link rel="apple-touch-icon" href="/icons/icon-192.png"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/><meta name="apple-mobile-web-app-title" content="Uena"/><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="/manifest.json"/><meta name="theme-color" content="#f97316"/><link rel="apple-touch-icon" href="/icons/icon-192.png"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/><meta name="apple-mobile-web-app-title" content="Dashboard"/><meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Dashboard — Restaurant System</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
@@ -770,7 +770,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   </div>
 
   <div class="sidebar-footer">
-    <div class="footer-title">Uena Restaurant</div>
+    <div class="footer-title" id="sidebarFooterName">Restaurant</div>
     <div>© 2026 All Rights Reserved</div>
   </div>
 </div>
@@ -784,7 +784,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   <div class="demo-banner" id="demoBanner">
     <div class="db-left">
       <span class="db-badge">DEMO</span>
-      <span>This is a live demo of Uena Restaurant System. All data shown is sample data.</span>
+      <span>This is a live demo of the Restaurant System. All data shown is sample data.</span>
     </div>
     <button class="db-cta" onclick="window.open('mailto:prabeshchand143@gmail.com?subject=Restaurant System Inquiry','_blank')">
       📧 Get This System
@@ -4189,6 +4189,9 @@ applyLanguage(localStorage.getItem('lang') || 'en');
     if (d.restaurant_name) {
       const b = document.getElementById('brandName');
       if (b) b.textContent = d.restaurant_name;
+      const f = document.getElementById('sidebarFooterName');
+      if (f) f.textContent = d.restaurant_name;
+      document.title = d.restaurant_name + ' — Dashboard';
     }
   } catch(e) {}
 })();
