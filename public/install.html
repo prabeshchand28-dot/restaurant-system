@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Install Uena Restaurant App</title>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#f97316"/>
+<link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#111;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:40px 32px;max-width:420px;width:100%;text-align:center}
+.logo{width:90px;height:90px;background:#f97316;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:900;color:#fff;margin:0 auto 20px}
+h1{font-size:26px;font-weight:800;margin-bottom:6px}
+.sub{color:#aaa;font-size:14px;margin-bottom:32px}
+.steps{text-align:left;margin-bottom:28px}
+.step{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+.step-num{min-width:32px;height:32px;background:#f97316;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0}
+.step-text{font-size:14px;color:#ccc;line-height:1.5;padding-top:6px}
+.step-text strong{color:#fff}
+.btn{display:block;background:#f97316;color:#fff;text-decoration:none;padding:16px;border-radius:12px;font-size:16px;font-weight:700;margin-bottom:12px;border:none;width:100%;cursor:pointer}
+.btn-outline{background:transparent;border:2px solid #444;color:#aaa;font-size:14px;padding:12px}
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:#555;font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#333}
+.os-tabs{display:flex;gap:8px;margin-bottom:24px}
+.os-tab{flex:1;padding:10px;border-radius:8px;border:2px solid #333;background:transparent;color:#aaa;font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
+.os-tab.active{border-color:#f97316;color:#f97316;background:#f9731610}
+.panel{display:none}.panel.active{display:block}
+.url-box{background:#0a0a0a;border:1px solid #333;border-radius:10px;padding:14px;font-size:13px;color:#f97316;font-family:monospace;word-break:break-all;margin-bottom:20px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">U</div>
+  <h1>Uena Restaurant</h1>
+  <p class="sub">Restaurant Management System — Install as App</p>
+
+  <div class="os-tabs">
+    <button class="os-tab active" onclick="switchTab('android',this)">🤖 Android</button>
+    <button class="os-tab" onclick="switchTab('iphone',this)">🍎 iPhone</button>
+  </div>
+
+  <!-- Android -->
+  <div class="panel active" id="panel-android">
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>Chrome browser</strong> ma yo link khol</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">Browser ko <strong>⋮ menu</strong> (top right) click gara</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>"Add to Home screen"</strong> click gara</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text"><strong>"Install"</strong> press gara — app install huncha!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- iPhone -->
+  <div class="panel" id="panel-iphone">
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>Safari browser</strong> ma yo link khol</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">Tala <strong>Share button (⎙)</strong> tap gara</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>"Add to Home Screen"</strong> tap gara</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text"><strong>"Add"</strong> press gara — app install huncha!</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="url-box">restaurant-system-1-u9ew.onrender.com</div>
+
+  <a class="btn" href="/login">▶ Open App</a>
+  <a class="btn btn-outline" href="/menu">🍽️ View Menu (Customer)</a>
+</div>
+
+<script>
+function switchTab(name, el) {
+  document.querySelectorAll('.os-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+</script>
+</body>
+</html>
