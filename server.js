@@ -75,6 +75,116 @@ app.use('/api/performance',   require('./routes/staffPerformance'));
 app.use('/api/campaigns',     require('./routes/campaigns'));
 app.use('/api/analytics',     require('./routes/analytics'));
 app.use('/api/payments/gateway', require('./routes/stripe'));
+
+// ── Online Payments: eSewa + Khalti ─────────────────────────────────────────
+const esewa  = require('./services/esewaService');
+const khalti = require('./services/khaltiService');
+
+// eSewa — initiate (returns form fields, frontend POSTs to eSewa)
+app.post('/api/pay/esewa/initiate', async (req, res) => {
+  try {
+    const { orderId, amount, taxAmount } = req.body;
+    const baseUrl   = process.env.PUBLIC_URL || `http://localhost:${PORT}`;
+    const result    = esewa.initiatePayment({
+      orderId,
+      amount:     parseFloat(amount),
+      taxAmount:  parseFloat(taxAmount || 0),
+      successUrl: `${baseUrl}/api/pay/esewa/success`,
+      failureUrl: `${baseUrl}/api/pay/esewa/failure`,
+    });
+    res.json({ success: true, ...result });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// eSewa — success callback
+app.get('/api/pay/esewa/success', async (req, res) => {
+  try {
+    const { data } = req.query;
+    if (!data) return res.redirect('/payment-success?status=failed&gateway=esewa');
+    const result = await esewa.verifyPayment(data);
+    if (result.success) {
+      // Extract orderId from transactionUuid (format: order-<id>-<timestamp>)
+      const match   = result.transactionUuid?.match(/order-(\d+)-/);
+      const orderId = match ? parseInt(match[1]) : null;
+      if (orderId) {
+        await prisma.payment.create({
+          data: {
+            restaurantId: 1,
+            orderId,
+            method:     'eSewa',
+            amount:     parseFloat(result.amount),
+            amountPaid: parseFloat(result.amount),
+            change:     0,
+            receiptNo:  result.transactionCode || 'ESW-' + Date.now(),
+            status:     'Paid',
+          }
+        }).catch(() => {});
+        await prisma.order.update({
+          where: { id: orderId },
+          data:  { status: 'Completed', completedAt: new Date() }
+        }).catch(() => {});
+      }
+      res.redirect(`/payment-success?status=success&gateway=esewa&txn=${result.transactionCode}`);
+    } else {
+      res.redirect(`/payment-success?status=failed&gateway=esewa&msg=${encodeURIComponent(result.message)}`);
+    }
+  } catch (e) { res.redirect('/payment-success?status=failed&gateway=esewa'); }
+});
+
+// eSewa — failure callback
+app.get('/api/pay/esewa/failure', (req, res) => {
+  res.redirect('/payment-success?status=failed&gateway=esewa');
+});
+
+// Khalti — initiate
+app.post('/api/pay/khalti/initiate', async (req, res) => {
+  try {
+    const { orderId, amount, customerName, customerPhone, customerEmail } = req.body;
+    const baseUrl = process.env.PUBLIC_URL || `http://localhost:${PORT}`;
+    const result  = await khalti.initiatePayment({
+      orderId,
+      amount:        parseFloat(amount),
+      customerName,
+      customerPhone,
+      customerEmail,
+      returnUrl:   `${baseUrl}/api/pay/khalti/verify`,
+      websiteUrl:  baseUrl,
+    });
+    res.json(result);
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// Khalti — verify (redirect URL after payment)
+app.get('/api/pay/khalti/verify', async (req, res) => {
+  try {
+    const { pidx, orderId } = req.query;
+    if (!pidx) return res.redirect('/payment-success?status=failed&gateway=khalti');
+    const result = await khalti.verifyPayment(pidx);
+    if (result.success) {
+      if (orderId) {
+        await prisma.payment.create({
+          data: {
+            restaurantId: 1,
+            orderId:    parseInt(orderId),
+            method:     'Khalti',
+            amount:     result.amount,
+            amountPaid: result.amount,
+            change:     0,
+            receiptNo:  result.transactionId || 'KHL-' + Date.now(),
+            status:     'Paid',
+          }
+        }).catch(() => {});
+        await prisma.order.update({
+          where: { id: parseInt(orderId) },
+          data:  { status: 'Completed', completedAt: new Date() }
+        }).catch(() => {});
+      }
+      res.redirect(`/payment-success?status=success&gateway=khalti&txn=${result.transactionId}`);
+    } else {
+      res.redirect(`/payment-success?status=failed&gateway=khalti&msg=${encodeURIComponent(result.message)}`);
+    }
+  } catch (e) { res.redirect('/payment-success?status=failed&gateway=khalti'); }
+});
 // Phase 5
 app.use('/api/waste',            require('./routes/waste'));
 app.use('/api/events',           require('./routes/events'));
