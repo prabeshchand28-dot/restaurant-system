@@ -157,15 +157,19 @@ app.post('/api/pay/khalti/initiate', async (req, res) => {
 // Khalti — verify (redirect URL after payment)
 app.get('/api/pay/khalti/verify', async (req, res) => {
   try {
-    const { pidx, orderId } = req.query;
+    const { pidx } = req.query;
     if (!pidx) return res.redirect('/payment-success?status=failed&gateway=khalti');
     const result = await khalti.verifyPayment(pidx);
     if (result.success) {
+      // Extract orderId from purchaseOrderId (format: order-<id>-<timestamp>)
+      const purchaseId = result.data?.purchase_order_id || '';
+      const match      = purchaseId.match(/order-(\d+)-/);
+      const orderId    = match ? parseInt(match[1]) : null;
       if (orderId) {
         await prisma.payment.create({
           data: {
             restaurantId: 1,
-            orderId:    parseInt(orderId),
+            orderId,
             method:     'Khalti',
             amount:     result.amount,
             amountPaid: result.amount,
@@ -175,7 +179,7 @@ app.get('/api/pay/khalti/verify', async (req, res) => {
           }
         }).catch(() => {});
         await prisma.order.update({
-          where: { id: parseInt(orderId) },
+          where: { id: orderId },
           data:  { status: 'Completed', completedAt: new Date() }
         }).catch(() => {});
       }

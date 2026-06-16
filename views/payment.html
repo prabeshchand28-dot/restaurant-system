@@ -321,6 +321,23 @@ body{display:flex;flex-direction:column;overflow:hidden}
 
 /* Scrollbar */
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#bbb;border-radius:2px}
+
+/* ── Online Payment QR Modal ── */
+.onpay-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;display:none;align-items:center;justify-content:center}
+.onpay-overlay.show{display:flex}
+.onpay-box{background:#fff;border-radius:20px;padding:32px 28px;max-width:360px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.onpay-logo{width:56px;height:56px;border-radius:14px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#fff}
+.onpay-logo.esewa{background:#60bb46}
+.onpay-logo.khalti{background:#5C2D91}
+.onpay-title{font-size:18px;font-weight:800;color:#1e293b;margin-bottom:4px}
+.onpay-amt{font-size:28px;font-weight:900;color:#f97316;margin-bottom:16px}
+.onpay-qr{width:200px;height:200px;margin:0 auto 16px;border:3px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center}
+.onpay-instruction{font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.6}
+.onpay-status{font-size:13px;font-weight:700;padding:8px 16px;border-radius:8px;margin-bottom=16px;display:inline-block}
+.onpay-status.waiting{background:#fef3c7;color:#92400e}
+.onpay-status.success{background:#d1fae5;color:#065f46}
+.onpay-cancel{background:none;border:1px solid #e2e8f0;padding:8px 20px;border-radius:8px;color:#64748b;cursor:pointer;font-size:13px;font-family:inherit;margin-top:12px}
+.onpay-cancel:hover{background:#f1f5f9}
 </style>
 </head>
 <body>
@@ -970,6 +987,13 @@ async function executePayment() {
     showToast('Insufficient amount', 'error'); return;
   }
 
+  // eSewa / Khalti → show QR modal, don't go through normal flow
+  if (payMethod === 'eSewa' || payMethod === 'Khalti') {
+    btn.disabled = true;
+    await initiateOnlinePayment(payMethod);
+    return;
+  }
+
   btn.disabled = true;
   showLoading('Processing payment...');
 
@@ -1194,5 +1218,132 @@ loadTables().then(async () => {
 </script>
 <script src="/js/offline.js" defer></script>
 <script src="/js/autoupdate.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<!-- ── Online Payment QR Modal ── -->
+<div class="onpay-overlay" id="onpayOverlay">
+  <div class="onpay-box">
+    <div class="onpay-logo" id="onpayLogo">ई</div>
+    <div class="onpay-title" id="onpayTitle">eSewa Payment</div>
+    <div class="onpay-amt" id="onpayAmt">रू 0</div>
+    <div class="onpay-qr" id="onpayQR"></div>
+    <div class="onpay-instruction">
+      Customer le afno phone bata QR scan garun<br/>
+      → Pay garsin → Payment auto-confirm hunxa
+    </div>
+    <div class="onpay-status waiting" id="onpayStatus">⏳ Payment ko pratiksha...</div>
+    <br/>
+    <button class="onpay-cancel" onclick="cancelOnlinePayment()">✕ Cancel</button>
+  </div>
+</div>
+
+<script>
+let _onpayPollTimer = null;
+let _onpayOrderId   = null;
+
+async function initiateOnlinePayment(gateway) {
+  const orderId = currentOrder?.ids?.[0];
+  if (!orderId) return;
+
+  try {
+    showLoading(`${gateway} payment link banaudai...`);
+    const endpoint = gateway === 'eSewa'
+      ? '/api/pay/esewa/initiate'
+      : '/api/pay/khalti/initiate';
+
+    const body = gateway === 'eSewa'
+      ? { orderId, amount: finalTotal, taxAmount: 0 }
+      : { orderId, amount: finalTotal, customerName: 'Guest', customerPhone: '9800000000', customerEmail: 'guest@restaurant.com' };
+
+    const r = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authH() },
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    hideLoading();
+
+    if (!d.success) { showToast('Payment link banena: ' + (d.message || ''), 'error'); return; }
+
+    let payUrl;
+    if (gateway === 'eSewa') {
+      // Build eSewa form URL with query params for QR
+      const params = new URLSearchParams(d.fields).toString();
+      payUrl = d.paymentUrl + '?' + params;
+    } else {
+      payUrl = d.paymentUrl;
+    }
+
+    _onpayOrderId = orderId;
+    showOnpayModal(gateway, payUrl, finalTotal);
+    startPaymentPoll(orderId, gateway);
+
+  } catch(e) {
+    hideLoading();
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+function showOnpayModal(gateway, payUrl, amount) {
+  const logo  = document.getElementById('onpayLogo');
+  const title = document.getElementById('onpayTitle');
+  const amt   = document.getElementById('onpayAmt');
+  const qrDiv = document.getElementById('onpayQR');
+  const status = document.getElementById('onpayStatus');
+
+  logo.textContent  = gateway === 'eSewa' ? 'ई' : 'K';
+  logo.className    = 'onpay-logo ' + (gateway === 'eSewa' ? 'esewa' : 'khalti');
+  title.textContent = gateway + ' Payment';
+  amt.textContent   = 'रू ' + amount.toLocaleString();
+  status.textContent = '⏳ Payment ko pratiksha...';
+  status.className  = 'onpay-status waiting';
+
+  // Generate QR code
+  qrDiv.innerHTML = '';
+  new QRCode(qrDiv, {
+    text:   payUrl,
+    width:  190,
+    height: 190,
+    correctLevel: QRCode.CorrectLevel.M,
+  });
+
+  document.getElementById('onpayOverlay').classList.add('show');
+}
+
+function startPaymentPoll(orderId, gateway) {
+  let attempts = 0;
+  _onpayPollTimer = setInterval(async () => {
+    attempts++;
+    try {
+      const r = await fetch(`/api/orders/${orderId}`, { headers: authH() });
+      const d = await r.json();
+      const order = d.order || d;
+      if (order.status === 'Completed') {
+        clearInterval(_onpayPollTimer);
+        document.getElementById('onpayStatus').textContent = '✅ Payment Successful!';
+        document.getElementById('onpayStatus').className = 'onpay-status success';
+        setTimeout(() => {
+          document.getElementById('onpayOverlay').classList.remove('show');
+          // Record locally and show receipt
+          buildReceipt(finalTotal);
+          document.getElementById('successOverlay').classList.add('show');
+          payMethod = gateway;
+        }, 1500);
+      }
+    } catch {}
+    if (attempts > 60) { // 3 min timeout
+      clearInterval(_onpayPollTimer);
+      document.getElementById('onpayStatus').textContent = '⏰ Timeout — manually verify';
+      document.getElementById('onpayStatus').className = 'onpay-status waiting';
+    }
+  }, 3000);
+}
+
+function cancelOnlinePayment() {
+  clearInterval(_onpayPollTimer);
+  document.getElementById('onpayOverlay').classList.remove('show');
+  document.getElementById('executeBtn').disabled = false;
+}
+</script>
 </body>
 </html>
