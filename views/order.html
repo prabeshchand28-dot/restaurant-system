@@ -249,24 +249,6 @@ img{display:block}
 .place-order-btn:active{opacity:.85}
 .place-order-btn:disabled{opacity:.5;cursor:not-allowed}
 
-/* Payment modal */
-.pay-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;display:flex;align-items:flex-end;justify-content:center}
-.pay-modal-overlay.hidden{display:none}
-.pay-modal{background:#1c1c1e;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:480px}
-.pay-modal h3{font-size:17px;font-weight:800;color:#fff;text-align:center;margin-bottom:6px}
-.pay-modal .pay-sub{font-size:13px;color:#8e8e93;text-align:center;margin-bottom:20px}
-.pay-option{display:flex;align-items:center;gap:14px;background:#2c2c2e;border-radius:14px;padding:16px;margin-bottom:10px;border:2px solid transparent;cursor:pointer;transition:border-color .2s}
-.pay-option:active,.pay-option.selected{border-color:var(--accent)}
-.pay-option-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
-.pay-option-icon.esewa{background:#60bb46}
-.pay-option-icon.khalti{background:#5C2D91}
-.pay-option-icon.cash{background:#3a3a3c}
-.pay-option-info{flex:1}
-.pay-option-name{font-size:15px;font-weight:700;color:#fff}
-.pay-option-desc{font-size:12px;color:#8e8e93;margin-top:2px}
-.pay-confirm-btn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:800;font-family:var(--font);cursor:pointer;margin-top:6px}
-.pay-confirm-btn:disabled{opacity:.5}
-
 /* My orders sheet */
 .my-orders-btn{
   background:none;border:none;color:rgba(255,255,255,.8);font-family:var(--font);
@@ -898,16 +880,11 @@ async function placeOrder() {
 
     if (d.success) {
       addSessionOrderId(d.order.id);
-      const total = Object.entries(cart).reduce((s,[id,qty])=>{
-        const m = menu.find(x=>x.id===parseInt(id));
-        return s + (m ? effectivePrice(m)*qty : 0);
-      }, 0);
       cart = {}; updateBottomBar(); renderMenu(currentCat);
       closeSheet('cartSheet');
       document.getElementById('ordersNotifDot').classList.add('show');
+      showToast(`✅ Order placed! Est. wait: ${d.order.estimatedWait||'?'} min`);
       loadMyOrders();
-      // Show payment modal
-      openPayModal(d.order.id, Math.round(total));
     } else {
       showToast('⚠️ ' + (d.message || 'Failed'));
     }
@@ -969,6 +946,11 @@ function renderMyOrders() {
       <div class="ohc-total"><span>Total</span><span>Rs ${total.toLocaleString()}</span></div>
       <span class="ohc-status ${o.status}">${sIcon} ${o.status}</span>
       ${o.status==='Completed' ? `<div class="ohc-actions" style="margin-top:10px"><button class="ohc-btn rate" onclick="openRating(${o.id})">⭐ Rate this order</button></div>` : ''}
+      ${(o.status==='Pending'||o.status==='Preparing') && !o.offline ? `
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button onclick="payOnline('esewa',${o.id},${total})" style="flex:1;background:#60bb46;color:#fff;border:none;border-radius:8px;padding:9px 0;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">eSewa Pay</button>
+          <button onclick="payOnline('khalti',${o.id},${total})" style="flex:1;background:#5C2D91;color:#fff;border:none;border-radius:8px;padding:9px 0;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Khalti Pay</button>
+        </div>` : ''}
     </div>`;
   }).join('');
 }
@@ -1145,147 +1127,26 @@ function showToast(msg) {
 </script>
 <script src="/js/offline.js" defer></script>
 <script src="/js/autoupdate.js"></script>
-
-<!-- ── Payment Method Modal ── -->
-<div class="pay-modal-overlay hidden" id="payModalOverlay">
-  <div class="pay-modal">
-    <h3>💳 Payment Garnus</h3>
-    <p class="pay-sub" id="payModalSub">Order placed! Payment method choose garnus.</p>
-
-    <div class="pay-option" onclick="selectPayMethod('esewa')" id="payOpt-esewa">
-      <div class="pay-option-icon esewa">ई</div>
-      <div class="pay-option-info">
-        <div class="pay-option-name">eSewa</div>
-        <div class="pay-option-desc">Digital wallet — fast ra easy</div>
-      </div>
-      <span style="color:#60bb46;font-size:18px" id="payCheck-esewa"></span>
-    </div>
-
-    <div class="pay-option" onclick="selectPayMethod('khalti')" id="payOpt-khalti">
-      <div class="pay-option-icon khalti">K</div>
-      <div class="pay-option-info">
-        <div class="pay-option-name">Khalti</div>
-        <div class="pay-option-desc">Digital wallet — secure payment</div>
-      </div>
-      <span style="color:#5C2D91;font-size:18px" id="payCheck-khalti"></span>
-    </div>
-
-    <div class="pay-option" onclick="selectPayMethod('cash')" id="payOpt-cash">
-      <div class="pay-option-icon cash">💵</div>
-      <div class="pay-option-info">
-        <div class="pay-option-name">Cash / Counter</div>
-        <div class="pay-option-desc">Counter ma gayera pay garnus</div>
-      </div>
-      <span style="color:#8e8e93;font-size:18px" id="payCheck-cash"></span>
-    </div>
-
-    <button class="pay-confirm-btn" id="payConfirmBtn" onclick="confirmPayment()" disabled>
-      Continue →
-    </button>
-  </div>
-</div>
-
-<!-- Hidden eSewa form (submitted programmatically) -->
-<form id="esewaForm" method="POST" style="display:none">
-  <input type="hidden" name="amount" id="esewa_amount"/>
-  <input type="hidden" name="tax_amount" id="esewa_tax_amount"/>
-  <input type="hidden" name="total_amount" id="esewa_total_amount"/>
-  <input type="hidden" name="transaction_uuid" id="esewa_transaction_uuid"/>
-  <input type="hidden" name="product_code" id="esewa_product_code"/>
-  <input type="hidden" name="product_service_charge" value="0"/>
-  <input type="hidden" name="product_delivery_charge" value="0"/>
-  <input type="hidden" name="success_url" id="esewa_success_url"/>
-  <input type="hidden" name="failure_url" id="esewa_failure_url"/>
-  <input type="hidden" name="signed_field_names" id="esewa_signed_field_names"/>
-  <input type="hidden" name="signature" id="esewa_signature"/>
-</form>
-
 <script>
-let _pendingOrderId   = null;
-let _pendingOrderAmt  = 0;
-let _selectedPayMethod = null;
-
-function openPayModal(orderId, totalAmount) {
-  _pendingOrderId   = orderId;
-  _pendingOrderAmt  = totalAmount;
-  _selectedPayMethod = null;
-  document.getElementById('payModalSub').textContent =
-    `Order #${orderId} — Total: Rs ${totalAmount}`;
-  ['esewa','khalti','cash'].forEach(m => {
-    document.getElementById('payCheck-' + m).textContent = '';
-    document.getElementById('payOpt-' + m).style.borderColor = 'transparent';
-  });
-  document.getElementById('payConfirmBtn').disabled = true;
-  document.getElementById('payModalOverlay').classList.remove('hidden');
-}
-
-function selectPayMethod(method) {
-  _selectedPayMethod = method;
-  ['esewa','khalti','cash'].forEach(m => {
-    const el  = document.getElementById('payOpt-' + m);
-    const chk = document.getElementById('payCheck-' + m);
-    if (m === method) {
-      el.style.borderColor = m === 'esewa' ? '#60bb46' : m === 'khalti' ? '#5C2D91' : '#f97316';
-      chk.textContent = '✓';
-    } else {
-      el.style.borderColor = 'transparent';
-      chk.textContent = '';
-    }
-  });
-  document.getElementById('payConfirmBtn').disabled = false;
-}
-
-async function confirmPayment() {
-  const btn = document.getElementById('payConfirmBtn');
-  btn.disabled = true; btn.textContent = '⏳ Processing...';
-
-  if (_selectedPayMethod === 'cash') {
-    document.getElementById('payModalOverlay').classList.add('hidden');
-    showToast('✅ Counter ma gayera pay garnus. Dhanyabad!');
-    btn.textContent = 'Continue →';
-    return;
-  }
-
+async function payOnline(gateway, orderId, amount) {
+  showToast("⏳ " + (gateway === "esewa" ? "eSewa" : "Khalti") + " link banaudai...");
   try {
-    if (_selectedPayMethod === 'esewa') {
-      const r = await fetch('/api/pay/esewa/initiate', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: _pendingOrderId, amount: _pendingOrderAmt, taxAmount: 0 }),
-      });
-      const d = await r.json();
-      if (!d.success) throw new Error(d.message);
-      // Fill hidden form and submit to eSewa
-      const form = document.getElementById('esewaForm');
-      form.action = d.paymentUrl;
-      Object.entries(d.fields).forEach(([k, v]) => {
-        const el = form.querySelector(`[name="${k}"]`);
-        if (el) el.value = v;
-      });
-      form.submit();
-      return;
-    }
-
-    if (_selectedPayMethod === 'khalti') {
-      const r = await fetch('/api/pay/khalti/initiate', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId:       _pendingOrderId,
-          amount:        _pendingOrderAmt,
-          customerName:  'Guest',
-          customerPhone: '9800000000',
-          customerEmail: 'guest@restaurant.com',
-        }),
-      });
-      const d = await r.json();
-      if (!d.success) throw new Error(d.message);
-      window.location.href = d.paymentUrl;
-      return;
-    }
-  } catch (e) {
-    showToast('❌ Payment error: ' + e.message, 'error');
-    btn.disabled = false; btn.textContent = 'Continue →';
-  }
+    const endpoint = gateway === "esewa" ? "/api/pay/esewa/initiate" : "/api/pay/khalti/initiate";
+    const body = gateway === "esewa"
+      ? { orderId, amount, taxAmount: 0 }
+      : { orderId, amount, customerName: "Guest", customerPhone: "9800000000", customerEmail: "guest@restaurant.com" };
+    const r = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.message || "Failed");
+    if (gateway === "esewa") {
+      const form = document.createElement("form");
+      form.method = "POST"; form.action = d.paymentUrl;
+      Object.entries(d.fields).forEach(([k,v]) => { const i=document.createElement("input"); i.type="hidden"; i.name=k; i.value=v; form.appendChild(i); });
+      document.body.appendChild(form); form.submit();
+    } else { window.location.href = d.paymentUrl; }
+  } catch(e) { showToast("Error: " + e.message, "error"); }
 }
 </script>
+
 </body>
 </html>
